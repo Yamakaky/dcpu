@@ -1,0 +1,11 @@
+[package]
+authors = ["yamakaky"]
+name = "dcpu"
+version = "0.1.0"
+
+[dependencies]
+enum_primitive = "0.1.0"
+log = "0.3.6"
+nom = "1.2.2"
+num = "0.1.31"
+simplelog = "0.1.0"
