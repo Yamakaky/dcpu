@@ -38,6 +38,15 @@ pub struct Ast {
     pub instructions: Vec<Instruction>
 }
 
+impl fmt::Display for Ast {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for i in self.instructions.iter() {
+            try!(write!(f, "{}\n", i));
+        }
+        write!(f, "")
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub enum Instruction {
     /// op b a
