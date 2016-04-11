@@ -12,13 +12,14 @@ use docopt::Docopt;
 use dcpu::iterators::U16ToInstruction;
 
 const USAGE: &'static str = "
-Usage: disassembler [--ast]
-       disassembler (--help | --version)
+Usage:
+  disassembler [--ast]
+  disassembler (--help | --version)
 
 Options:
-    --ast              Show the AST of the file.
-    -h, --help         Show this message.
-    --version          Show the version of disassembler.
+  --ast              Show the AST of the file.
+  -h, --help         Show this message.
+  --version          Show the version of disassembler.
 ";
 
 #[derive(RustcDecodable)]
@@ -39,8 +40,9 @@ impl<I: ReadBytesExt> Iterator for IterU16<I> {
 }
 
 fn main() {
-    let args: Args = Docopt::new(USAGE).and_then(|d| d.decode())
-                                       .unwrap_or_else(|e| e.exit());
+    let args: Args = Docopt::new(USAGE)
+                            .and_then(|d| d.decode())
+                            .unwrap_or_else(|e| e.exit());
 
     let input = io::stdin();
     let mut output = io::stdout();
