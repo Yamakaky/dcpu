@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use num::FromPrimitive;
 
+pub const MASK_OP: u16 = 0b11111;
 pub const SHIFT_A: u16 = 10;
 pub const SHIFT_B: u16 = 5;
 pub const MASK_B: u16 = 0b11111;
@@ -88,7 +89,7 @@ impl Instruction {
     }
 
     pub fn decode(data: &[u16; 3]) -> Result<(u16, Instruction), DecodeError> {
-        let op_bin = data[0] & 0x3f;
+        let op_bin = data[0] & MASK_OP;
         let a_bin = data[0] >> SHIFT_A;
         let b_bin = (data[0] >> SHIFT_B) & MASK_B;
 
