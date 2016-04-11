@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::default::Default;
-use std::error::Error;
 use std::fmt;
+use std::error;
 
 use types::*;
 use types::Value::*;
@@ -9,69 +9,42 @@ use types::BasicOp::*;
 use types::SpecialOp::*;
 
 #[derive(Debug)]
-pub enum CpuError {
+pub enum Error {
     DecodeError(DecodeError),
-    ExecutionError(ExecutionError)
-}
-
-impl fmt::Display for CpuError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            CpuError::DecodeError(ref e) => write!(f, "instruction deciding error: {}", e),
-            CpuError::ExecutionError(ref e) => write!(f, "execution error: {}", e)
-        }
-    }
-}
-
-impl Error for CpuError {
-    fn description(&self) -> &str {
-        match *self {
-            CpuError::DecodeError(ref e) => e.description(),
-            CpuError::ExecutionError(ref e) => e.description()
-        }
-    }
-
-    fn cause(&self) -> Option<&Error> {
-        match *self {
-            CpuError::DecodeError(ref e) => Some(e),
-            CpuError::ExecutionError(ref e) => Some(e)
-        }
-    }
-}
-
-impl From<DecodeError> for CpuError {
-    fn from(e: DecodeError) -> CpuError {
-        CpuError::DecodeError(e)
-    }
-}
-
-impl From<ExecutionError> for CpuError {
-    fn from(e: ExecutionError) -> CpuError {
-        CpuError::ExecutionError(e)
-    }
-}
-
-#[derive(Debug)]
-pub enum ExecutionError {
     InvalidHardwareId(u16),
     InFire
 }
 
-impl fmt::Display for ExecutionError {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            ExecutionError::InvalidHardwareId(ref id) => write!(f, "invalid device id: {}", id),
-            ExecutionError::InFire => write!(f, "dcpu in fire, run for your lives!")
+            Error::DecodeError(ref e) => write!(f, "instruction deciding error: {}", e),
+            Error::InvalidHardwareId(ref id) => write!(f, "invalid device id: {}", id),
+            Error::InFire => write!(f, "dcpu in fire, run for your lives!")
         }
     }
 }
 
-impl Error for ExecutionError {
+impl error::Error for Error {
     fn description(&self) -> &str {
         match *self {
-            ExecutionError::InvalidHardwareId(_) => "invalid hardware id",
-            ExecutionError::InFire => "dcpu in fire, run for your lives!"
+            Error::DecodeError(ref e) => e.description(),
+            Error::InvalidHardwareId(_) => "invalid hardware id",
+            Error::InFire => "dcpu in fire, run for your lives!"
         }
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            Error::DecodeError(ref e) => Some(e),
+            _ => None
+        }
+    }
+}
+
+impl From<DecodeError> for Error {
+    fn from(e: DecodeError) -> Error {
+        Error::DecodeError(e)
     }
 }
 
@@ -170,7 +143,7 @@ impl Cpu {
         }
     }
 
-    pub fn tick(&mut self) -> Result<CpuState, CpuError> {
+    pub fn tick(&mut self) -> Result<CpuState, Error> {
         if self.wait != 0 {
             self.wait -= 1;
             trace!("Waiting");
@@ -215,14 +188,14 @@ impl Cpu {
         }
     }
 
-    fn op(&mut self, i: Instruction) -> Result<(), ExecutionError> {
+    fn op(&mut self, i: Instruction) -> Result<(), Error> {
         match i {
             Instruction::BasicOp(op, b, a) => self.basic_op(op, b, a),
             Instruction::SpecialOp(op, a) => self.special_op(op, a)
         }
     }
 
-    fn basic_op(&mut self, op: BasicOp, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn basic_op(&mut self, op: BasicOp, b: Value, a: Value) -> Result<(), Error> {
         match op {
             SET => self.op_set(b, a),
             ADD => self.op_add(b, a),
@@ -254,7 +227,7 @@ impl Cpu {
         }
     }
 
-    fn special_op(&mut self, op: SpecialOp, a: Value) -> Result<(), ExecutionError> {
+    fn special_op(&mut self, op: SpecialOp, a: Value) -> Result<(), Error> {
         match op {
             JSR => self.op_jsr(a),
             INT => self.op_int(a),
@@ -268,13 +241,13 @@ impl Cpu {
         }
     }
 
-    fn op_set(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_set(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         self.set(b, v);
         Ok(())
     }
 
-    fn op_add(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_add(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         let (new_v, overflow) = o.overflowing_add(v);
@@ -283,7 +256,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_sub(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_sub(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         let (new_v, overflow) = o.overflowing_sub(v);
@@ -292,7 +265,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_mul(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_mul(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a) as u32;
         let o = self.get(b) as u32;
         let new_v = v * o;
@@ -301,7 +274,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_mli(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_mli(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a) as i16 as i32;
         let o = self.get(b) as i16 as i32;
         let new_v = (v * o) as u32;
@@ -310,7 +283,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_div(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_div(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         if v == 0 {
             self.set(b, 0);
@@ -323,7 +296,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_dvi(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_dvi(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a) as i16;
         if v == 0 {
             self.set(b, 0);
@@ -336,7 +309,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_mod(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_mod(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         if v == 0 {
             self.set(b, 0);
@@ -347,7 +320,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_mdi(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_mdi(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a) as i16;
         if v == 0 {
             self.set(b, 0);
@@ -358,28 +331,28 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_and(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_and(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         self.set(b, o & v);
         Ok(())
     }
 
-    fn op_bor(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_bor(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         self.set(b, o | v);
         Ok(())
     }
 
-    fn op_xor(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_xor(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         self.set(b, o ^ v);
         Ok(())
     }
 
-    fn op_shr(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_shr(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         self.set(b, o >> v);
@@ -387,7 +360,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_asr(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_asr(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b) as i16;
         self.set(b, (o >> v) as u16);
@@ -395,7 +368,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_shl(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_shl(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         self.set(b, o << v);
@@ -403,65 +376,65 @@ impl Cpu {
         Ok(())
     }
 
-    fn exec_if(&mut self, cond: bool) -> Result<(), ExecutionError> {
+    fn exec_if(&mut self, cond: bool) -> Result<(), Error> {
         if !cond {
             let next_i = self.pc;
-            let (offset, _) = self.decode(next_i).unwrap();
+            let (offset, _) = try!(self.decode(next_i));
             self.pc = self.pc.wrapping_add(offset);
             self.wait += 1;
         }
         Ok(())
     }
 
-    fn op_ifb(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_ifb(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         self.exec_if((v & o) != 0)
     }
 
-    fn op_ifc(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_ifc(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         self.exec_if((v & o) == 0)
     }
 
-    fn op_ife(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_ife(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         self.exec_if(v == o)
     }
 
-    fn op_ifn(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_ifn(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         self.exec_if(v != o)
     }
 
-    fn op_ifg(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_ifg(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         self.exec_if(v > o)
     }
 
-    fn op_ifa(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_ifa(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a) as i16;
         let o = self.get(b) as i16;
         self.exec_if(v > o)
     }
 
-    fn op_ifl(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_ifl(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         self.exec_if(v < o)
     }
 
-    fn op_ifu(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_ifu(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a) as i16;
         let o = self.get(b) as i16;
         self.exec_if(v < o)
     }
 
-    fn op_adx(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_adx(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         let ex = self.ex;
@@ -478,7 +451,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_sbx(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_sbx(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let o = self.get(b);
         let ex = self.ex;
@@ -495,7 +468,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_sti(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_sti(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         self.set(b, v);
         self.registers[Register::I as usize] =
@@ -505,7 +478,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_std(&mut self, b: Value, a: Value) -> Result<(), ExecutionError> {
+    fn op_std(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         self.set(b, v);
         self.registers[Register::I as usize] =
@@ -515,7 +488,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_jsr(&mut self, a: Value) -> Result<(), ExecutionError> {
+    fn op_jsr(&mut self, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         let new_pc = Litteral(self.pc);
         try!(self.op_set(Push, new_pc));
@@ -523,10 +496,10 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_int(&mut self, a: Value) -> Result<(), ExecutionError> {
+    fn op_int(&mut self, a: Value) -> Result<(), Error> {
         if self.ia != 0 {
             if self.interrupts_queue.len() >= 256 {
-                return Err(ExecutionError::InFire);
+                return Err(Error::InFire);
             }
             let v = self.get(a);
             self.interrupts_queue.push_back(v);
@@ -534,19 +507,19 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_iag(&mut self, a: Value) -> Result<(), ExecutionError> {
+    fn op_iag(&mut self, a: Value) -> Result<(), Error> {
         let ia = self.ia;
         self.set(a, ia);
         Ok(())
     }
 
-    fn op_ias(&mut self, a: Value) -> Result<(), ExecutionError> {
+    fn op_ias(&mut self, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         self.ia = v;
         Ok(())
     }
 
-    fn op_rfi(&mut self, _: Value) -> Result<(), ExecutionError> {
+    fn op_rfi(&mut self, _: Value) -> Result<(), Error> {
         self.is_queue_enabled = false;
         let v1 = self.get(Push);
         self.set(Reg(Register::A), v1);
@@ -555,19 +528,19 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_iaq(&mut self, a: Value) -> Result<(), ExecutionError> {
+    fn op_iaq(&mut self, a: Value) -> Result<(), Error> {
         let v = self.get(a);
         self.is_queue_enabled = v == 0;
         Ok(())
     }
 
-    fn op_hwn(&mut self, a: Value) -> Result<(), ExecutionError> {
+    fn op_hwn(&mut self, a: Value) -> Result<(), Error> {
         let nb_devices = self.devices.len();
         self.set(a, nb_devices as u16);
         Ok(())
     }
 
-    fn op_hwq(&mut self, a: Value) -> Result<(), ExecutionError> {
+    fn op_hwq(&mut self, a: Value) -> Result<(), Error> {
         let v = self.get(a) as usize;
 
         if v < self.devices.len() {
@@ -582,11 +555,11 @@ impl Cpu {
             self.set(Reg(Register::Y), (manufacturer >> 16) as u16);
             Ok(())
         } else {
-            Err(ExecutionError::InvalidHardwareId(v as u16))
+            Err(Error::InvalidHardwareId(v as u16))
         }
     }
 
-    fn op_hwi(&mut self, a: Value) -> Result<(), ExecutionError> {
+    fn op_hwi(&mut self, a: Value) -> Result<(), Error> {
         let v = self.get(a) as usize;
 
         if v < self.devices.len() {
@@ -594,7 +567,7 @@ impl Cpu {
             self.wait += self.devices[v].delay();
             Ok(())
         } else {
-            Err(ExecutionError::InvalidHardwareId(v as u16))
+            Err(Error::InvalidHardwareId(v as u16))
         }
     }
 }
