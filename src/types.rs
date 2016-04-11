@@ -69,14 +69,14 @@ impl Instruction {
                 output[0] = op.encode();
 
                 let (val, next) = a.encode(true);
-                output[0] |= (val << SHIFT_A);
+                output[0] |= val << SHIFT_A;
                 if let Some(n) = next {
                     output[1] = n;
                     size += 1;
                 }
 
                 let (val, next) = b.encode(false);
-                output[0] |= (val << SHIFT_B);
+                output[0] |= val << SHIFT_B;
                 if let Some(n) = next {
                     output[2] = n;
                     size += 1;
@@ -228,7 +228,7 @@ impl fmt::Display for Value {
         match *self {
             Value::Reg(r) => write!(f, "{:?}", r),
             Value::AtReg(r) => write!(f, "[{:?}]", r),
-            Value::AtRegPlus(r, v) => write!(f, "[{:?} + v]", r),
+            Value::AtRegPlus(r, v) => write!(f, "[{:?} + {}]", r, v),
             Value::Pick(n) => write!(f, "PICK {}", n),
             Value::AtAddr(v) => write!(f, "[{}]", v),
             Value::Litteral(v) => write!(f, "{}", v),
