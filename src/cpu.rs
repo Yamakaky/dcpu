@@ -9,45 +9,45 @@ use types::BasicOp::*;
 use types::SpecialOp::*;
 
 #[derive(Debug)]
-pub enum DcpuError {
+pub enum CpuError {
     DecodeError(DecodeError),
     ExecutionError(ExecutionError)
 }
 
-impl fmt::Display for DcpuError {
+impl fmt::Display for CpuError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            DcpuError::DecodeError(ref e) => write!(f, "instruction deciding error: {}", e),
-            DcpuError::ExecutionError(ref e) => write!(f, "execution error: {}", e)
+            CpuError::DecodeError(ref e) => write!(f, "instruction deciding error: {}", e),
+            CpuError::ExecutionError(ref e) => write!(f, "execution error: {}", e)
         }
     }
 }
 
-impl Error for DcpuError {
+impl Error for CpuError {
     fn description(&self) -> &str {
         match *self {
-            DcpuError::DecodeError(ref e) => e.description(),
-            DcpuError::ExecutionError(ref e) => e.description()
+            CpuError::DecodeError(ref e) => e.description(),
+            CpuError::ExecutionError(ref e) => e.description()
         }
     }
 
     fn cause(&self) -> Option<&Error> {
         match *self {
-            DcpuError::DecodeError(ref e) => Some(e),
-            DcpuError::ExecutionError(ref e) => Some(e)
+            CpuError::DecodeError(ref e) => Some(e),
+            CpuError::ExecutionError(ref e) => Some(e)
         }
     }
 }
 
-impl From<DecodeError> for DcpuError {
-    fn from(e: DecodeError) -> DcpuError {
-        DcpuError::DecodeError(e)
+impl From<DecodeError> for CpuError {
+    fn from(e: DecodeError) -> CpuError {
+        CpuError::DecodeError(e)
     }
 }
 
-impl From<ExecutionError> for DcpuError {
-    fn from(e: ExecutionError) -> DcpuError {
-        DcpuError::ExecutionError(e)
+impl From<ExecutionError> for CpuError {
+    fn from(e: ExecutionError) -> CpuError {
+        CpuError::ExecutionError(e)
     }
 }
 
@@ -83,12 +83,12 @@ pub trait Device {
     fn delay(&self) -> u16;
 }
 
-pub enum DcpuState {
+pub enum CpuState {
     Executing,
     Waiting,
 }
 
-pub struct Dcpu {
+pub struct Cpu {
     pub ram: [u16; 0x10000],
     pub registers: [u16; 8],
     pub pc: u16,
@@ -101,9 +101,9 @@ pub struct Dcpu {
     pub interrupts_queue: VecDeque<u16>
 }
 
-impl Default for Dcpu {
-    fn default() -> Dcpu {
-        Dcpu {
+impl Default for Cpu {
+    fn default() -> Cpu {
+        Cpu {
             ram: [0; 0x10000],
             registers: [0; 8],
             pc: 0,
@@ -118,7 +118,7 @@ impl Default for Dcpu {
     }
 }
 
-impl Dcpu {
+impl Cpu {
     pub fn load(&mut self, data: &[u16], offset: u16) {
         for (i, d) in data.iter().enumerate() {
             self.ram[offset.wrapping_add(i as u16) as usize] = *d;
@@ -170,11 +170,11 @@ impl Dcpu {
         }
     }
 
-    pub fn tick(&mut self) -> Result<DcpuState, DcpuError> {
+    pub fn tick(&mut self) -> Result<CpuState, CpuError> {
         if self.wait != 0 {
             self.wait -= 1;
             trace!("Waiting");
-            return Ok(DcpuState::Waiting);
+            return Ok(CpuState::Waiting);
         }
 
         if !self.is_queue_enabled {
@@ -190,7 +190,7 @@ impl Dcpu {
         self.pc = self.pc.wrapping_add(words_used);
         try!(self.op(instruction));
 
-        Ok(DcpuState::Executing)
+        Ok(CpuState::Executing)
     }
 
     fn decode(&mut self, offset: u16) -> Result<(u16, Instruction), DecodeError> {
