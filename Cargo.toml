@@ -4,8 +4,11 @@ name = "dcpu"
 version = "0.1.0"
 
 [dependencies]
+byteorder = "0.5.1"
+docopt = "0.6.80"
 enum_primitive = "0.1.0"
 log = "0.3.6"
 nom = "1.2.2"
 num = "0.1.31"
+rustc-serialize = "0.3.19"
 simplelog = "0.1.0"
