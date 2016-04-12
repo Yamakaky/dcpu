@@ -7,6 +7,7 @@ extern crate nom;
 extern crate num;
 
 pub mod cpu;
+pub mod device;
 pub mod iterators;
 pub mod parser;
 pub mod preprocessor;

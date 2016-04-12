@@ -3,6 +3,7 @@ use std::default::Default;
 use std::fmt;
 use std::error;
 
+use device::Device;
 use types::*;
 use types::Value::*;
 use types::BasicOp::*;
@@ -12,6 +13,7 @@ use types::SpecialOp::*;
 pub enum Error {
     DecodeError(DecodeError),
     InvalidHardwareId(u16),
+    InterruptError,
     InFire
 }
 
@@ -20,6 +22,7 @@ impl fmt::Display for Error {
         match *self {
             Error::DecodeError(ref e) => write!(f, "instruction deciding error: {}", e),
             Error::InvalidHardwareId(ref id) => write!(f, "invalid device id: {}", id),
+            Error::InterruptError => write!(f, "invalid hardware int"),
             Error::InFire => write!(f, "dcpu in fire, run for your lives!")
         }
     }
@@ -30,6 +33,7 @@ impl error::Error for Error {
         match *self {
             Error::DecodeError(ref e) => e.description(),
             Error::InvalidHardwareId(_) => "invalid hardware id",
+            Error::InterruptError => "invalid hardware int",
             Error::InFire => "dcpu in fire, run for your lives!"
         }
     }
@@ -48,14 +52,6 @@ impl From<DecodeError> for Error {
     }
 }
 
-pub trait Device {
-    fn hardware_id(&self) -> u32;
-    fn hardware_version(&self) -> u16;
-    fn manufacturer(&self) -> u32;
-    fn interrupt(&self);
-    fn delay(&self) -> u16;
-}
-
 pub enum CpuState {
     Executing,
     Waiting,
@@ -69,7 +65,6 @@ pub struct Cpu {
     pub ex: u16,
     pub ia: u16,
     pub wait: u16,
-    pub devices: Vec<Box<Device>>,
     pub is_queue_enabled: bool,
     pub interrupts_queue: VecDeque<u16>
 }
@@ -84,7 +79,6 @@ impl Default for Cpu {
             ex: 0,
             ia: 0,
             wait: 0,
-            devices: vec!(),
             is_queue_enabled: false,
             interrupts_queue: VecDeque::new()
         }
@@ -139,11 +133,11 @@ impl Cpu {
             PC => self.pc = val,
             EX => self.ex = val,
             AtAddr(off) => self.ram[off as usize] = val,
-            Litteral(_) => unreachable!()
+            Litteral(_) => ()
         }
     }
 
-    pub fn tick(&mut self) -> Result<CpuState, Error> {
+    pub fn tick(&mut self, devices: &mut [Box<Device>]) -> Result<CpuState, Error> {
         if self.wait != 0 {
             self.wait -= 1;
             trace!("Waiting");
@@ -161,7 +155,7 @@ impl Cpu {
         trace!("Executing {:?}", instruction);
         self.wait = instruction.delay() - 1;
         self.pc = self.pc.wrapping_add(words_used);
-        try!(self.op(instruction));
+        try!(self.op(instruction, devices));
 
         Ok(CpuState::Executing)
     }
@@ -188,10 +182,10 @@ impl Cpu {
         }
     }
 
-    fn op(&mut self, i: Instruction) -> Result<(), Error> {
+    fn op(&mut self, i: Instruction, devices: &mut [Box<Device>]) -> Result<(), Error> {
         match i {
             Instruction::BasicOp(op, b, a) => self.basic_op(op, b, a),
-            Instruction::SpecialOp(op, a) => self.special_op(op, a)
+            Instruction::SpecialOp(op, a) => self.special_op(op, a, devices)
         }
     }
 
@@ -227,7 +221,7 @@ impl Cpu {
         }
     }
 
-    fn special_op(&mut self, op: SpecialOp, a: Value) -> Result<(), Error> {
+    fn special_op(&mut self, op: SpecialOp, a: Value, devices: &mut [Box<Device>]) -> Result<(), Error> {
         match op {
             JSR => self.op_jsr(a),
             INT => self.op_int(a),
@@ -235,9 +229,9 @@ impl Cpu {
             IAS => self.op_ias(a),
             RFI => self.op_rfi(a),
             IAQ => self.op_iaq(a),
-            HWN => self.op_hwn(a),
-            HWQ => self.op_hwq(a),
-            HWI => self.op_hwi(a)
+            HWN => self.op_hwn(a, devices),
+            HWQ => self.op_hwq(a, devices),
+            HWI => self.op_hwi(a, devices)
         }
     }
 
@@ -534,19 +528,19 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_hwn(&mut self, a: Value) -> Result<(), Error> {
-        let nb_devices = self.devices.len();
+    fn op_hwn(&mut self, a: Value, devices: &mut [Box<Device>]) -> Result<(), Error> {
+        let nb_devices = devices.len();
         self.set(a, nb_devices as u16);
         Ok(())
     }
 
-    fn op_hwq(&mut self, a: Value) -> Result<(), Error> {
+    fn op_hwq(&mut self, a: Value, devices: &mut [Box<Device>]) -> Result<(), Error> {
         let v = self.get(a) as usize;
 
-        if v < self.devices.len() {
-            let id = self.devices[v].hardware_id();
-            let version = self.devices[v].hardware_version();
-            let manufacturer = self.devices[v].manufacturer();
+        if v < devices.len() {
+            let id = devices[v].hardware_id();
+            let version = devices[v].hardware_version();
+            let manufacturer = devices[v].manufacturer();
 
             self.set(Reg(Register::A), id as u16);
             self.set(Reg(Register::B), (id >> 16) as u16);
@@ -559,12 +553,11 @@ impl Cpu {
         }
     }
 
-    fn op_hwi(&mut self, a: Value) -> Result<(), Error> {
+    fn op_hwi(&mut self, a: Value, devices: &mut [Box<Device>]) -> Result<(), Error> {
         let v = self.get(a) as usize;
 
-        if v < self.devices.len() {
-            self.devices[v].interrupt();
-            self.wait += self.devices[v].delay();
+        if v < devices.len() {
+            self.wait += try!(devices[v].interrupt(self).map_err(|_| Error::InterruptError));
             Ok(())
         } else {
             Err(Error::InvalidHardwareId(v as u16))
