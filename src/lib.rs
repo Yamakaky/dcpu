@@ -1,3 +1,5 @@
+#![doc(html_root_url = "https://yamakaky.github.io/dcpu/")]
+
 #[macro_use]
 extern crate enum_primitive;
 #[macro_use]
