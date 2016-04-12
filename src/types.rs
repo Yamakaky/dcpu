@@ -33,6 +33,12 @@ impl Error for DecodeError {
     }
 }
 
+pub enum ParseError {
+    BasicOp,
+    SpecialOp,
+    Register
+}
+
 #[derive(Debug)]
 pub struct Ast {
     pub instructions: Vec<Instruction>
@@ -47,7 +53,7 @@ impl fmt::Display for Ast {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Instruction {
     /// op b a
     BasicOp(BasicOp, Value, Value),
@@ -125,8 +131,7 @@ impl fmt::Display for Instruction {
 }
 
 enum_from_primitive! {
-#[allow(dead_code)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Register {
     A = 0x0,
     B = 0x1,
@@ -145,8 +150,25 @@ impl Register {
     }
 }
 
-#[allow(dead_code)]
-#[derive(Debug, Copy, Clone)]
+impl FromStr for Register {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Register, ParseError> {
+        match s {
+            "A" => Ok(Register::A),
+            "B" => Ok(Register::B),
+            "C" => Ok(Register::C),
+            "I" => Ok(Register::I),
+            "J" => Ok(Register::J),
+            "X" => Ok(Register::X),
+            "Y" => Ok(Register::Y),
+            "Z" => Ok(Register::Z),
+            _ => Err(ParseError::Register)
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Value {
     Reg(Register),
     AtReg(Register),
@@ -238,8 +260,7 @@ impl fmt::Display for Value {
 }
 
 enum_from_primitive! {
-#[allow(dead_code)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum BasicOp {
     SET = 0x01,
     ADD = 0x02,
@@ -291,11 +312,9 @@ impl BasicOp {
     }
 }
 
-pub struct ParseBasicOpError;
-
 impl FromStr for BasicOp {
-    type Err = ParseBasicOpError;
-    fn from_str(s: &str) -> Result<BasicOp, ParseBasicOpError> {
+    type Err = ParseError;
+    fn from_str(s: &str) -> Result<BasicOp, ParseError> {
         match s {
             "SET" => Ok(BasicOp::SET),
             "ADD" => Ok(BasicOp::ADD),
@@ -324,14 +343,14 @@ impl FromStr for BasicOp {
             "SBX" => Ok(BasicOp::SBX),
             "STI" => Ok(BasicOp::STI),
             "STD" => Ok(BasicOp::STD),
-            _     => Err(ParseBasicOpError)
+            _     => Err(ParseError::BasicOp)
         }
     }
 }
 
 enum_from_primitive! {
 #[allow(dead_code)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum SpecialOp {
     JSR = 0x01,
     INT = 0x08,
@@ -361,5 +380,24 @@ impl SpecialOp {
 
     pub fn decode(op: u16) -> Result<SpecialOp, DecodeError> {
         SpecialOp::from_i32(op as i32).ok_or(DecodeError::SpecialOp(op))
+    }
+}
+
+impl FromStr for SpecialOp {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<SpecialOp, ParseError> {
+        match s {
+            "JSR" => Ok(SpecialOp::JSR),
+            "INT" => Ok(SpecialOp::INT),
+            "IAG" => Ok(SpecialOp::IAG),
+            "IAS" => Ok(SpecialOp::IAS),
+            "RFI" => Ok(SpecialOp::RFI),
+            "IAQ" => Ok(SpecialOp::IAQ),
+            "HWN" => Ok(SpecialOp::HWN),
+            "HWQ" => Ok(SpecialOp::HWQ),
+            "HWI" => Ok(SpecialOp::HWI),
+            _ => Err(ParseError::SpecialOp)
+        }
     }
 }
