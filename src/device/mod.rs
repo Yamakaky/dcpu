@@ -1,5 +1,3 @@
-pub mod clock;
-
 use cpu::Cpu;
 
 pub enum TickResult {
