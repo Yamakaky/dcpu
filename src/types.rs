@@ -119,6 +119,13 @@ impl Instruction {
             Ok((1 + used_a + used_b, Instruction::BasicOp(op, b, a)))
         }
     }
+
+    pub fn is_if(&self) -> bool {
+        match *self {
+            Instruction::BasicOp(op, _, _) => op.is_if(),
+            Instruction::SpecialOp(_, _) => false
+        }
+    }
 }
 
 impl fmt::Display for Instruction {
@@ -309,6 +316,15 @@ impl BasicOp {
 
     pub fn decode(op: u16) -> Result<BasicOp, DecodeError> {
         BasicOp::from_i32(op as i32).ok_or(DecodeError::BasicOp(op))
+    }
+
+    pub fn is_if(&self) -> bool {
+        match *self {
+            BasicOp::IFB | BasicOp::IFC | BasicOp::IFE | BasicOp::IFN |
+            BasicOp::IFG | BasicOp::IFA | BasicOp::IFL |
+            BasicOp::IFU => true,
+            _ => false
+        }
     }
 }
 

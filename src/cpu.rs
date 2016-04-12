@@ -65,6 +65,7 @@ pub struct Cpu {
     pub ex: u16,
     pub ia: u16,
     pub wait: u16,
+    pub check_if_cascade: bool,
     pub is_queue_enabled: bool,
     pub interrupts_queue: VecDeque<u16>
 }
@@ -79,6 +80,7 @@ impl Default for Cpu {
             ex: 0,
             ia: 0,
             wait: 0,
+            check_if_cascade: true,
             is_queue_enabled: false,
             interrupts_queue: VecDeque::new()
         }
@@ -152,9 +154,18 @@ impl Cpu {
 
         let pc = self.pc;
         let (words_used, instruction) = try!(self.decode(pc));
+        self.pc = self.pc.wrapping_add(words_used);
+
+        if self.check_if_cascade {
+            trace!("Skipping cascade");
+            self.check_if_cascade = instruction.is_if();
+            if instruction.is_if() {
+                return Ok(CpuState::Waiting);
+            }
+        }
+
         trace!("Executing {:?}", instruction);
         self.wait = instruction.delay() - 1;
-        self.pc = self.pc.wrapping_add(words_used);
         try!(self.op(instruction, devices));
 
         Ok(CpuState::Executing)
@@ -375,6 +386,7 @@ impl Cpu {
             let next_i = self.pc;
             let (offset, _) = try!(self.decode(next_i));
             self.pc = self.pc.wrapping_add(offset);
+            self.check_if_cascade = true;
             self.wait += 1;
         }
         Ok(())
