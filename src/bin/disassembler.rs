@@ -1,7 +1,10 @@
 extern crate byteorder;
 extern crate dcpu;
 extern crate docopt;
+#[macro_use]
+extern crate log;
 extern crate rustc_serialize;
+extern crate simplelog;
 
 use std::io;
 use std::io::Write;
@@ -40,6 +43,8 @@ impl<I: ReadBytesExt> Iterator for IterU16<I> {
 }
 
 fn main() {
+    simplelog::TermLogger::init(simplelog::LogLevelFilter::Trace).unwrap();
+
     let args: Args = Docopt::new(USAGE)
                             .and_then(|d| d.decode())
                             .unwrap_or_else(|e| e.exit());
