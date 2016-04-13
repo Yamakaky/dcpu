@@ -109,7 +109,7 @@ named!(basic_op(&[u8]) -> BasicOp,
 );
 
 named!(instruction(&[u8]) -> ParsedInstruction,
-    alt_complete!(basic_instruction | special_instruction)
+    alt!(basic_instruction | special_instruction)
 );
 
 named!(basic_instruction(&[u8]) -> ParsedInstruction,
@@ -162,7 +162,7 @@ named!(at_reg_plus(&[u8]) -> ParsedValue,
 );
 
 named!(value(&[u8]) -> ParsedValue,
-    alt_complete!(
+    alt!(
         map!(register, ParsedValue::Reg) |
         map!(delimited!(char!('['), register, char!(']')),
              ParsedValue::AtReg) |
@@ -186,8 +186,8 @@ named!(value(&[u8]) -> ParsedValue,
 named!(raw_label(&[u8]) -> String,
     map_res!(
         recognize!(preceded!(
-            alt_complete!(alpha | tag!("_")),
-            many0!(alt_complete!(alphanumeric | tag!("_")))
+            alt!(alpha | tag!("_")),
+            many0!(alt!(alphanumeric | tag!("_")))
             )
         ),
         bytes_to_type
@@ -225,7 +225,7 @@ named!(expression(&[u8]) -> Expression,
 );
 
 named!(a_value(&[u8]) -> ParsedValue,
-    alt_complete!(
+    alt!(
         value |
         map!(expression, ParsedValue::Litteral) |
         map!(tag!("POP"), |_| ParsedValue::Push)
@@ -233,7 +233,7 @@ named!(a_value(&[u8]) -> ParsedValue,
 );
 
 named!(b_value(&[u8]) -> ParsedValue,
-    alt_complete!(
+    alt!(
         value |
         map!(expression, ParsedValue::Litteral) |
         map!(tag!("PUSH"), |_| ParsedValue::Push)
