@@ -7,7 +7,8 @@ use types::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ParsedItem {
-    Label(String),
+    LabelDecl(String),
+    LocalLabelDecl(String),
     ParsedInstruction(ParsedInstruction),
     Comment(String)
 }
@@ -36,6 +37,7 @@ pub enum ParsedValue {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expression {
     Label(String),
+    LocalLabel(String),
     Num(u16),
     Add(Box<Expression>, Box<Expression>),
     Sub(Box<Expression>, Box<Expression>)
@@ -163,7 +165,7 @@ named!(value(&[u8]) -> ParsedValue,
     )
 );
 
-named!(label(&[u8]) -> String,
+named!(raw_label(&[u8]) -> String,
     map_res!(
         recognize!(preceded!(
             alt_complete!(alpha | tag!("_")),
@@ -174,10 +176,33 @@ named!(label(&[u8]) -> String,
     )
 );
 
+named!(raw_local_label(&[u8]) -> String,
+    chain!(char!('.') ~ l: raw_label, || l)
+);
+
+named!(label_decl(&[u8]) -> ParsedItem,
+    chain!(
+        opt!(char!(':')) ~
+        l: raw_label ~
+        opt!(char!(':')),
+        || ParsedItem::LabelDecl(l)
+    )
+);
+
+named!(local_label_decl(&[u8]) -> ParsedItem,
+    chain!(
+        opt!(char!(':')) ~
+        l: raw_local_label ~
+        opt!(char!(':')),
+        || ParsedItem::LocalLabelDecl(l)
+    )
+);
+
 named!(expression(&[u8]) -> Expression,
     alt_complete!(
         map!(number, Expression::Num) |
-        map!(label, Expression::Label)
+        map!(raw_label, Expression::Label) |
+        map!(raw_local_label, Expression::LocalLabel)
     )
 );
 
@@ -198,9 +223,15 @@ named!(b_value(&[u8]) -> ParsedValue,
 );
 
 named!(pub parse(&[u8]) -> Vec<ParsedItem>,
-    complete!(separated_list!(line_ending,
-                              map!(instruction,
-                                   ParsedItem::ParsedInstruction)))
+    complete!(
+        separated_list!(multispace,
+                        alt!(map!(instruction,
+                                  ParsedItem::ParsedInstruction) |
+                             comment |
+                             label_decl |
+                             local_label_decl)
+        )
+    )
 );
 
 
