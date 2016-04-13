@@ -131,8 +131,8 @@ impl Instruction {
 impl fmt::Display for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Instruction::BasicOp(op, b, a) => write!(f, "{:?} {}, {}", op, b, a),
-            Instruction::SpecialOp(op, a) => write!(f, "{:?} {}", op, a)
+            Instruction::BasicOp(op, b, a) => write!(f, "{:?} {:b}, {:o}", op, b, a),
+            Instruction::SpecialOp(op, a) => write!(f, "{:?} {:o}", op, a)
         }
     }
 }
@@ -246,13 +246,13 @@ impl Value {
             0x1f => (1, Value::Litteral(next)),
             x if is_a &&
                  x >= 0x20 &&
-                 x <= 0x3f => (0, Value::Litteral(x - 0x21)),
+                 x <= 0x3f => (0, Value::Litteral(x.wrapping_sub(0x21))),
             _ => unreachable!()
         }
     }
 }
 
-impl fmt::Display for Value {
+impl fmt::Binary for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Value::Reg(r) => write!(f, "{:?}", r),
@@ -261,6 +261,22 @@ impl fmt::Display for Value {
             Value::Pick(n) => write!(f, "PICK {}", n),
             Value::AtAddr(v) => write!(f, "[{}]", v),
             Value::Litteral(v) => write!(f, "{}", v),
+            Value::Push => write!(f, "PUSH"),
+            x => write!(f, "{:?}", x)
+        }
+    }
+}
+
+impl fmt::Octal for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Value::Reg(r) => write!(f, "{:?}", r),
+            Value::AtReg(r) => write!(f, "[{:?}]", r),
+            Value::AtRegPlus(r, v) => write!(f, "[{:?} + {}]", r, v),
+            Value::Pick(n) => write!(f, "PICK {}", n),
+            Value::AtAddr(v) => write!(f, "[{}]", v),
+            Value::Litteral(v) => write!(f, "{}", v),
+            Value::Push => write!(f, "POP"),
             x => write!(f, "{:?}", x)
         }
     }
