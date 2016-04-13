@@ -254,9 +254,11 @@ named!(pub parse(&[u8]) -> Vec<ParsedItem>,
 
 
 #[cfg(test)]
+const empty: &'static [u8] = &[];
+
+#[cfg(test)]
 #[test]
 fn test_num() {
-    let empty: &[u8] = &[];
     assert_eq!(number("1".as_bytes()), IResult::Done(empty, 1));
     assert_eq!(number("0b1".as_bytes()), IResult::Done(empty, 1));
     assert_eq!(number("0x1".as_bytes()), IResult::Done(empty, 1));
@@ -267,7 +269,6 @@ fn test_num() {
 #[cfg(test)]
 #[test]
 fn test_instruction() {
-    let empty: &[u8] = &[];
     assert_eq!(instruction("ADD A, B".as_bytes()),
                IResult::Done(empty,
                              ParsedInstruction::BasicOp(BasicOp::ADD,
@@ -278,7 +279,6 @@ fn test_instruction() {
 #[cfg(test)]
 #[test]
 fn test_register() {
-    let empty: &[u8] = &[];
     assert_eq!(register("A".as_bytes()),
                IResult::Done(empty, Register::A));
 }
@@ -286,7 +286,6 @@ fn test_register() {
 #[cfg(test)]
 #[test]
 fn test_basic_op() {
-    let empty: &[u8] = &[];
     assert_eq!(basic_op("ADD".as_bytes()),
                IResult::Done(empty, BasicOp::ADD));
 }
