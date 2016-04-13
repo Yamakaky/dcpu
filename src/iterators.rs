@@ -35,11 +35,15 @@ impl<I: Iterator<Item=u16>> Iterator for U16ToInstruction<I> {
             Ok(x) => x,
             Err(_) => return None
         };
-        if used as usize > self.len_buffer {
+        let used = used as usize;
+        if used > self.len_buffer {
             return None;
         }
 
-        self.len_buffer -= used as usize;
+        for n in used..3 {
+            self.buffer[n - used] = self.buffer[n];
+        }
+        self.len_buffer -= used;
         Some(i)
     }
 }
@@ -72,7 +76,12 @@ impl<I: Iterator<Item=Instruction>> Iterator for InstructionToU16<I> {
             }
         }
 
+        let ret = Some(self.buffer[0]);
+        for n in 1..3 {
+            self.buffer[n - 1] = self.buffer[n];
+        }
+
         self.len_buffer -= 1;
-        Some(self.buffer[self.len_buffer])
+        ret
     }
 }
