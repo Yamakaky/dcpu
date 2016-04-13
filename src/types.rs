@@ -227,7 +227,7 @@ impl Value {
     pub fn decode(val: u16, next: u16, is_a: bool) -> (u16, Value) {
         match val {
             x if x <= 0x17 => {
-                let reg = Register::from_i32((x % 0x8) as i32).unwrap();
+                let reg = Register::from_u16(x % 0x8).unwrap();
                 if x <= 0x07 {
                     (0, Value::Reg(reg))
                 } else if x <= 0x0f {
@@ -315,7 +315,7 @@ impl BasicOp {
     }
 
     pub fn decode(op: u16) -> Result<BasicOp, DecodeError> {
-        BasicOp::from_i32(op as i32).ok_or(DecodeError::BasicOp(op))
+        BasicOp::from_u16(op).ok_or(DecodeError::BasicOp(op))
     }
 
     pub fn is_if(&self) -> bool {
@@ -395,7 +395,7 @@ impl SpecialOp {
     }
 
     pub fn decode(op: u16) -> Result<SpecialOp, DecodeError> {
-        SpecialOp::from_i32(op as i32).ok_or(DecodeError::SpecialOp(op))
+        SpecialOp::from_u16(op).ok_or(DecodeError::SpecialOp(op))
     }
 }
 
