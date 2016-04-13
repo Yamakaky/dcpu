@@ -50,27 +50,45 @@ fn bytes_to_type<I: FromStr>(i: &[u8]) -> Result<I, ()> {
         .map_err(|_| ())
 }
 
-named!(hex_num(&[u8]) -> &[u8],
-    recognize!(chain!(tag!("0x") ~ n: many1!(hex_digit), || ()))
+named!(hex_num(&[u8]) -> (&str, u32),
+    map_res!(chain!(tag!("0x") ~ n: recognize!(many1!(hex_digit)), || n),
+             |n| str::from_utf8(n).map(|n| (n, 16)))
 );
 
-named!(octal_num(&[u8]) -> &[u8],
-    recognize!(chain!(tag!("0o") ~ many1!(one_of!("01234567")), || ()))
+named!(num(&[u8]) -> (&str, u32),
+    map_res!(chain!(n: recognize!(many1!(digit)), || n),
+             |n| str::from_utf8(n).map(|n| (n, 10)))
 );
 
-named!(bin_num(&[u8]) -> &[u8],
-    recognize!(chain!(tag!("0b") ~ many1!(one_of!("01")), || ()))
+named!(octal_num(&[u8]) -> (&str, u32),
+    map_res!(chain!(tag!("0o") ~ n: recognize!(many1!(one_of!("01234567"))), || n),
+             |n| str::from_utf8(n).map(|n| (n, 8)))
 );
 
-named!(num(&[u8]) -> &[u8],
-    recognize!(many1!(digit))
+named!(bin_num(&[u8]) -> (&str, u32),
+    map_res!(chain!(tag!("0b") ~ n: recognize!(many1!(one_of!("01"))), || n),
+             |n| str::from_utf8(n).map(|n| (n, 2)))
+);
+
+named!(pos_number(&[u8]) -> u16,
+    map_res!(alt!(hex_num | octal_num | bin_num | num),
+             |(n, base)| u16::from_str_radix(n, base))
+);
+
+named!(neg_number(&[u8]) -> u16,
+    map!(
+        map_res!(
+            chain!(char!('-') ~
+                   n: alt!(hex_num | octal_num | bin_num | num),
+                   || n),
+            |(n, base)| i16::from_str_radix(&format!("-{}", n), base)
+        ),
+        |n| n as u16
+    )
 );
 
 named!(number(&[u8]) -> u16,
-    map_res!(
-         recognize!(alt_complete!(hex_num | octal_num | bin_num | num)),
-         bytes_to_type
-     )
+    alt!(neg_number | pos_number)
 );
 
 named!(comment(&[u8]) -> ParsedItem,
@@ -240,9 +258,10 @@ named!(pub parse(&[u8]) -> Vec<ParsedItem>,
 fn test_num() {
     let empty: &[u8] = &[];
     assert_eq!(number("1".as_bytes()), IResult::Done(empty, 1));
-    //assert_eq!(number("0b1".as_bytes()), IResult::Done(empty, 1));
-    //assert_eq!(number("0x1".as_bytes()), IResult::Done(empty, 1));
-    //assert_eq!(number("0o1".as_bytes()), IResult::Done(empty, 1));
+    assert_eq!(number("0b1".as_bytes()), IResult::Done(empty, 1));
+    assert_eq!(number("0x1".as_bytes()), IResult::Done(empty, 1));
+    assert_eq!(number("0o1".as_bytes()), IResult::Done(empty, 1));
+    assert_eq!(number("-0o1".as_bytes()), IResult::Done(empty, 0xffff));
 }
 
 #[cfg(test)]
