@@ -14,7 +14,7 @@ impl<I: ReadBytesExt> Iterator for IterU16<I> {
     type Item = u16;
 
     fn next(&mut self) -> Option<u16> {
-        self.input.read_u16::<byteorder::BigEndian>().ok()
+        self.input.read_u16::<byteorder::LittleEndian>().ok()
     }
 }
 
