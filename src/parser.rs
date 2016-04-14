@@ -101,7 +101,7 @@ named!(neg_number(&[u8]) -> Num,
     map!(
         map_res!(
             chain!(char!('-') ~
-                   n: alt!(hex_num | octal_num | bin_num | num),
+                   n: alt_complete!(hex_num | octal_num | bin_num | num),
                    || n),
             |(n, base)| i16::from_str_radix(&format!("-{}", n), base)
         ),
@@ -131,17 +131,17 @@ named!(basic_op(&[u8]) -> BasicOp,
 );
 
 named!(instruction(&[u8]) -> ParsedInstruction,
-    alt!(basic_instruction | special_instruction)
+    alt_complete!(basic_instruction | special_instruction)
 );
 
 named!(basic_instruction(&[u8]) -> ParsedInstruction,
     chain!(
         op: basic_op ~
-        many1!(space) ~
+        multispace ~
         b: b_value ~
-        many0!(space) ~
+        multispace? ~
         char!(',') ~
-        many0!(space) ~
+        multispace? ~
         a: a_value,
 
         || ParsedInstruction::BasicOp(op, b, a)
@@ -158,7 +158,7 @@ named!(special_op(&[u8]) -> SpecialOp,
 named!(special_instruction(&[u8]) -> ParsedInstruction,
     chain!(
         op: special_op ~
-        many1!(space) ~
+        multispace ~
         a: a_value,
 
         || ParsedInstruction::SpecialOp(op, a)
@@ -184,7 +184,7 @@ named!(at_reg_plus(&[u8]) -> ParsedValue,
 );
 
 named!(value(&[u8]) -> ParsedValue,
-    alt!(
+    alt_complete!(
         map!(register, ParsedValue::Reg) |
         map!(delimited!(char!('['), register, char!(']')),
              ParsedValue::AtReg) |
@@ -208,8 +208,8 @@ named!(value(&[u8]) -> ParsedValue,
 named!(raw_label(&[u8]) -> String,
     map_res!(
         recognize!(preceded!(
-            alt!(alpha | tag!("_")),
-            many0!(alt!(alphanumeric | tag!("_")))
+            alt_complete!(alpha | tag!("_")),
+            many0!(alt_complete!(alphanumeric | tag!("_")))
             )
         ),
         bytes_to_type
@@ -301,7 +301,7 @@ named!(expression(&[u8]) -> Expression,
 );
 
 named!(a_value(&[u8]) -> ParsedValue,
-    alt!(
+    alt_complete!(
         value |
         map!(expression, ParsedValue::Litteral) |
         map!(tag!("POP"), |_| ParsedValue::Push)
@@ -309,7 +309,7 @@ named!(a_value(&[u8]) -> ParsedValue,
 );
 
 named!(b_value(&[u8]) -> ParsedValue,
-    alt!(
+    alt_complete!(
         value |
         map!(expression, ParsedValue::Litteral) |
         map!(tag!("PUSH"), |_| ParsedValue::Push)
@@ -319,11 +319,12 @@ named!(b_value(&[u8]) -> ParsedValue,
 named!(pub parse(&[u8]) -> Vec<ParsedItem>,
     complete!(
         separated_list!(multispace,
-                        alt!(map!(instruction,
-                                  ParsedItem::ParsedInstruction) |
-                             comment |
-                             label_decl |
-                             local_label_decl)
+                        alt_complete!(
+                            map!(instruction,
+                                 ParsedItem::ParsedInstruction) |
+                            comment |
+                            label_decl |
+                            local_label_decl)
         )
     )
 );
