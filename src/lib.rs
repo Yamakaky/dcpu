@@ -11,6 +11,7 @@ extern crate num;
 pub mod cpu;
 pub mod device;
 pub mod iterators;
+pub mod linker;
 pub mod parser;
 pub mod preprocessor;
 pub mod types;

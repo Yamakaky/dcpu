@@ -6,21 +6,24 @@ extern crate log;
 extern crate rustc_serialize;
 extern crate simplelog;
 
-use std::io;
+#[macro_use]
+mod utils;
+
 use std::io::Write;
 
-use byteorder::ReadBytesExt;
 use docopt::Docopt;
 
 use dcpu::iterators::U16ToInstruction;
 
 const USAGE: &'static str = "
 Usage:
-  disassembler [--ast]
+  disassembler [--ast] [-i <file>] [-o <file>]
   disassembler (--help | --version)
 
 Options:
   --ast              Show the AST of the file.
+  -i <file>          File to use instead of stdin.
+  -o <file>          File to use instead of stdout.
   -h, --help         Show this message.
   --version          Show the version of disassembler.
 ";
@@ -28,35 +31,25 @@ Options:
 #[derive(RustcDecodable)]
 struct Args {
     flag_ast: bool,
-}
-
-struct IterU16<I> {
-    pub input: I
-}
-
-impl<I: ReadBytesExt> Iterator for IterU16<I> {
-    type Item = u16;
-
-    fn next(&mut self) -> Option<u16> {
-        self.input.read_u16::<byteorder::LittleEndian>().ok()
-    }
+    flag_i: Option<String>,
+    flag_o: Option<String>,
 }
 
 fn main() {
-    simplelog::TermLogger::init(simplelog::LogLevelFilter::Trace).unwrap();
+    simplelog::TermLogger::init(simplelog::LogLevelFilter::Info).unwrap();
 
     let args: Args = Docopt::new(USAGE)
                             .and_then(|d| d.decode())
                             .unwrap_or_else(|e| e.exit());
 
-    let input = io::stdin();
-    let mut output = io::stdout();
+    let input = utils::get_input(args.flag_i);
+    let mut output = utils::get_output(args.flag_o);
 
-    for i in U16ToInstruction::chain(IterU16{input: input}) {
+    for i in U16ToInstruction::chain(utils::IterU16{input: input}) {
         if args.flag_ast {
-            write!(output, "{:?}\n", i).unwrap();
+            writeln!(output, "{:?}", i).unwrap();
         } else {
-            write!(output, "{}\n", i).unwrap();
+            writeln!(output, "{}", i).unwrap();
         }
     }
 }
