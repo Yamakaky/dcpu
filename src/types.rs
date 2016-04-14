@@ -63,8 +63,8 @@ pub enum Instruction {
 impl Instruction {
     pub fn delay(&self) -> u16 {
         match *self {
-            Instruction::BasicOp(op, b, a) => op.delay() + a.delay() + b.delay(),
-            Instruction::SpecialOp(op, a) => op.delay() + a.delay()
+            Instruction::BasicOp(op, b, a) => op.delay() + a.delay(true) + b.delay(false),
+            Instruction::SpecialOp(op, a) => op.delay() + a.delay(true)
         }
     }
 
@@ -191,13 +191,17 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn delay(&self) -> u16 {
-        // TODO : reg a + litteral
+    pub fn delay(&self, is_a: bool) -> u16 {
         match *self {
             Value::AtRegPlus(_, _) |
             Value::Pick(_) |
-            Value::AtAddr(_) |
-            Value::Litteral(_) => 1,
+            Value::AtAddr(_) => 1,
+            Value::Litteral(n) => if is_a && (n <= 0x1e || n == 0xffff) {
+                // Let's say the compiler is smart ^^
+                0
+            } else {
+                1
+            },
             _ => 0
         }
     }
