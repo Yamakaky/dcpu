@@ -40,7 +40,12 @@ pub enum Expression {
     LocalLabel(String),
     Num(Num),
     Add(Box<Expression>, Box<Expression>),
-    Sub(Box<Expression>, Box<Expression>)
+    Sub(Box<Expression>, Box<Expression>),
+    Mul(Box<Expression>, Box<Expression>),
+    Div(Box<Expression>, Box<Expression>),
+    Shr(Box<Expression>, Box<Expression>),
+    Shl(Box<Expression>, Box<Expression>),
+    Mod(Box<Expression>, Box<Expression>)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -53,6 +58,7 @@ impl From<Num> for Expression {
     fn from(n: Num) -> Expression {
         Expression::Num(n)
     }
+}
 
 fn bytes_to_type<I: FromStr>(i: &[u8]) -> Result<I, ()> {
     str::from_utf8(i)
@@ -232,11 +238,65 @@ named!(local_label_decl(&[u8]) -> ParsedItem,
     )
 );
 
-named!(expression(&[u8]) -> Expression,
+named!(simple_expression(&[u8]) -> Expression,
     alt_complete!(
         map!(number, Expression::Num) |
         map!(raw_label, Expression::Label) |
         map!(raw_local_label, Expression::LocalLabel)
+    )
+);
+
+named!(expression(&[u8]) -> Expression,
+    alt_complete!(
+        chain!(char!('(') ~
+               multispace? ~
+               e: expression ~
+               multispace? ~
+               char!(')'),
+               || e) |
+        chain!(e1: simple_expression ~
+               multispace? ~
+               char!('+') ~
+               multispace? ~
+               e2: expression,
+               || Expression::Add(Box::new(e1), Box::new(e2))) |
+        chain!(e1: simple_expression ~
+               multispace? ~
+               char!('-') ~
+               multispace? ~
+               e2: expression,
+               || Expression::Sub(Box::new(e1), Box::new(e2))) |
+        chain!(e1: simple_expression ~
+               multispace? ~
+               char!('*') ~
+               multispace? ~
+               e2: expression,
+               || Expression::Mul(Box::new(e1), Box::new(e2))) |
+        chain!(e1: simple_expression ~
+               multispace? ~
+               char!('/') ~
+               multispace? ~
+               e2: expression,
+               || Expression::Div(Box::new(e1), Box::new(e2))) |
+        chain!(e1: simple_expression ~
+               multispace? ~
+               tag!(">>") ~
+               multispace? ~
+               e2: expression,
+               || Expression::Shr(Box::new(e1), Box::new(e2))) |
+        chain!(e1: simple_expression ~
+               multispace? ~
+               tag!("<<") ~
+               multispace? ~
+               e2: expression,
+               || Expression::Shl(Box::new(e1), Box::new(e2))) |
+        chain!(e1: simple_expression ~
+               multispace? ~
+               char!('%') ~
+               multispace? ~
+               e2: expression,
+               || Expression::Mod(Box::new(e1), Box::new(e2))) |
+        simple_expression
     )
 );
 
@@ -304,4 +364,20 @@ fn test_register() {
 fn test_basic_op() {
     assert_eq!(basic_op("ADD".as_bytes()),
                IResult::Done(empty, BasicOp::ADD));
+}
+
+#[cfg(test)]
+#[test]
+fn test_expression() {
+    assert_eq!(expression("1 + 2".as_bytes()),
+               IResult::Done(empty,
+                             Expression::Add(Box::new(Expression::Num(Num::U(1))),
+                                             Box::new(Expression::Num(Num::U(2))))));
+    assert_eq!(expression("1-2".as_bytes()),
+               IResult::Done(empty,
+                             Expression::Sub(Box::new(Expression::Num(Num::U(1))),
+                                             Box::new(Expression::Num(Num::U(2))))));
+    assert_eq!(expression("(1)".as_bytes()),
+               IResult::Done(empty,
+                             Expression::Num(Num::U(1))));
 }
