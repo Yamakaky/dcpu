@@ -38,10 +38,21 @@ pub enum ParsedValue {
 pub enum Expression {
     Label(String),
     LocalLabel(String),
-    Num(u16),
+    Num(Num),
     Add(Box<Expression>, Box<Expression>),
     Sub(Box<Expression>, Box<Expression>)
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Num {
+    U(u16),
+    I(i16)
+}
+
+impl From<Num> for Expression {
+    fn from(n: Num) -> Expression {
+        Expression::Num(n)
+    }
 
 fn bytes_to_type<I: FromStr>(i: &[u8]) -> Result<I, ()> {
     str::from_utf8(i)
@@ -70,12 +81,17 @@ named!(bin_num(&[u8]) -> (&str, u32),
              |n| str::from_utf8(n).map(|n| (n, 2)))
 );
 
-named!(pos_number(&[u8]) -> u16,
-    map_res!(alt!(hex_num | octal_num | bin_num | num),
-             |(n, base)| u16::from_str_radix(n, base))
+named!(pos_number(&[u8]) -> Num,
+    map!(
+        map_res!(
+            alt_complete!(hex_num | octal_num | bin_num | num),
+            |(n, base)| u16::from_str_radix(n, base)
+        ),
+        Num::U
+    )
 );
 
-named!(neg_number(&[u8]) -> u16,
+named!(neg_number(&[u8]) -> Num,
     map!(
         map_res!(
             chain!(char!('-') ~
@@ -83,12 +99,12 @@ named!(neg_number(&[u8]) -> u16,
                    || n),
             |(n, base)| i16::from_str_radix(&format!("-{}", n), base)
         ),
-        |n| n as u16
+        Num::I
     )
 );
 
-named!(number(&[u8]) -> u16,
-    alt!(neg_number | pos_number)
+named!(number(&[u8]) -> Num,
+    alt_complete!(neg_number | pos_number)
 );
 
 named!(comment(&[u8]) -> ParsedItem,
@@ -259,11 +275,11 @@ const empty: &'static [u8] = &[];
 #[cfg(test)]
 #[test]
 fn test_num() {
-    assert_eq!(number("1".as_bytes()), IResult::Done(empty, 1));
-    assert_eq!(number("0b1".as_bytes()), IResult::Done(empty, 1));
-    assert_eq!(number("0x1".as_bytes()), IResult::Done(empty, 1));
-    assert_eq!(number("0o1".as_bytes()), IResult::Done(empty, 1));
-    assert_eq!(number("-0o1".as_bytes()), IResult::Done(empty, 0xffff));
+    assert_eq!(number("1".as_bytes()), IResult::Done(empty, Num::U(1)));
+    assert_eq!(number("0b1".as_bytes()), IResult::Done(empty, Num::U(1)));
+    assert_eq!(number("0x1".as_bytes()), IResult::Done(empty, Num::U(1)));
+    assert_eq!(number("0o1".as_bytes()), IResult::Done(empty, Num::U(1)));
+    assert_eq!(number("-0o1".as_bytes()), IResult::Done(empty, Num::I(-1)));
 }
 
 #[cfg(test)]
