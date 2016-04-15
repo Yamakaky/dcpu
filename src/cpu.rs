@@ -254,37 +254,37 @@ impl Cpu {
 
     fn op_add(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
-        let (new_v, overflow) = o.overflowing_add(val_a);
-        self.set(b, new_v);
+        let val_b = self.get(b);
+        let (new_b, overflow) = val_b.overflowing_add(val_a);
+        self.set(b, new_b);
         self.ex = overflow as u16;
         Ok(())
     }
 
     fn op_sub(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
-        let (new_v, overflow) = o.overflowing_sub(val_a);
-        self.set(b, new_v);
+        let val_b = self.get(b);
+        let (new_b, overflow) = val_b.overflowing_sub(val_a);
+        self.set(b, new_b);
         self.ex = if overflow {0xffff} else {0};
         Ok(())
     }
 
     fn op_mul(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a) as u32;
-        let o = self.get(b) as u32;
-        let new_v = val_a * o;
-        self.set(b, new_v as u16);
-        self.ex = (new_v >> 16) as u16;
+        let val_b = self.get(b) as u32;
+        let new_b = val_a * val_b;
+        self.set(b, new_b as u16);
+        self.ex = (new_b >> 16) as u16;
         Ok(())
     }
 
     fn op_mli(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a) as i16 as i32;
-        let o = self.get(b) as i16 as i32;
-        let new_v = (val_a * o) as u32;
-        self.set(b, new_v as u16);
-        self.ex = (new_v >> 16) as u16;
+        let val_b = self.get(b) as i16 as i32;
+        let new_b = (val_a * val_b) as u32;
+        self.set(b, new_b as u16);
+        self.ex = (new_b >> 16) as u16;
         Ok(())
     }
 
@@ -294,9 +294,9 @@ impl Cpu {
             self.set(b, 0);
             self.ex = 0;
         } else {
-            let o = self.get(b);
-            self.set(b, o / val_a);
-            self.ex = ((o as u32) << 16 / val_a) as u16;
+            let val_b = self.get(b);
+            self.set(b, val_b / val_a);
+            self.ex = ((val_b as u32) << 16 / val_a) as u16;
         }
         Ok(())
     }
@@ -307,9 +307,9 @@ impl Cpu {
             self.set(b, 0);
             self.ex = 0;
         } else {
-            let o = self.get(b) as i16;
-            self.set(b, (o / val_a) as u16);
-            self.ex = ((o as i32) << 16 / val_a) as u16;
+            let val_b = self.get(b) as i16;
+            self.set(b, (val_b / val_a) as u16);
+            self.ex = ((val_b as i32) << 16 / val_a) as u16;
         }
         Ok(())
     }
@@ -319,8 +319,8 @@ impl Cpu {
         if val_a == 0 {
             self.set(b, 0);
         } else {
-            let o = self.get(b);
-            self.set(b, o % val_a);
+            let val_b = self.get(b);
+            self.set(b, val_b % val_a);
         }
         Ok(())
     }
@@ -330,54 +330,54 @@ impl Cpu {
         if val_a == 0 {
             self.set(b, 0);
         } else {
-            let o = self.get(b) as i16;
-            self.set(b, (o % val_a) as u16);
+            let val_b = self.get(b) as i16;
+            self.set(b, (val_b % val_a) as u16);
         }
         Ok(())
     }
 
     fn op_and(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
-        self.set(b, o & val_a);
+        let val_b = self.get(b);
+        self.set(b, val_b & val_a);
         Ok(())
     }
 
     fn op_bor(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
-        self.set(b, o | val_a);
+        let val_b = self.get(b);
+        self.set(b, val_b | val_a);
         Ok(())
     }
 
     fn op_xor(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
-        self.set(b, o ^ val_a);
+        let val_b = self.get(b);
+        self.set(b, val_b ^ val_a);
         Ok(())
     }
 
     fn op_shr(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
-        self.set(b, o >> val_a);
-        self.ex = (((o as u32) << 16) >> val_a) as u16;
+        let val_b = self.get(b);
+        self.set(b, val_b >> val_a);
+        self.ex = (((val_b as u32) << 16) >> val_a) as u16;
         Ok(())
     }
 
     fn op_asr(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b) as i16;
-        self.set(b, (o >> val_a) as u16);
-        self.ex = (((o as i32) << 16) >> val_a) as u16;
+        let val_b = self.get(b) as i16;
+        self.set(b, (val_b >> val_a) as u16);
+        self.ex = (((val_b as i32) << 16) >> val_a) as u16;
         Ok(())
     }
 
     fn op_shl(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
-        self.set(b, o << val_a);
-        self.ex = (((o as u32) << val_a) >> 16) as u16;
+        let val_b = self.get(b);
+        self.set(b, val_b << val_a);
+        self.ex = (((val_b as u32) << val_a) >> 16) as u16;
         Ok(())
     }
 
@@ -394,83 +394,83 @@ impl Cpu {
 
     fn op_ifb(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
-        self.exec_if((val_a & o) != 0)
+        let val_b = self.get(b);
+        self.exec_if((val_a & val_b) != 0)
     }
 
     fn op_ifc(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
-        self.exec_if((val_a & o) == 0)
+        let val_b = self.get(b);
+        self.exec_if((val_a & val_b) == 0)
     }
 
     fn op_ife(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
-        self.exec_if(val_a == o)
+        let val_b = self.get(b);
+        self.exec_if(val_a == val_b)
     }
 
     fn op_ifn(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
-        self.exec_if(val_a != o)
+        let val_b = self.get(b);
+        self.exec_if(val_a != val_b)
     }
 
     fn op_ifg(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
-        self.exec_if(val_a > o)
+        let val_b = self.get(b);
+        self.exec_if(val_a > val_b)
     }
 
     fn op_ifa(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a) as i16;
-        let o = self.get(b) as i16;
-        self.exec_if(val_a > o)
+        let val_b = self.get(b) as i16;
+        self.exec_if(val_a > val_b)
     }
 
     fn op_ifl(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
-        self.exec_if(val_a < o)
+        let val_b = self.get(b);
+        self.exec_if(val_a < val_b)
     }
 
     fn op_ifu(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a) as i16;
-        let o = self.get(b) as i16;
-        self.exec_if(val_a < o)
+        let val_b = self.get(b) as i16;
+        self.exec_if(val_a < val_b)
     }
 
     fn op_adx(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
+        let val_b = self.get(b);
         let ex = self.ex;
         self.ex = 0;
-        let (new_v, overflow) = val_a.overflowing_add(o);
+        let (new_b, overflow) = val_a.overflowing_add(val_b);
         if overflow {
             self.ex = 1;
         }
-        let (new_v, overflow) = new_v.overflowing_add(ex);
+        let (new_b, overflow) = new_b.overflowing_add(ex);
         if overflow {
             self.ex = 1;
         }
-        self.set(b, new_v);
+        self.set(b, new_b);
         Ok(())
     }
 
     fn op_sbx(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
-        let o = self.get(b);
+        let val_b = self.get(b);
         let ex = self.ex;
         self.ex = 0;
-        let (new_v, overflow) = val_a.overflowing_sub(o);
+        let (new_b, overflow) = val_a.overflowing_sub(val_b);
         if overflow {
             self.ex = 0xffff;
         }
-        let (new_v, overflow) = new_v.overflowing_add(ex);
+        let (new_b, overflow) = new_b.overflowing_add(ex);
         if overflow {
             self.ex = 0xffff;
         }
-        self.set(b, new_v);
+        self.set(b, new_b);
         Ok(())
     }
 
