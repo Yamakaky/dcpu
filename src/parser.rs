@@ -331,23 +331,23 @@ named!(pub parse(&[u8]) -> Vec<ParsedItem>,
 
 
 #[cfg(test)]
-const empty: &'static [u8] = &[];
+const EMPTY: &'static [u8] = &[];
 
 #[cfg(test)]
 #[test]
 fn test_num() {
-    assert_eq!(number("1".as_bytes()), IResult::Done(empty, Num::U(1)));
-    assert_eq!(number("0b1".as_bytes()), IResult::Done(empty, Num::U(1)));
-    assert_eq!(number("0x1".as_bytes()), IResult::Done(empty, Num::U(1)));
-    assert_eq!(number("0o1".as_bytes()), IResult::Done(empty, Num::U(1)));
-    assert_eq!(number("-0o1".as_bytes()), IResult::Done(empty, Num::I(-1)));
+    assert_eq!(number("1".as_bytes()), IResult::Done(EMPTY, Num::U(1)));
+    assert_eq!(number("0b1".as_bytes()), IResult::Done(EMPTY, Num::U(1)));
+    assert_eq!(number("0x1".as_bytes()), IResult::Done(EMPTY, Num::U(1)));
+    assert_eq!(number("0o1".as_bytes()), IResult::Done(EMPTY, Num::U(1)));
+    assert_eq!(number("-0o1".as_bytes()), IResult::Done(EMPTY, Num::I(-1)));
 }
 
 #[cfg(test)]
 #[test]
 fn test_instruction() {
     assert_eq!(instruction("ADD A, B".as_bytes()),
-               IResult::Done(empty,
+               IResult::Done(EMPTY,
                              ParsedInstruction::BasicOp(BasicOp::ADD,
                                                         ParsedValue::Reg(Register::A),
                                                         ParsedValue::Reg(Register::B))));
@@ -357,28 +357,28 @@ fn test_instruction() {
 #[test]
 fn test_register() {
     assert_eq!(register("A".as_bytes()),
-               IResult::Done(empty, Register::A));
+               IResult::Done(EMPTY, Register::A));
 }
 
 #[cfg(test)]
 #[test]
 fn test_basic_op() {
     assert_eq!(basic_op("ADD".as_bytes()),
-               IResult::Done(empty, BasicOp::ADD));
+               IResult::Done(EMPTY, BasicOp::ADD));
 }
 
 #[cfg(test)]
 #[test]
 fn test_expression() {
     assert_eq!(expression("1 + 2".as_bytes()),
-               IResult::Done(empty,
+               IResult::Done(EMPTY,
                              Expression::Add(Box::new(Expression::Num(Num::U(1))),
                                              Box::new(Expression::Num(Num::U(2))))));
     assert_eq!(expression("1-2".as_bytes()),
-               IResult::Done(empty,
+               IResult::Done(EMPTY,
                              Expression::Sub(Box::new(Expression::Num(Num::U(1))),
                                              Box::new(Expression::Num(Num::U(2))))));
     assert_eq!(expression("(1)".as_bytes()),
-               IResult::Done(empty,
+               IResult::Done(EMPTY,
                              Expression::Num(Num::U(1))));
 }
