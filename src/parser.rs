@@ -6,7 +6,13 @@ use nom::*;
 use types::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Directive {
+    Dat(Vec<u16>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ParsedItem {
+    Directive(Directive),
     LabelDecl(String),
     LocalLabelDecl(String),
     ParsedInstruction(ParsedInstruction),
@@ -54,6 +60,15 @@ pub enum Num {
     I(i16)
 }
 
+impl From<Num> for u16 {
+    fn from(n: Num) -> u16 {
+        match n {
+            Num::U(u) => u,
+            Num::I(i) => i as u16
+        }
+    }
+}
+
 impl From<Num> for Expression {
     fn from(n: Num) -> Expression {
         Expression::Num(n)
@@ -87,30 +102,25 @@ named!(bin_num(&[u8]) -> (&str, u32),
              |n| str::from_utf8(n).map(|n| (n, 2)))
 );
 
-named!(pos_number(&[u8]) -> Num,
-    map!(
-        map_res!(
-            alt_complete!(hex_num | octal_num | bin_num | num),
-            |(n, base)| u16::from_str_radix(n, base)
-        ),
-        Num::U
+named!(pos_number(&[u8]) -> u16,
+    map_res!(
+        alt_complete!(hex_num | octal_num | bin_num | num),
+        |(n, base)| u16::from_str_radix(n, base)
     )
 );
 
-named!(neg_number(&[u8]) -> Num,
-    map!(
-        map_res!(
-            chain!(char!('-') ~
-                   n: alt_complete!(hex_num | octal_num | bin_num | num),
-                   || n),
-            |(n, base)| i16::from_str_radix(&format!("-{}", n), base)
-        ),
-        Num::I
+named!(neg_number(&[u8]) -> i16,
+    map_res!(
+        chain!(char!('-') ~
+               n: alt_complete!(hex_num | octal_num | bin_num | num),
+               || n),
+        |(n, base)| i16::from_str_radix(&format!("-{}", n), base)
     )
 );
 
 named!(number(&[u8]) -> Num,
-    alt_complete!(neg_number | pos_number)
+    alt_complete!(map!(neg_number, Num::I) |
+                  map!(pos_number, Num::U))
 );
 
 named!(comment(&[u8]) -> ParsedItem,
@@ -316,10 +326,25 @@ named!(b_value(&[u8]) -> ParsedValue,
     )
 );
 
+named!(dir_dat(&[u8]) -> Directive,
+    chain!(tag!("dat") ~
+           multispace ~
+           ns: separated_list!(multispace,
+                               number),
+           || Directive::Dat(ns.into_iter().map(From::from).collect()))
+);
+
+named!(directive(&[u8]) -> Directive,
+    chain!(char!('.') ~
+           d: dir_dat,
+           || d)
+);
+
 named!(pub parse(&[u8]) -> Vec<ParsedItem>,
     complete!(
         separated_list!(multispace,
                         alt_complete!(
+                            map!(directive, ParsedItem::Directive) |
                             map!(instruction,
                                  ParsedItem::ParsedInstruction) |
                             comment |
@@ -381,4 +406,12 @@ fn test_expression() {
     assert_eq!(expression("(1)".as_bytes()),
                IResult::Done(EMPTY,
                              Expression::Num(Num::U(1))));
+}
+
+#[cfg(test)]
+#[test]
+fn test_directive() {
+    assert_eq!(directive(".dat 1 0x2".as_bytes()),
+               IResult::Done(EMPTY,
+                             Directive::Dat(vec!(1, 2))));
 }
