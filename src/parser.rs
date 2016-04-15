@@ -126,7 +126,7 @@ named!(number(&[u8]) -> Num,
 named!(comment(&[u8]) -> ParsedItem,
     map!(
         map_res!(
-            delimited!(tag!(";"), not_line_ending, line_ending),
+            delimited!(tag!(";"), not_line_ending, peek!(line_ending)),
             bytes_to_type
         ),
         ParsedItem::Comment
@@ -185,9 +185,13 @@ named!(register(&[u8]) -> Register,
 named!(at_reg_plus(&[u8]) -> ParsedValue,
     chain!(
         char!('[') ~
+        multispace? ~
         reg: register ~
+        multispace? ~
         char!('+') ~
+        multispace? ~
         e: expression ~
+        multispace? ~
         char!(']'),
         || ParsedValue::AtRegPlus(reg, e)
     )
@@ -196,14 +200,25 @@ named!(at_reg_plus(&[u8]) -> ParsedValue,
 named!(value(&[u8]) -> ParsedValue,
     alt_complete!(
         map!(register, ParsedValue::Reg) |
-        map!(delimited!(char!('['), register, char!(']')),
+        map!(chain!(char!('[') ~
+                    multispace? ~
+                    r: register ~
+                    multispace? ~
+                    char!(']'),
+                    || r),
              ParsedValue::AtReg) |
-        map!(delimited!(char!('['), expression, char!(']')),
+        map!(chain!(char!('[') ~
+                    multispace? ~
+                    e: expression ~
+                    multispace? ~
+                    char!(']'),
+                    || e),
              ParsedValue::AtAddr) |
         at_reg_plus |
         map!(
             chain!(
-                tag!("PICK ") ~
+                tag!("PICK") ~
+                space ~
                 n: expression,
                 || n
             ),
@@ -217,9 +232,10 @@ named!(value(&[u8]) -> ParsedValue,
 
 named!(raw_label(&[u8]) -> String,
     map_res!(
-        recognize!(preceded!(
-            alt_complete!(alpha | tag!("_")),
-            many0!(alt_complete!(alphanumeric | tag!("_")))
+        recognize!(
+            preceded!(
+                alt_complete!(alpha | tag!("_")),
+                many0!(alt_complete!(alphanumeric | tag!("_")))
             )
         ),
         bytes_to_type
@@ -328,15 +344,16 @@ named!(b_value(&[u8]) -> ParsedValue,
 
 named!(dir_dat(&[u8]) -> Directive,
     chain!(tag!("dat") ~
-           multispace ~
-           ns: separated_list!(multispace,
+           space ~
+           ns: separated_list!(space,
                                number),
            || Directive::Dat(ns.into_iter().map(From::from).collect()))
 );
 
 named!(directive(&[u8]) -> Directive,
     chain!(char!('.') ~
-           d: dir_dat,
+           d: dir_dat ~
+           peek!(line_ending),
            || d)
 );
 
@@ -411,7 +428,8 @@ fn test_expression() {
 #[cfg(test)]
 #[test]
 fn test_directive() {
-    assert_eq!(directive(".dat 1 0x2".as_bytes()),
-               IResult::Done(EMPTY,
+    let nl: &[u8] = &[10];
+    assert_eq!(directive(".dat 1 0x2\n".as_bytes()),
+               IResult::Done(nl,
                              Directive::Dat(vec!(1, 2))));
 }
