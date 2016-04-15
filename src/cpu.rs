@@ -445,7 +445,7 @@ impl Cpu {
         let val_b = self.get(b);
         let ex = self.ex;
         self.ex = 0;
-        let (new_b, overflow) = val_a.overflowing_add(val_b);
+        let (new_b, overflow) = val_b.overflowing_add(val_a);
         if overflow {
             self.ex = 1;
         }
@@ -462,7 +462,7 @@ impl Cpu {
         let val_b = self.get(b);
         let ex = self.ex;
         self.ex = 0;
-        let (new_b, overflow) = val_a.overflowing_sub(val_b);
+        let (new_b, overflow) = val_b.overflowing_sub(val_a);
         if overflow {
             self.ex = 0xffff;
         }
