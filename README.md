@@ -10,8 +10,10 @@
   - [ ] Clock
   - [ ] Screen
   - [ ] Keyboard
-- [x] Working disassembler
-- [ ] Working assembler (WIP)
+- [x] Disassembler
+- [ ] Assembler
+  - [x] Parser
+  - [ ] Labels solver
 
 ## Usage
 
@@ -24,4 +26,4 @@ All binaries support a `--help` flag.
 
 ## Documentation
 
-The library interface is documented [here](https://yamakaky.github.io/dcpu/dcpu/index.html)
+The library interface is documented [here](https://yamakaky.github.io/dcpu/dcpu/index.html).
