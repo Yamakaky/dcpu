@@ -82,34 +82,34 @@ fn bytes_to_type<I: FromStr>(i: &[u8]) -> Result<I, ()> {
         .map_err(|_| ())
 }
 
-named!(hex_num(&[u8]) -> (&str, u32),
+named!(hex_num<(&str, u32)>,
     map_res!(chain!(tag!("0x") ~ n: recognize!(many1!(hex_digit)), || n),
              |n| str::from_utf8(n).map(|n| (n, 16)))
 );
 
-named!(num(&[u8]) -> (&str, u32),
+named!(num<(&str, u32)>,
     map_res!(chain!(n: recognize!(many1!(digit)), || n),
              |n| str::from_utf8(n).map(|n| (n, 10)))
 );
 
-named!(octal_num(&[u8]) -> (&str, u32),
+named!(octal_num<(&str, u32)>,
     map_res!(chain!(tag!("0o") ~ n: recognize!(many1!(one_of!("01234567"))), || n),
              |n| str::from_utf8(n).map(|n| (n, 8)))
 );
 
-named!(bin_num(&[u8]) -> (&str, u32),
+named!(bin_num<(&str, u32)>,
     map_res!(chain!(tag!("0b") ~ n: recognize!(many1!(one_of!("01"))), || n),
              |n| str::from_utf8(n).map(|n| (n, 2)))
 );
 
-named!(pos_number(&[u8]) -> u16,
+named!(pos_number<u16>,
     map_res!(
         alt_complete!(hex_num | octal_num | bin_num | num),
         |(n, base)| u16::from_str_radix(n, base)
     )
 );
 
-named!(neg_number(&[u8]) -> i16,
+named!(neg_number<i16>,
     map_res!(
         chain!(char!('-') ~
                n: alt_complete!(hex_num | octal_num | bin_num | num),
@@ -118,12 +118,12 @@ named!(neg_number(&[u8]) -> i16,
     )
 );
 
-named!(number(&[u8]) -> Num,
+named!(number<Num>,
     alt_complete!(map!(neg_number, Num::I) |
                   map!(pos_number, Num::U))
 );
 
-named!(comment(&[u8]) -> ParsedItem,
+named!(comment<ParsedItem>,
     map!(
         map_res!(
             delimited!(tag!(";"), not_line_ending, peek!(line_ending)),
@@ -133,18 +133,18 @@ named!(comment(&[u8]) -> ParsedItem,
     )
 );
 
-named!(basic_op(&[u8]) -> BasicOp,
+named!(basic_op<BasicOp>,
     map_res!(
         take!(3),
         bytes_to_type
     )
 );
 
-named!(instruction(&[u8]) -> ParsedInstruction,
+named!(instruction<ParsedInstruction>,
     alt_complete!(basic_instruction | special_instruction)
 );
 
-named!(basic_instruction(&[u8]) -> ParsedInstruction,
+named!(basic_instruction<ParsedInstruction>,
     chain!(
         op: basic_op ~
         multispace ~
@@ -158,14 +158,14 @@ named!(basic_instruction(&[u8]) -> ParsedInstruction,
     )
 );
 
-named!(special_op(&[u8]) -> SpecialOp,
+named!(special_op<SpecialOp>,
     map_res!(
         take!(3),
         bytes_to_type
     )
 );
 
-named!(special_instruction(&[u8]) -> ParsedInstruction,
+named!(special_instruction<ParsedInstruction>,
     chain!(
         op: special_op ~
         multispace ~
@@ -175,14 +175,14 @@ named!(special_instruction(&[u8]) -> ParsedInstruction,
     )
 );
 
-named!(register(&[u8]) -> Register,
+named!(register<Register>,
     map_res!(
         alpha,
         bytes_to_type
     )
 );
 
-named!(at_reg_plus(&[u8]) -> ParsedValue,
+named!(at_reg_plus<ParsedValue>,
     chain!(
         char!('[') ~
         multispace? ~
@@ -197,7 +197,7 @@ named!(at_reg_plus(&[u8]) -> ParsedValue,
     )
 );
 
-named!(value(&[u8]) -> ParsedValue,
+named!(value<ParsedValue>,
     alt_complete!(
         map!(register, ParsedValue::Reg) |
         map!(chain!(char!('[') ~
@@ -230,7 +230,7 @@ named!(value(&[u8]) -> ParsedValue,
     )
 );
 
-named!(raw_label(&[u8]) -> String,
+named!(raw_label<String>,
     map_res!(
         recognize!(
             preceded!(
@@ -242,11 +242,11 @@ named!(raw_label(&[u8]) -> String,
     )
 );
 
-named!(raw_local_label(&[u8]) -> String,
+named!(raw_local_label<String>,
     chain!(char!('.') ~ l: raw_label, || l)
 );
 
-named!(label_decl(&[u8]) -> ParsedItem,
+named!(label_decl<ParsedItem>,
     chain!(
         opt!(char!(':')) ~
         l: raw_label ~
@@ -255,7 +255,7 @@ named!(label_decl(&[u8]) -> ParsedItem,
     )
 );
 
-named!(local_label_decl(&[u8]) -> ParsedItem,
+named!(local_label_decl<ParsedItem>,
     chain!(
         opt!(char!(':')) ~
         l: raw_local_label ~
@@ -264,7 +264,7 @@ named!(local_label_decl(&[u8]) -> ParsedItem,
     )
 );
 
-named!(simple_expression(&[u8]) -> Expression,
+named!(simple_expression<Expression>,
     alt_complete!(
         map!(number, Expression::Num) |
         map!(raw_label, Expression::Label) |
@@ -272,7 +272,7 @@ named!(simple_expression(&[u8]) -> Expression,
     )
 );
 
-named!(expression(&[u8]) -> Expression,
+named!(expression<Expression>,
     alt_complete!(
         chain!(char!('(') ~
                multispace? ~
@@ -326,7 +326,7 @@ named!(expression(&[u8]) -> Expression,
     )
 );
 
-named!(a_value(&[u8]) -> ParsedValue,
+named!(a_value<ParsedValue>,
     alt_complete!(
         value |
         map!(expression, ParsedValue::Litteral) |
@@ -334,7 +334,7 @@ named!(a_value(&[u8]) -> ParsedValue,
     )
 );
 
-named!(b_value(&[u8]) -> ParsedValue,
+named!(b_value<ParsedValue>,
     alt_complete!(
         value |
         map!(expression, ParsedValue::Litteral) |
@@ -342,7 +342,7 @@ named!(b_value(&[u8]) -> ParsedValue,
     )
 );
 
-named!(dir_dat(&[u8]) -> Directive,
+named!(dir_dat<Directive>,
     chain!(tag!("dat") ~
            space ~
            ns: separated_list!(space,
@@ -350,24 +350,22 @@ named!(dir_dat(&[u8]) -> Directive,
            || Directive::Dat(ns.into_iter().map(From::from).collect()))
 );
 
-named!(directive(&[u8]) -> Directive,
+named!(directive<Directive>,
     chain!(char!('.') ~
            d: dir_dat ~
            peek!(line_ending),
            || d)
 );
 
-named!(pub parse(&[u8]) -> Vec<ParsedItem>,
-    complete!(
-        separated_list!(multispace,
-                        alt_complete!(
-                            map!(directive, ParsedItem::Directive) |
-                            map!(instruction,
-                                 ParsedItem::ParsedInstruction) |
-                            comment |
-                            label_decl |
-                            local_label_decl)
-        )
+named!(pub parse< Vec<ParsedItem> >,
+    separated_list!(multispace,
+                    alt_complete!(
+                        map!(directive, ParsedItem::Directive) |
+                        map!(instruction,
+                             ParsedItem::ParsedInstruction) |
+                        comment |
+                        label_decl |
+                        local_label_decl)
     )
 );
 
