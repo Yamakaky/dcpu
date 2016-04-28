@@ -12,6 +12,7 @@ mod utils;
 use docopt::Docopt;
 
 use dcpu::cpu::Cpu;
+use dcpu::computer::Computer;
 
 const USAGE: &'static str = "
 Usage:
@@ -49,10 +50,10 @@ fn main() {
     let mut cpu = Cpu::default();
     cpu.load(&rom, 0);
 
-    let mut devices = Vec::new();
+    let mut computer = Computer::new(cpu);
 
     loop {
-        match cpu.tick(&mut devices) {
+        match computer.tick() {
             Ok(_) => (),
             Err(e) => {
                 println!("{}", e);

@@ -8,6 +8,7 @@ extern crate log;
 extern crate nom;
 extern crate num;
 
+pub mod computer;
 pub mod cpu;
 pub mod device;
 pub mod iterators;
