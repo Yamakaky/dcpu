@@ -161,7 +161,7 @@ impl FromStr for Register {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Register, ParseError> {
-        match s {
+        match s.to_uppercase().as_str() {
             "A" => Ok(Register::A),
             "B" => Ok(Register::B),
             "C" => Ok(Register::C),
@@ -351,7 +351,7 @@ impl BasicOp {
 impl FromStr for BasicOp {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<BasicOp, ParseError> {
-        match s {
+        match s.to_uppercase().as_str() {
             "SET" => Ok(BasicOp::SET),
             "ADD" => Ok(BasicOp::ADD),
             "SUB" => Ok(BasicOp::SUB),
@@ -423,7 +423,7 @@ impl FromStr for SpecialOp {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<SpecialOp, ParseError> {
-        match s {
+        match s.to_uppercase().as_str() {
             "JSR" => Ok(SpecialOp::JSR),
             "INT" => Ok(SpecialOp::INT),
             "IAG" => Ok(SpecialOp::IAG),
