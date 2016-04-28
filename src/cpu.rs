@@ -52,9 +52,16 @@ impl From<DecodeError> for Error {
     }
 }
 
+#[derive(Debug)]
 pub enum CpuState {
     Executing,
     Waiting,
+}
+
+#[derive(Debug)]
+pub enum OnDecodeError {
+    Continue,
+    Fail,
 }
 
 pub struct Cpu {
@@ -65,6 +72,7 @@ pub struct Cpu {
     pub ex: u16,
     pub ia: u16,
     pub wait: u16,
+    pub on_decode_error: OnDecodeError,
     pub check_if_cascade: bool,
     pub is_queue_enabled: bool,
     pub interrupts_queue: VecDeque<u16>
@@ -80,6 +88,7 @@ impl Default for Cpu {
             ex: 0,
             ia: 0,
             wait: 0,
+            on_decode_error: OnDecodeError::Continue,
             check_if_cascade: true,
             is_queue_enabled: false,
             interrupts_queue: VecDeque::new()
@@ -88,6 +97,12 @@ impl Default for Cpu {
 }
 
 impl Cpu {
+    pub fn new(e: OnDecodeError) -> Cpu {
+        let mut cpu = Cpu::default();
+        cpu.on_decode_error = e;
+        cpu
+    }
+
     pub fn load(&mut self, data: &[u16], offset: u16) {
         for (i, d) in data.iter().enumerate() {
             self.ram[offset.wrapping_add(i as u16) as usize] = *d;
@@ -153,7 +168,17 @@ impl Cpu {
         }
 
         let pc = self.pc;
-        let (words_used, instruction) = try!(self.decode(pc));
+        let (words_used, instruction) = match self.decode(pc) {
+            Ok(res) => res,
+            Err(e) => match self.on_decode_error {
+                OnDecodeError::Continue => {
+                    warn!("Instruction decoding error: {:x}", self.ram[pc as usize]);
+                    self.pc += 1;
+                    return Ok(CpuState::Executing);
+                },
+                OnDecodeError::Fail => return Err(e.into()),
+            }
+        };
         self.pc = self.pc.wrapping_add(words_used);
 
         if self.check_if_cascade {
@@ -180,7 +205,7 @@ impl Cpu {
         Instruction::decode(&bin)
     }
 
-    fn trigger_interrupt(&mut self, i: u16) {
+    pub fn trigger_interrupt(&mut self, i: u16) {
         if self.ia != 0 {
             self.is_queue_enabled = true;
             let pc = self.get(PC);
