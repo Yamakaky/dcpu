@@ -8,11 +8,10 @@ extern crate log;
 extern crate nom;
 extern crate num;
 
+pub mod assembler;
 pub mod computer;
 pub mod cpu;
 pub mod device;
 pub mod iterators;
-pub mod linker;
-pub mod parser;
 pub mod preprocessor;
 pub mod types;

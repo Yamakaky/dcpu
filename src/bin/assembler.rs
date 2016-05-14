@@ -14,8 +14,7 @@ use byteorder::WriteBytesExt;
 use docopt::Docopt;
 use nom::IResult::*;
 
-use dcpu::linker;
-use dcpu::parser;
+use dcpu::assembler::{linker, parser};
 
 const USAGE: &'static str = "
 Usage:
@@ -72,7 +71,7 @@ fn main_ret() -> i32 {
         die!(0, "{:?}", ast);
     }
 
-    let bin = match linker::resolve_labels(&[]) {
+    let bin = match linker::link(&[]) {
         Ok(v) => v,
         Err(e) => die!(1, "Error: {:?}", e)
     };
