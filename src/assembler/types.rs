@@ -22,10 +22,10 @@ pub enum ParsedInstruction {
 }
 
 impl ParsedInstruction {
-    fn solve(&self,
-             globals: &HashMap<String, u16>,
-             locals: &HashMap<String, u16>)
-             -> Result<Instruction, String> {
+    pub fn solve(&self,
+                 globals: &HashMap<String, u16>,
+                 locals: &HashMap<String, u16>)
+                 -> Result<Instruction, String> {
         match *self {
             ParsedInstruction::BasicOp(op, ref b, ref a) => {
                 Ok(Instruction::BasicOp(op,

@@ -71,7 +71,7 @@ fn main_ret() -> i32 {
         die!(0, "{:?}", ast);
     }
 
-    let bin = match linker::link(&[]) {
+    let bin = match linker::link(ast) {
         Ok(v) => v,
         Err(e) => die!(1, "Error: {:?}", e)
     };
