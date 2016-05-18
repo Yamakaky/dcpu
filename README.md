@@ -11,9 +11,7 @@
   - [ ] Screen
   - [ ] Keyboard
 - [x] Disassembler
-- [ ] Assembler
-  - [x] Parser
-  - [ ] Labels solver
+- [x] Assembler
 
 ## Usage
 

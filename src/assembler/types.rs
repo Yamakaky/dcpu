@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use types::{BasicOp, SpecialOp, Register, Value, Instruction};
+use assembler::linker::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Directive {
@@ -25,7 +26,7 @@ impl ParsedInstruction {
     pub fn solve(&self,
                  globals: &HashMap<String, u16>,
                  locals: &HashMap<String, u16>)
-                 -> Result<Instruction, String> {
+                 -> Result<Instruction, Error> {
         match *self {
             ParsedInstruction::BasicOp(op, ref b, ref a) => {
                 Ok(Instruction::BasicOp(op,
@@ -58,7 +59,7 @@ impl ParsedValue {
     fn solve(&self,
              globals: &HashMap<String, u16>,
              locals: &HashMap<String, u16>)
-             -> Result<Value, String> {
+             -> Result<Value, Error> {
         match *self {
             ParsedValue::Reg(r) => Ok(Value::Reg(r)),
             ParsedValue::AtReg(r) => Ok(Value::AtReg(r)),
@@ -95,18 +96,18 @@ impl Expression {
     fn solve(&self,
              globals: &HashMap<String, u16>,
              locals: &HashMap<String, u16>)
-             -> Result<u16, String> {
+             -> Result<u16, Error> {
         match *self {
             Expression::Label(ref s) => {
                 match globals.get(s) {
                     Some(addr) => Ok(*addr),
-                    None => Err(s.clone()),
+                    None => Err(Error::UnknownLabel(s.clone())),
                 }
             }
             Expression::LocalLabel(ref s) => {
                 match locals.get(s) {
                     Some(addr) => Ok(*addr),
-                    None => Err(s.clone()),
+                    None => Err(Error::UnknownLocalLabel(s.clone())),
                 }
             }
             Expression::Num(n) => Ok(n.into()),
