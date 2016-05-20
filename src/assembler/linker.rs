@@ -23,7 +23,7 @@ pub fn link(ast: &[ParsedItem]) -> Result<Vec<u16>, Error> {
         let mut index = 0u16;
         for item in ast {
             match *item {
-                ParsedItem::Directive(_) => unimplemented!(),
+                ParsedItem::Directive(ref d) => index += d.append_to(&mut bin),
                 ParsedItem::LabelDecl(ref s) => {
                     let ptr = globals.get_mut(s).unwrap();
                     if *ptr != index {

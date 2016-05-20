@@ -7,6 +7,17 @@ pub enum Directive {
     Dat(Vec<u16>),
 }
 
+impl Directive {
+    pub fn append_to(&self, bin: &mut Vec<u16>) -> u16 {
+        match *self {
+            Directive::Dat(ref v) => {
+                bin.extend(v);
+                return v.len() as u16;
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ParsedItem {
     Directive(Directive),
