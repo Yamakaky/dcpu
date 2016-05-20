@@ -9,6 +9,7 @@ extern crate simplelog;
 mod utils;
 
 use std::io::{Read, Write};
+use std::str;
 
 use byteorder::WriteBytesExt;
 use docopt::Docopt;
@@ -64,6 +65,7 @@ fn main_ret() -> i32 {
     let parsed = parser::parse(&preprocessed.as_bytes());
     let ast = match parsed {
         Done(ref i, ref o) if i.len() == 0 => o,
+        Done(ref i, _) => die!(1, "Unknown: \"{}\"", str::from_utf8(i).unwrap()),
         e => die!(1, "Error: {:?}", e)
     };
 
