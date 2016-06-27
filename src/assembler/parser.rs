@@ -281,9 +281,16 @@ named!(dir_dat<Directive>,
            || Directive::Dat(ns.into_iter().map(From::from).collect()))
 );
 
+named!(dir_org<Directive>,
+    chain!(tag!("org") ~
+           space ~
+           n: number,
+           || Directive::Org(n.into()))
+);
+
 named!(directive<Directive>,
     chain!(char!('.') ~
-           d: dir_dat ~
+           d: alt_complete!(dir_dat | dir_org) ~
            peek!(line_ending),
            || d)
 );

@@ -5,6 +5,7 @@ use assembler::linker::Error;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Directive {
     Dat(Vec<u16>),
+    Org(u16),
 }
 
 impl Directive {
@@ -12,7 +13,12 @@ impl Directive {
         match *self {
             Directive::Dat(ref v) => {
                 bin.extend(v);
-                return v.len() as u16;
+                v.len() as u16
+            }
+            Directive::Org(n) => {
+                let l = bin.len();
+                bin.resize(l + (n as usize), 0);
+                n
             }
         }
     }
