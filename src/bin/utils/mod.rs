@@ -33,6 +33,7 @@ pub fn get_output(o: Option<String>) -> Box<Write> {
         Box::new(OpenOptions::new()
                              .write(true)
                              .create(true)
+                             .truncate(true)
                              .open(path)
                              .expect("Open file error"))
     } else {
