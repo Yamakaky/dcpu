@@ -81,7 +81,7 @@ pub struct Cpu {
 impl Default for Cpu {
     fn default() -> Cpu {
         Cpu {
-            ram: [0; 0x10000],
+            ram: [0xbeef; 0x10000],
             registers: [0; 8],
             pc: 0,
             sp: 0xffff,
