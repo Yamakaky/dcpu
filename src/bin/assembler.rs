@@ -65,7 +65,7 @@ fn main_ret() -> i32 {
     let parsed = parser::parse(&preprocessed.as_bytes());
     let ast = match parsed {
         Done(ref i, ref o) if i.len() == 0 => o,
-        Done(ref i, _) => die!(1, "Unknown: \"{}\"", str::from_utf8(i).unwrap()),
+        Done(ref i, _) => die!(1, "Unknown: \"{}\"", str::from_utf8(i).unwrap().lines().next().unwrap()),
         e => die!(1, "Error: {:?}", e)
     };
 
