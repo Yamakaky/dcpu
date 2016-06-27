@@ -1,19 +1,42 @@
 use std::collections::HashMap;
+use std::iter;
+
 use types::{BasicOp, SpecialOp, Register, Value, Instruction};
 use assembler::linker::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Directive {
-    Dat(Vec<u16>),
+    Dat(Vec<DatItem>),
     Org(u16),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum DatItem {
+    S(String),
+    N(u16),
 }
 
 impl Directive {
     pub fn append_to(&self, bin: &mut Vec<u16>) -> u16 {
         match *self {
             Directive::Dat(ref v) => {
-                bin.extend(v);
-                v.len() as u16
+                let mut i = 0;
+                for x in v.iter() {
+                    i += match *x {
+                        DatItem::S(ref s) => {
+                            let it = s.bytes().chain(iter::once(0));
+                            let size = it.size_hint().0;
+                            assert!(size == it.size_hint().1.unwrap());
+                            bin.extend(it.map(|x| x as u16));
+                            size
+                        }
+                        DatItem::N(n) => {
+                            bin.push(n);
+                            1
+                        }
+                    }
+                }
+                i as u16
             }
             Directive::Org(n) => {
                 let l = bin.len();
@@ -21,6 +44,18 @@ impl Directive {
                 n
             }
         }
+    }
+}
+
+impl From<String> for DatItem {
+    fn from(s: String) -> DatItem {
+        DatItem::S(s)
+    }
+}
+
+impl From<Num> for DatItem {
+    fn from(n: Num) -> DatItem {
+        DatItem::N(n.into())
     }
 }
 

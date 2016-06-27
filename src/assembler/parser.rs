@@ -273,12 +273,20 @@ named!(b_value<ParsedValue>,
     )
 );
 
+named!(string<String>,
+    map_res!(
+        delimited!(tag!("\""), recognize!(many0!(none_of!("\""))), tag!("\"")),
+        bytes_to_type
+    )
+);
+
 named!(dir_dat<Directive>,
     chain!(tag!("dat") ~
            space ~
            ns: separated_list!(space,
-                               number),
-           || Directive::Dat(ns.into_iter().map(From::from).collect()))
+                               alt_complete!(map!(number, From::from) |
+                                             map!(string, From::from))),
+           || Directive::Dat(ns))
 );
 
 named!(dir_org<Directive>,
@@ -367,5 +375,6 @@ fn test_directive() {
     let nl: &[u8] = &[10];
     assert_eq!(directive(".dat 1 0x2\n".as_bytes()),
                IResult::Done(nl,
-                             Directive::Dat(vec!(1, 2))));
+                             Directive::Dat(vec!(DatItem::N(1),
+                                                 DatItem::N(2)))));
 }
