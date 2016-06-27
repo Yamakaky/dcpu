@@ -20,7 +20,7 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::DecodeError(ref e) => write!(f, "instruction deciding error: {}", e),
+            Error::DecodeError(ref e) => write!(f, "instruction decoding error: {}", e),
             Error::InvalidHardwareId(ref id) => write!(f, "invalid device id: {}", id),
             Error::InterruptError => write!(f, "invalid hardware int"),
             Error::InFire => write!(f, "dcpu in fire, run for your lives!")
