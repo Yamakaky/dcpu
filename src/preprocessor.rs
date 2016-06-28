@@ -10,7 +10,7 @@ pub fn preprocess(asm: &str) -> Option<String> {
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
-        .spawn().unwrap();
+        .spawn().unwrap_or_else(|e| panic!("failed to execute process: {}\nIs gcc installed?", e));
 
     if let Some(ref mut stdin) = process.stdin {
         if stdin.write_all(asm.as_bytes()).is_err() {
