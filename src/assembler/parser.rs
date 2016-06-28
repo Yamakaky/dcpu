@@ -259,17 +259,17 @@ named!(expression<Expression>,
 
 named!(a_value<ParsedValue>,
     alt_complete!(
+        map!(tag!("POP"), |_| ParsedValue::Push) |
         value |
-        map!(expression, ParsedValue::Litteral) |
-        map!(tag!("POP"), |_| ParsedValue::Push)
+        map!(expression, ParsedValue::Litteral)
     )
 );
 
 named!(b_value<ParsedValue>,
     alt_complete!(
+        map!(tag!("PUSH"), |_| ParsedValue::Push) |
         value |
-        map!(expression, ParsedValue::Litteral) |
-        map!(tag!("PUSH"), |_| ParsedValue::Push)
+        map!(expression, ParsedValue::Litteral)
     )
 );
 
