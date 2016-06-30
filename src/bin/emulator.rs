@@ -16,13 +16,13 @@ use dcpu::computer::Computer;
 
 const USAGE: &'static str = "
 Usage:
-  emulator [(-d <device>)...] [-i <file>]
+  emulator [(-d <device>)...] [<file>]
   emulator (--help | --version)
 
 Options:
   <file>             The binary file to execute.
   -d, --device       Des super devices.
-  -i <file>          File to use instead of stdin.
+  <file>             File to use instead of stdin.
   -h, --help         Show this message.
   --version          Show the version of disassembler.
 ";
@@ -30,7 +30,7 @@ Options:
 #[derive(Debug, RustcDecodable)]
 struct Args {
     arg_device: Option<Vec<String>>,
-    flag_i: Option<String>,
+    arg_file: Option<String>,
 }
 
 fn main() {
@@ -41,7 +41,7 @@ fn main() {
                             .unwrap_or_else(|e| e.exit());
 
     let rom = {
-        let input = utils::get_input(args.flag_i);
+        let input = utils::get_input(args.arg_file);
         let mut rom = Vec::new();
         rom.extend(utils::IterU16{input: input});
         rom

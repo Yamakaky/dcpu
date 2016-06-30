@@ -19,14 +19,14 @@ use dcpu::assembler::{linker, parser};
 
 const USAGE: &'static str = "
 Usage:
-  assembler [--no-cpp] [--ast] [--hex] [-i <file>] [-o <file>]
+  assembler [--no-cpp] [--ast] [--hex] [<file>] [-o <file>]
   assembler (--help | --version)
 
 Options:
   --no-cpp      Disable gcc preprocessor pass.
   --ast         Show the file AST.
   --hex         Show in hexadecimal instead of binary.
-  -i <file>     File to use instead of stdin.
+  <file>        File to use instead of stdin.
   -o <file>     File to use instead of stdout.
   -h --help     Show this screen.
   --version     Show version.
@@ -37,7 +37,7 @@ struct Args {
     flag_no_cpp: bool,
     flag_ast: bool,
     flag_hex: bool,
-    flag_i: Option<String>,
+    arg_file: Option<String>,
     flag_o: Option<String>,
 }
 
@@ -50,7 +50,7 @@ fn main_ret() -> i32 {
 
     let asm = {
         let mut asm = String::new();
-        let mut input = utils::get_input(args.flag_i);
+        let mut input = utils::get_input(args.arg_file);
         input.read_to_string(&mut asm).unwrap();
         asm
     };
