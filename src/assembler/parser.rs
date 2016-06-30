@@ -304,14 +304,19 @@ named!(directive<Directive>,
 );
 
 named!(pub parse< Vec<ParsedItem> >,
-    separated_list!(multispace,
-                    alt_complete!(
-                        map!(directive, ParsedItem::Directive) |
-                        map!(instruction,
-                             ParsedItem::ParsedInstruction) |
-                        comment |
-                        label_decl |
-                        local_label_decl)
+    delimited!(
+        opt!(multispace),
+        separated_list!(multispace,
+                        alt_complete!(
+                            map!(directive, ParsedItem::Directive) |
+                            map!(instruction,
+                                 ParsedItem::ParsedInstruction) |
+                            comment |
+                            label_decl |
+                            local_label_decl
+                        )
+        ),
+        opt!(multispace)
     )
 );
 
