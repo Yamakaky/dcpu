@@ -296,9 +296,31 @@ named!(dir_org<Directive>,
            || Directive::Org(n.into()))
 );
 
+named!(dir_global<Directive>,
+    chain!(tag!("globl") ~
+           many0!(none_of!("\n")),
+           || Directive::Global)
+);
+
+named!(dir_text<Directive>,
+    chain!(tag!("text") ~
+           many0!(none_of!("\n")),
+           || Directive::Text)
+);
+
+named!(dir_bss<Directive>,
+    chain!(tag!("bss") ~
+           many0!(none_of!("\n")),
+           || Directive::BSS)
+);
+
 named!(directive<Directive>,
     chain!(char!('.') ~
-           d: alt_complete!(dir_dat | dir_org) ~
+           d: alt_complete!(dir_dat |
+                            dir_org |
+                            dir_global |
+                            dir_text |
+                            dir_bss) ~
            peek!(line_ending),
            || d)
 );

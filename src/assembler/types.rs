@@ -8,6 +8,9 @@ use assembler::linker::Error;
 pub enum Directive {
     Dat(Vec<DatItem>),
     Org(u16),
+    Global,
+    Text,
+    BSS,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -43,6 +46,7 @@ impl Directive {
                 bin.resize(l + (n as usize), 0);
                 n
             }
+            Directive::Global | Directive::Text | Directive::BSS => 0,
         }
     }
 }
