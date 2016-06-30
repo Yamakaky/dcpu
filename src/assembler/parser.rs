@@ -131,6 +131,7 @@ named!(at_reg_plus<ParsedValue>,
 named!(value<ParsedValue>,
     alt_complete!(
         map!(register, ParsedValue::Reg) |
+        at_reg_plus |
         map!(chain!(char!('[') ~
                     multispace? ~
                     r: register ~
@@ -145,7 +146,6 @@ named!(value<ParsedValue>,
                     char!(']'),
                     || e),
              ParsedValue::AtAddr) |
-        at_reg_plus |
         map!(
             chain!(
                 tag!("PICK") ~
