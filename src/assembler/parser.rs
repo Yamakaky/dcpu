@@ -13,6 +13,30 @@ fn bytes_to_type<I: FromStr>(i: &[u8]) -> Result<I, ()> {
         .map_err(|_| ())
 }
 
+macro_rules! span {
+    ($i:expr, $submac:ident!( $($args:tt)* )) => (
+        {
+            match $submac!($i, $($args)*) {
+                IResult::Done(i, o)     => {
+                    let index = ($i).offset(i);
+                    let span: &[u8] = &($i)[..index];
+                    let res: IResult<&[u8], Spanned<ParsedItem>> =
+                        IResult::Done(i, Spanned {
+                            span: span,
+                            inner: o,
+                        });
+                    res
+                },
+                IResult::Error(e)      => return IResult::Error(e),
+                IResult::Incomplete(i) => return IResult::Incomplete(i)
+            }
+        }
+    );
+    ($i:expr, $f:expr) => (
+        span!($i, call!($f))
+    );
+}
+
 named!(hex_num<(&str, u32)>,
     map_res!(chain!(tag!("0x") ~ n: recognize!(many1!(hex_digit)), || n),
              |n| str::from_utf8(n).map(|n| (n, 16)))
@@ -325,17 +349,19 @@ named!(directive<Directive>,
            || d)
 );
 
-named!(pub parse< Vec<ParsedItem> >,
+named!(pub parse< Vec<Spanned<ParsedItem>> >,
     delimited!(
         opt!(multispace),
         separated_list!(multispace,
-                        alt_complete!(
-                            map!(directive, ParsedItem::Directive) |
-                            map!(instruction,
-                                 ParsedItem::ParsedInstruction) |
-                            comment |
-                            label_decl |
-                            local_label_decl
+                        span!(
+                            alt_complete!(
+                                map!(directive, ParsedItem::Directive) |
+                                map!(instruction,
+                                     ParsedItem::ParsedInstruction) |
+                                comment |
+                                label_decl |
+                                local_label_decl
+                            )
                         )
         ),
         opt!(multispace)

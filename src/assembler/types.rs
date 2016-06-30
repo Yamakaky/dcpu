@@ -1,8 +1,23 @@
 use std::collections::HashMap;
 use std::iter;
+use std::ops::Deref;
 
 use types::{BasicOp, SpecialOp, Register, Value, Instruction};
 use assembler::linker::Error;
+
+#[derive(Debug)]
+pub struct Spanned<'a, T> {
+    pub span: &'a [u8],
+    pub inner: T,
+}
+
+impl<'a, T> Deref for Spanned<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        &self.inner
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Directive {

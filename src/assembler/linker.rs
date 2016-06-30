@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ops::Deref;
 
 use assembler::types::*;
 
@@ -11,7 +12,7 @@ pub enum Error {
     LocalBeforeGlobal(String),
 }
 
-pub fn link(ast: &[ParsedItem]) -> Result<Vec<u16>, Error> {
+pub fn link(ast: &[Spanned<ParsedItem>]) -> Result<Vec<u16>, Error> {
 
     let mut bin = Vec::new();
     let (mut globals, mut locals) = try!(extract_labels(ast));
@@ -22,7 +23,7 @@ pub fn link(ast: &[ParsedItem]) -> Result<Vec<u16>, Error> {
         changed = false;
         let mut index = 0u16;
         for item in ast {
-            match *item {
+            match *item.deref() {
                 ParsedItem::Directive(ref d) => index += d.append_to(&mut bin),
                 ParsedItem::LabelDecl(ref s) => {
                     let ptr = globals.get_mut(s).unwrap();
@@ -60,14 +61,14 @@ pub fn link(ast: &[ParsedItem]) -> Result<Vec<u16>, Error> {
 }
 
 fn extract_labels
-    (ast: &[ParsedItem])
+    (ast: &[Spanned<ParsedItem>])
      -> Result<(HashMap<String, u16>, HashMap<String, HashMap<String, u16>>), Error> {
     let mut prev_label = None;
     let mut globals = HashMap::new();
     let mut locals = HashMap::new();
 
     for item in ast.iter() {
-        match *item {
+        match *item.deref() {
             ParsedItem::LabelDecl(ref s) => {
                 prev_label = Some(s.clone());
                 if globals.contains_key(s) {
