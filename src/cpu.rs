@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::default::Default;
 use std::fmt;
-use std::error;
+use std::error::{self, Error as StdError};
 
 use device::Device;
 use types::*;
@@ -14,7 +14,8 @@ pub enum Error {
     DecodeError(DecodeError),
     InvalidHardwareId(u16),
     InterruptError,
-    InFire
+    InFire,
+    Halted,
 }
 
 impl fmt::Display for Error {
@@ -22,8 +23,7 @@ impl fmt::Display for Error {
         match *self {
             Error::DecodeError(ref e) => write!(f, "instruction decoding error: {}", e),
             Error::InvalidHardwareId(ref id) => write!(f, "invalid device id: {}", id),
-            Error::InterruptError => write!(f, "invalid hardware int"),
-            Error::InFire => write!(f, "dcpu in fire, run for your lives!")
+            _ => write!(f, "{}", self.description()),
         }
     }
 }
@@ -34,7 +34,8 @@ impl error::Error for Error {
             Error::DecodeError(ref e) => e.description(),
             Error::InvalidHardwareId(_) => "invalid hardware id",
             Error::InterruptError => "invalid hardware int",
-            Error::InFire => "dcpu in fire, run for your lives!"
+            Error::InFire => "dcpu in fire, run for your lives!",
+            Error::Halted => "cpu halted",
         }
     }
 
@@ -75,7 +76,9 @@ pub struct Cpu {
     pub on_decode_error: OnDecodeError,
     pub check_if_cascade: bool,
     pub is_queue_enabled: bool,
-    pub interrupts_queue: VecDeque<u16>
+    pub interrupts_queue: VecDeque<u16>,
+    pub log_queue: VecDeque<u16>,
+    pub halted: bool,
 }
 
 impl Default for Cpu {
@@ -91,7 +94,9 @@ impl Default for Cpu {
             on_decode_error: OnDecodeError::Continue,
             check_if_cascade: true,
             is_queue_enabled: false,
-            interrupts_queue: VecDeque::new()
+            interrupts_queue: VecDeque::new(),
+            log_queue: VecDeque::new(),
+            halted: false,
         }
     }
 }
@@ -155,6 +160,9 @@ impl Cpu {
     }
 
     pub fn tick(&mut self, devices: &mut [Box<Device>]) -> Result<CpuState, Error> {
+        if self.halted {
+            return Err(Error::Halted);
+        }
         if self.wait != 0 {
             self.wait -= 1;
             trace!("Waiting");
@@ -267,7 +275,10 @@ impl Cpu {
             IAQ => self.op_iaq(a),
             HWN => self.op_hwn(a, devices),
             HWQ => self.op_hwq(a, devices),
-            HWI => self.op_hwi(a, devices)
+            HWI => self.op_hwi(a, devices),
+            LOG => self.op_log(a),
+            BRK => self.op_brk(a),
+            HLT => self.op_hlt(),
         }
     }
 
@@ -599,5 +610,20 @@ impl Cpu {
         } else {
             Err(Error::InvalidHardwareId(val_a as u16))
         }
+    }
+
+    fn op_log(&mut self, a: Value) -> Result<(), Error> {
+        let val_a = self.get(a);
+        self.log_queue.push_back(val_a);
+        Ok(())
+    }
+
+    fn op_brk(&mut self, _: Value) -> Result<(), Error> {
+        Ok(())
+    }
+
+    fn op_hlt(&mut self) -> Result<(), Error> {
+        self.halted = true;
+        Err(Error::Halted)
     }
 }

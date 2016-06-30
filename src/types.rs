@@ -396,14 +396,18 @@ pub enum SpecialOp {
     IAQ = 0x0c,
     HWN = 0x10,
     HWQ = 0x11,
-    HWI = 0x12
+    HWI = 0x12,
+    LOG = 0x13,
+    BRK = 0x14,
+    HLT = 0x15,
 }
 }
 
 impl SpecialOp {
     pub fn delay(&self) -> u16 {
         match *self {
-            SpecialOp::IAG | SpecialOp::IAS => 1,
+            SpecialOp::BRK | SpecialOp::HLT => 0,
+            SpecialOp::IAG | SpecialOp::IAS | SpecialOp::LOG => 1,
             SpecialOp::IAQ | SpecialOp::HWN => 2,
             SpecialOp::JSR | SpecialOp::RFI => 3,
             SpecialOp::INT | SpecialOp::HWQ | SpecialOp::HWI => 4
@@ -433,6 +437,9 @@ impl FromStr for SpecialOp {
             "HWN" => Ok(SpecialOp::HWN),
             "HWQ" => Ok(SpecialOp::HWQ),
             "HWI" => Ok(SpecialOp::HWI),
+            "LOG" => Ok(SpecialOp::LOG),
+            "BRK" => Ok(SpecialOp::BRK),
+            "HLT" => Ok(SpecialOp::HLT),
             _ => Err(ParseError::SpecialOp)
         }
     }
