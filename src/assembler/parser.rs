@@ -179,18 +179,16 @@ named!(raw_local_label<String>,
 
 named!(label_decl<ParsedItem>,
     chain!(
-        opt!(char!(':')) ~
-        l: raw_label ~
-        opt!(char!(':')),
+        char!(':') ~
+        l: raw_label,
         || ParsedItem::LabelDecl(l)
     )
 );
 
 named!(local_label_decl<ParsedItem>,
     chain!(
-        opt!(char!(':')) ~
-        l: raw_local_label ~
-        opt!(char!(':')),
+        char!(':') ~
+        l: raw_local_label,
         || ParsedItem::LocalLabelDecl(l)
     )
 );
