@@ -281,7 +281,7 @@ named!(string<String>,
 );
 
 named!(dir_dat<Directive>,
-    chain!(alt_complete!(tag!("dat") | tag!("byte")| tag!("word")) ~
+    chain!(alt_complete!(tag!("dat") | tag!("byte")| tag!("word") | tag!("short")) ~
            space ~
            ns: separated_list!(space,
                                alt_complete!(map!(number, From::from) |
