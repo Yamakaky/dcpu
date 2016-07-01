@@ -165,8 +165,8 @@ named!(raw_label<String>,
     map_res!(
         recognize!(
             preceded!(
-                alt_complete!(alpha | tag!("_")),
-                many0!(alt_complete!(alphanumeric | tag!("_")))
+                alt_complete!(alpha | tag!("_") | tag!(".")),
+                many0!(alt_complete!(alphanumeric | tag!("_") | tag!(".")))
             )
         ),
         bytes_to_type
