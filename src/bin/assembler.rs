@@ -51,7 +51,7 @@ fn line_number(raw_file: &[u8], raw_line: &[u8]) -> (usize, usize) {
         .map(|(_, c)| c)
         .fold((1, 1), |(line, row), c| {
             if c == '\n' {
-                (line + 1, row)
+                (line + 1, 0)
             } else {
                 (line, row + 1)
             }
