@@ -14,6 +14,7 @@ use std::str;
 use byteorder::WriteBytesExt;
 use docopt::Docopt;
 use nom::IResult::*;
+use nom::HexDisplay;
 
 use dcpu::assembler::{linker, parser};
 
@@ -41,6 +42,22 @@ struct Args {
     flag_o: Option<String>,
 }
 
+fn line_number(raw_file: &[u8], raw_line: &[u8]) -> (usize, usize) {
+    let offset = raw_file.offset(raw_line);
+    assert!(offset < raw_file.len());
+    let file = str::from_utf8(raw_file).unwrap();
+    file.char_indices()
+        .take_while(|&(i, _)| i <= offset)
+        .map(|(_, c)| c)
+        .fold((1, 1), |(line, row), c| {
+            if c == '\n' {
+                (line + 1, row)
+            } else {
+                (line, row + 1)
+            }
+        })
+}
+
 fn main_ret() -> i32 {
     simplelog::TermLogger::init(simplelog::LogLevelFilter::Info).unwrap();
 
@@ -65,7 +82,14 @@ fn main_ret() -> i32 {
     let parsed = parser::parse(&preprocessed.as_bytes());
     let ast = match parsed {
         Done(ref i, ref o) if i.len() == 0 => o,
-        Done(ref i, _) => die!(1, "Unknown: \"{}\"", str::from_utf8(i).unwrap().lines().next().unwrap()),
+        Done(ref i, _) => {
+            let (line, row) = line_number(&preprocessed.as_bytes(), i);
+            die!(1,
+                 "Unknown (line {}, row {}): \"{}\"",
+                 line,
+                 row,
+                 str::from_utf8(i).unwrap().lines().next().unwrap());
+        }
         e => die!(1, "Error: {:?}", e)
     };
 
