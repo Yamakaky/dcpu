@@ -282,7 +282,7 @@ named!(dir_dat<Directive>,
     chain!(alt_complete!(tag!("dat") | tag!("byte")| tag!("word") | tag!("short")) ~
            space ~
            ns: separated_list!(space,
-                               alt_complete!(map!(number, From::from) |
+                               alt_complete!(map!(expression, From::from) |
                                              map!(string, From::from))),
            || Directive::Dat(ns))
 );
@@ -400,6 +400,6 @@ fn test_directive() {
     let nl: &[u8] = &[10];
     assert_eq!(directive(".dat 1 0x2\n".as_bytes()),
                IResult::Done(nl,
-                             Directive::Dat(vec!(DatItem::N(1),
-                                                 DatItem::N(2)))));
+                             Directive::Dat(vec!(DatItem::E(Expression::Num(Num::U(1))),
+                                                 DatItem::E(Expression::Num(Num::U(2)))))));
 }

@@ -11,6 +11,9 @@ pub enum Error {
     LocalBeforeGlobal(String),
 }
 
+pub type Globals = HashMap<String, u16>;
+pub type Locals = HashMap<String, u16>;
+
 pub fn link(ast: &[ParsedItem]) -> Result<Vec<u16>, Error> {
 
     let mut bin = Vec::new();
@@ -23,7 +26,10 @@ pub fn link(ast: &[ParsedItem]) -> Result<Vec<u16>, Error> {
         let mut index = 0u16;
         for item in ast {
             match *item {
-                ParsedItem::Directive(ref d) => index += d.append_to(&mut bin),
+                ParsedItem::Directive(ref d) => index += match last_global {
+                    Some(ref s) => try!(d.append_to(&mut bin, &globals, &locals.get(*s).unwrap())),
+                    None => try!(d.append_to(&mut bin, &globals, &HashMap::new())),
+                },
                 ParsedItem::LabelDecl(ref s) => {
                     let ptr = globals.get_mut(s).unwrap();
                     if *ptr != index {
@@ -61,7 +67,7 @@ pub fn link(ast: &[ParsedItem]) -> Result<Vec<u16>, Error> {
 
 fn extract_labels
     (ast: &[ParsedItem])
-     -> Result<(HashMap<String, u16>, HashMap<String, HashMap<String, u16>>), Error> {
+     -> Result<(Globals, HashMap<String, Locals>), Error> {
     let mut prev_label = None;
     let mut globals = HashMap::new();
     let mut locals = HashMap::new();

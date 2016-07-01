@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::iter;
 
 use types::{BasicOp, SpecialOp, Register, Value, Instruction};
-use assembler::linker::Error;
+use assembler::linker::{Error, Globals, Locals};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Directive {
@@ -16,11 +16,11 @@ pub enum Directive {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum DatItem {
     S(String),
-    N(u16),
+    E(Expression),
 }
 
 impl Directive {
-    pub fn append_to(&self, bin: &mut Vec<u16>) -> u16 {
+    pub fn append_to(&self, bin: &mut Vec<u16>, globals: &Globals, locals: &Locals) -> Result<u16, Error> {
         match *self {
             Directive::Dat(ref v) => {
                 let mut i = 0;
@@ -33,20 +33,20 @@ impl Directive {
                             bin.extend(it.map(|x| x as u16));
                             size
                         }
-                        DatItem::N(n) => {
-                            bin.push(n);
+                        DatItem::E(ref e) => {
+                            bin.push(try!(e.solve(globals, locals)));
                             1
                         }
                     }
                 }
-                i as u16
+                Ok(i as u16)
             }
             Directive::Org(n) => {
                 let l = bin.len();
                 bin.resize(l + (n as usize), 0);
-                n
+                Ok(n)
             }
-            Directive::Global | Directive::Text | Directive::BSS => 0,
+            Directive::Global | Directive::Text | Directive::BSS => Ok(0),
         }
     }
 }
@@ -57,9 +57,9 @@ impl From<String> for DatItem {
     }
 }
 
-impl From<Num> for DatItem {
-    fn from(n: Num) -> DatItem {
-        DatItem::N(n.into())
+impl From<Expression> for DatItem {
+    fn from(e: Expression) -> DatItem {
+        DatItem::E(e)
     }
 }
 
@@ -80,8 +80,8 @@ pub enum ParsedInstruction {
 
 impl ParsedInstruction {
     pub fn solve(&self,
-                 globals: &HashMap<String, u16>,
-                 locals: &HashMap<String, u16>)
+                 globals: &Globals,
+                 locals: &Locals)
                  -> Result<Instruction, Error> {
         match *self {
             ParsedInstruction::BasicOp(op, ref b, ref a) => {
