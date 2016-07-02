@@ -71,24 +71,24 @@ impl Instruction {
     pub fn encode(&self, output: &mut [u16]) -> u16 {
         match *self {
             Instruction::BasicOp(op, b, a) => {
-                let mut size = 1;
+                let mut i = 1;
                 output[0] = op.encode();
 
                 let (val, next) = a.encode(true);
                 output[0] |= val << SHIFT_A;
                 if let Some(n) = next {
-                    output[1] = n;
-                    size += 1;
+                    output[i] = n;
+                    i += 1;
                 }
 
                 let (val, next) = b.encode(false);
                 output[0] |= val << SHIFT_B;
                 if let Some(n) = next {
-                    output[2] = n;
-                    size += 1;
+                    output[i] = n;
+                    i += 1;
                 }
 
-                size
+                i as u16
             },
             Instruction::SpecialOp(op, v) => {
                 let (a_bin, next) = v.encode(true);
