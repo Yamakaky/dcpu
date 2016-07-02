@@ -155,6 +155,7 @@ named!(value<ParsedValue>,
             ),
             ParsedValue::Pick
         ) |
+        map!(tag!("PEEK"), |_| ParsedValue::Peek) |
         map!(tag!("SP"), |_| ParsedValue::SP) |
         map!(tag!("PC"), |_| ParsedValue::PC) |
         map!(tag!("EX"), |_| ParsedValue::EX)
