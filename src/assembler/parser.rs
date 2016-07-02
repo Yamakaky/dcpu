@@ -158,7 +158,8 @@ named!(value<ParsedValue>,
         map!(tag!("PEEK"), |_| ParsedValue::Peek) |
         map!(tag!("SP"), |_| ParsedValue::SP) |
         map!(tag!("PC"), |_| ParsedValue::PC) |
-        map!(tag!("EX"), |_| ParsedValue::EX)
+        map!(tag!("EX"), |_| ParsedValue::EX) |
+        map!(expression, ParsedValue::Litteral)
     )
 );
 
@@ -259,16 +260,14 @@ named!(expression<Expression>,
 named!(a_value<ParsedValue>,
     alt_complete!(
         map!(tag!("POP"), |_| ParsedValue::Push) |
-        value |
-        map!(expression, ParsedValue::Litteral)
+        value
     )
 );
 
 named!(b_value<ParsedValue>,
     alt_complete!(
         map!(tag!("PUSH"), |_| ParsedValue::Push) |
-        value |
-        map!(expression, ParsedValue::Litteral)
+        value
     )
 );
 
