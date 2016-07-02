@@ -18,12 +18,13 @@ pub fn link(ast: &[ParsedItem]) -> Result<Vec<u16>, Error> {
 
     let mut bin = Vec::new();
     let (mut globals, mut locals) = try!(extract_labels(ast));
-    let mut last_global = None;
     let mut changed = true;
 
     while changed {
+        bin.clear();
         changed = false;
         let mut index = 0u16;
+        let mut last_global = None;
         for item in ast {
             match *item {
                 ParsedItem::Directive(ref d) => index += match last_global {
