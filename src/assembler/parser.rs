@@ -198,8 +198,8 @@ named!(local_label_decl<ParsedItem>,
 named!(simple_expression<Expression>,
     alt_complete!(
         map!(number, Expression::Num) |
-        map!(raw_label, Expression::Label) |
-        map!(raw_local_label, Expression::LocalLabel)
+        map!(raw_local_label, Expression::LocalLabel) |
+        map!(raw_label, Expression::Label)
     )
 );
 
@@ -290,8 +290,21 @@ named!(dir_dat<Directive>,
 named!(dir_org<Directive>,
     chain!(tag!("org") ~
            space ~
-           n: number,
-           || Directive::Org(n.into()))
+           n: number ~
+           tag!(",")? ~
+           space ~
+           val: number,
+           || Directive::Org(n.into(), val.into()))
+);
+
+named!(dir_skip<Directive>,
+    chain!(tag!("skip") ~
+           space ~
+           n: number ~
+           tag!(",")? ~
+           space ~
+           val: number,
+           || Directive::Skip(n.into(), val.into()))
 );
 
 named!(dir_global<Directive>,
@@ -316,6 +329,7 @@ named!(directive<Directive>,
     chain!(char!('.') ~
            d: alt_complete!(dir_dat |
                             dir_org |
+                            dir_skip |
                             dir_global |
                             dir_text |
                             dir_bss) ~
@@ -332,8 +346,8 @@ named!(pub parse< Vec<ParsedItem> >,
                             map!(instruction,
                                  ParsedItem::ParsedInstruction) |
                             comment |
-                            label_decl |
-                            local_label_decl
+                            local_label_decl |
+                            label_decl
                         )
         ),
         opt!(multispace)

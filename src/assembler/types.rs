@@ -7,7 +7,8 @@ use assembler::linker::{Error, Globals, Locals};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Directive {
     Dat(Vec<DatItem>),
-    Org(u16),
+    Org(u16, u16),
+    Skip(u16, u16),
     Global,
     Text,
     BSS,
@@ -41,9 +42,17 @@ impl Directive {
                 }
                 Ok(i as u16)
             }
-            Directive::Org(n) => {
+            Directive::Org(n, val) => {
+                assert!(n as usize > bin.len(),
+                        "`.org` can't be used to go backward: current = {}, n = {}",
+                        bin.len() - 1,
+                        n);
+                bin.resize((n as usize), val);
+                Ok(n)
+            }
+            Directive::Skip(n, val) => {
                 let l = bin.len();
-                bin.resize(l + (n as usize), 0);
+                bin.resize(l + (n as usize), val);
                 Ok(n)
             }
             Directive::Global | Directive::Text | Directive::BSS => Ok(0),
