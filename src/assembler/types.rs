@@ -12,6 +12,8 @@ pub enum Directive {
     Global,
     Text,
     BSS,
+    /// Symbol, size
+    Lcomm(String, u16),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -56,6 +58,7 @@ impl Directive {
                 Ok(n)
             }
             Directive::Global | Directive::Text | Directive::BSS => Ok(0),
+            Directive::Lcomm(_, _) => unreachable!(),
         }
     }
 }

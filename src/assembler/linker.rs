@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::iter;
 
 use assembler::types::*;
 
@@ -27,6 +28,17 @@ pub fn link(ast: &[ParsedItem]) -> Result<Vec<u16>, Error> {
         let mut last_global = None;
         for item in ast {
             match *item {
+                ParsedItem::Directive(Directive::Lcomm(ref symbol, size)) => {
+                    let ptr = globals.get_mut(symbol).unwrap();
+                    if *ptr != index {
+                        *ptr = index;
+                        changed = true;
+                    }
+                    last_global = Some(symbol);
+
+                    bin.extend(iter::repeat(0).take(size as usize));
+                    index += size;
+                }
                 ParsedItem::Directive(ref d) => index += match last_global {
                     Some(ref s) => try!(d.append_to(&mut bin, &globals, &locals.get(*s).unwrap())),
                     None => try!(d.append_to(&mut bin, &globals, &HashMap::new())),
@@ -75,7 +87,7 @@ fn extract_labels
 
     for item in ast.iter() {
         match *item {
-            ParsedItem::LabelDecl(ref s) => {
+            ParsedItem::LabelDecl(ref s) | ParsedItem::Directive(Directive::Lcomm(ref s, _)) => {
                 prev_label = Some(s.clone());
                 if globals.contains_key(s) {
                     return Err(Error::DuplicatedLabel(s.clone()));

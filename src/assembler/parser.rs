@@ -332,6 +332,16 @@ named!(dir_bss<Directive>,
            || Directive::BSS)
 );
 
+named!(dir_lcomm<Directive>,
+    chain!(tag!("lcomm") ~
+           space ~
+           symbol: raw_label ~
+           tag!(",")? ~
+           space? ~
+           size: number,
+           || Directive::Lcomm(symbol, size.into()))
+);
+
 named!(directive<Directive>,
     chain!(char!('.') ~
            d: alt_complete!(dir_dat |
@@ -340,6 +350,7 @@ named!(directive<Directive>,
                             dir_zero |
                             dir_global |
                             dir_text |
+                            dir_lcomm |
                             dir_bss) ~
            peek!(line_ending),
            || d)
