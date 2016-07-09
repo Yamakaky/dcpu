@@ -307,6 +307,13 @@ named!(dir_skip<Directive>,
            || Directive::Skip(n.into(), val.into()))
 );
 
+named!(dir_zero<Directive>,
+    chain!(tag!("zero") ~
+           space ~
+           n: number,
+           || Directive::Skip(n.into(), 0))
+);
+
 named!(dir_global<Directive>,
     chain!(tag!("globl") ~
            many0!(none_of!("\n")),
@@ -330,6 +337,7 @@ named!(directive<Directive>,
            d: alt_complete!(dir_dat |
                             dir_org |
                             dir_skip |
+                            dir_zero |
                             dir_global |
                             dir_text |
                             dir_bss) ~
