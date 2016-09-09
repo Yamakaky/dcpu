@@ -333,7 +333,7 @@ named!(dir_bss<Directive>,
 );
 
 named!(dir_lcomm<Directive>,
-    chain!(tag!("lcomm") ~
+    chain!(alt_complete!(tag!("lcomm") | tag!("comm")) ~
            space ~
            symbol: raw_label ~
            tag!(",")? ~
