@@ -14,13 +14,16 @@ use debugger::parser::*;
 pub struct Debugger {
     cpu: cpu::Cpu,
     devices: Vec<Box<device::Device>>,
+    breakpoints: Vec<u16>,
 }
 
 impl Debugger {
-    pub fn new() -> Debugger {
+    pub fn new(mut cpu: cpu::Cpu) -> Debugger {
+        cpu.on_decode_error = cpu::OnDecodeError::Fail;
         Debugger {
-            cpu: cpu::Cpu::new(cpu::OnDecodeError::Fail),
+            cpu: cpu,
             devices: vec![],
+            breakpoints: vec![],
         }
     }
 
@@ -34,6 +37,8 @@ impl Debugger {
                 Command::Disassemble {from, size} =>
                     self.disassemble(from, size),
                 Command::Examine {from, size} => self.examine(from, size),
+                Command::Breakpoint(b) => self.breakpoints.push(b),
+                Command::Continue => self.continue_exec(),
             }
         }
     }
@@ -92,5 +97,19 @@ impl Debugger {
 
     fn examine(&mut self, from: u16, size: u16) {
         println!("{:?}", &self.cpu.ram[from as usize..(from + size) as usize]);
+    }
+
+    fn continue_exec(&mut self) {
+        loop {
+            match self.step() {
+                Ok(()) => (),
+                Err(()) => return,
+            }
+
+            if self.breakpoints.contains(&self.cpu.pc) {
+                println!("Breakpoint triggered at {}", self.cpu.pc);
+                return;
+            }
+        }
     }
 }

@@ -14,6 +14,8 @@ pub enum Command {
         from: u16,
         size: u16,
     },
+    Breakpoint(u16),
+    Continue,
 }
 
 named!(pub parse_command<Command>,
@@ -23,7 +25,9 @@ named!(pub parse_command<Command>,
             cmd_step |
             cmd_print_regs |
             cmd_disassemble |
-            cmd_examine
+            cmd_examine |
+            cmd_breakpoint |
+            cmd_continue
         ),
         opt!(multispace)
     )
@@ -55,4 +59,17 @@ named!(cmd_examine<Command>,
            size: pos_number,
            || Command::Examine{from: from, size: size}
     )
+);
+
+named!(cmd_breakpoint<Command>,
+    chain!(
+        tag!("b") ~
+        multispace ~
+        addr: pos_number,
+        || Command::Breakpoint(addr)
+    )
+);
+
+named!(cmd_continue<Command>,
+    map!(char!('c'), |_| Command::Continue)
 );
