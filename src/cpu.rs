@@ -16,6 +16,7 @@ pub enum Error {
     InterruptError,
     InFire,
     Halted,
+    Break(u16),
 }
 
 impl fmt::Display for Error {
@@ -23,6 +24,7 @@ impl fmt::Display for Error {
         match *self {
             Error::DecodeError(ref e) => write!(f, "instruction decoding error: {}", e),
             Error::InvalidHardwareId(ref id) => write!(f, "invalid device id: {}", id),
+            Error::Break(msg) => write!(f, "hardware breakpoint triggered with message {}", msg),
             _ => write!(f, "{}", self.description()),
         }
     }
@@ -33,6 +35,7 @@ impl error::Error for Error {
         match *self {
             Error::DecodeError(ref e) => e.description(),
             Error::InvalidHardwareId(_) => "invalid hardware id",
+            Error::Break(_) => "hardware breakpoint triggered",
             Error::InterruptError => "invalid hardware int",
             Error::InFire => "dcpu in fire, run for your lives!",
             Error::Halted => "cpu halted",
@@ -618,8 +621,9 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_brk(&mut self, _: Value) -> Result<(), Error> {
-        Ok(())
+    fn op_brk(&mut self, a: Value) -> Result<(), Error> {
+        let val_a = self.get(a);
+        Err(Error::Break(val_a))
     }
 
     fn op_hlt(&mut self) -> Result<(), Error> {
