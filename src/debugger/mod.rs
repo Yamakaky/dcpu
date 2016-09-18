@@ -75,7 +75,7 @@ impl Debugger {
         }
     }
 
-    fn print_registers(&mut self) {
+    fn print_registers(&self) {
         let regs = &self.cpu.registers;
         println!(" A {:>4x} |  B {:>4x} |  C {:>4x}",
                  regs[0], regs[1], regs[2]);
@@ -87,7 +87,7 @@ impl Debugger {
                  self.cpu.pc, self.cpu.sp, self.cpu.ex, self.cpu.ia);
     }
 
-    fn disassemble(&mut self, from: u16, size: u16) {
+    fn disassemble(&self, from: u16, size: u16) {
         for i in iterators::U16ToInstruction::chain(self.cpu
                                                         .ram
                                                         .iter()
@@ -98,7 +98,7 @@ impl Debugger {
         }
     }
 
-    fn examine(&mut self, from: u16, size: u16) {
+    fn examine(&self, from: u16, size: u16) {
         println!("{:?}", &self.cpu.ram[from as usize..(from + size) as usize]);
     }
 
