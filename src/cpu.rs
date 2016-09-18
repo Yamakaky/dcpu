@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::collections::VecDeque;
 use std::default::Default;
 use std::fmt;
@@ -201,10 +202,8 @@ impl Cpu {
         }
 
         trace!("Executing {:?}", instruction);
-        if instruction.delay() > 0 {
-            // BRK and HLT
-            self.wait = instruction.delay() - 1;
-        }
+        // BRK and HLT have a 0 delay
+        self.wait = max(instruction.delay(), 1) - 1;
         try!(self.op(instruction, devices));
 
         Ok(CpuState::Executing)
