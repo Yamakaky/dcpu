@@ -253,6 +253,52 @@ named!(expression<Expression>,
                multispace? ~
                e2: expression,
                || Expression::Mod(Box::new(e1), Box::new(e2))) |
+        chain!(e1: simple_expression ~
+               multispace? ~
+               char!('<') ~
+               multispace? ~
+               e2: expression,
+               || Expression::Less(Box::new(e1), Box::new(e2))) |
+        chain!(e1: simple_expression ~
+               multispace? ~
+               tag!("<=") ~
+               multispace? ~
+               e2: expression,
+               || Expression::Not(
+                     Box::new(Expression::Greater(Box::new(e1),
+                                                  Box::new(e2)))))  |
+        chain!(e1: simple_expression ~
+               multispace? ~
+               tag!("==") ~
+               multispace? ~
+               e2: expression,
+               || Expression::Equal(Box::new(e1), Box::new(e2))) |
+        chain!(e1: simple_expression ~
+               multispace? ~
+               tag!("!=") ~
+               multispace? ~
+               e2: expression,
+               || Expression::Not(
+                      Box::new(Expression::Equal(Box::new(e1),
+                                                 Box::new(e2))))) |
+        chain!(e1: simple_expression ~
+               multispace? ~
+               char!('>') ~
+               multispace? ~
+               e2: expression,
+               || Expression::Greater(Box::new(e1), Box::new(e2))) |
+        chain!(e1: simple_expression ~
+               multispace? ~
+               tag!(">=") ~
+               multispace? ~
+               e2: expression,
+               || Expression::Not(
+                     Box::new(Expression::Less(Box::new(e1),
+                                               Box::new(e2))))) |
+        chain!(char!('!') ~
+               multispace? ~
+               e: expression,
+               || Expression::Not(Box::new(e))) |
         simple_expression
     )
 );

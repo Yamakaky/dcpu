@@ -158,6 +158,12 @@ pub enum Expression {
     Shr(Box<Expression>, Box<Expression>),
     Shl(Box<Expression>, Box<Expression>),
     Mod(Box<Expression>, Box<Expression>),
+    Not(Box<Expression>),
+    /// a < b
+    Less(Box<Expression>, Box<Expression>),
+    Equal(Box<Expression>, Box<Expression>),
+    /// a > b
+    Greater(Box<Expression>, Box<Expression>),
 }
 
 impl Expression {
@@ -199,6 +205,21 @@ impl Expression {
             }
             Expression::Mod(ref l, ref r) => {
                 Ok(try!(l.solve(globals, locals)) % try!(r.solve(globals, locals)))
+            }
+            Expression::Not(ref l) => {
+                Ok(if try!(l.solve(globals, locals)) == 0 {1} else {0})
+            }
+            Expression::Less(ref l, ref r) => {
+                Ok((try!(l.solve(globals, locals)) <
+                    try!(r.solve(globals, locals))) as u16)
+            }
+            Expression::Equal(ref l, ref r) => {
+                Ok((try!(l.solve(globals, locals)) ==
+                    try!(r.solve(globals, locals))) as u16)
+            }
+            Expression::Greater(ref l, ref r) => {
+                Ok((try!(l.solve(globals, locals)) >
+                    try!(r.solve(globals, locals))) as u16)
             }
         }
     }
