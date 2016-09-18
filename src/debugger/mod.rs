@@ -38,6 +38,9 @@ impl Debugger {
                     self.disassemble(from, size),
                 Command::Examine {from, size} => self.examine(from, size),
                 Command::Breakpoint(b) => self.breakpoints.push(b),
+                Command::ShowBreakpoints => self.show_breakpoints(),
+                Command::DeleteBreakpoint(b) =>
+                    self.delete_breakpoint(b as usize),
                 Command::Continue => self.continue_exec(),
             }
         }
@@ -99,6 +102,19 @@ impl Debugger {
         println!("{:?}", &self.cpu.ram[from as usize..(from + size) as usize]);
     }
 
+    fn show_breakpoints(&self) {
+        println!("Num    Address");
+        for (i, b) in self.breakpoints.iter().enumerate() {
+            println!("{:<4}   0x{:0>4x}", i, b);
+        }
+    }
+
+    fn delete_breakpoint(&mut self, b: usize) {
+        if b < self.breakpoints.len() {
+            self.breakpoints.remove(b);
+        }
+    }
+
     fn continue_exec(&mut self) {
         loop {
             match self.step() {
@@ -106,8 +122,12 @@ impl Debugger {
                 Err(()) => return,
             }
 
-            if self.breakpoints.contains(&self.cpu.pc) {
-                println!("Breakpoint triggered at {}", self.cpu.pc);
+            if let Some((i, addr)) = self.breakpoints
+                                 .iter()
+                                 .enumerate()
+                                 .filter(|&(_, x)| *x == self.cpu.pc)
+                                 .next() {
+                println!("Breakpoint {} triggered at {}", i, addr);
                 return;
             }
         }

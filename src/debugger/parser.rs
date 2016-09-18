@@ -16,6 +16,8 @@ pub enum Command {
     },
     Breakpoint(u16),
     Continue,
+    ShowBreakpoints,
+    DeleteBreakpoint(u16),
 }
 
 named!(pub parse_command<Command>,
@@ -27,7 +29,9 @@ named!(pub parse_command<Command>,
             cmd_disassemble |
             cmd_examine |
             cmd_breakpoint |
-            cmd_continue
+            cmd_continue |
+            cmd_show_breakpoints |
+            cmd_delete_breakpoint
         ),
         opt!(multispace)
     )
@@ -67,6 +71,19 @@ named!(cmd_breakpoint<Command>,
         multispace ~
         addr: pos_number,
         || Command::Breakpoint(addr)
+    )
+);
+
+named!(cmd_show_breakpoints<Command>,
+    map!(tag!("breakpoints"), |_| Command::ShowBreakpoints)
+);
+
+named!(cmd_delete_breakpoint<Command>,
+    chain!(
+        tag!("delete") ~
+        multispace ~
+        addr: pos_number,
+        || Command::DeleteBreakpoint(addr)
     )
 );
 
