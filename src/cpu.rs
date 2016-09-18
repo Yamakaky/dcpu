@@ -201,7 +201,10 @@ impl Cpu {
         }
 
         trace!("Executing {:?}", instruction);
-        self.wait = instruction.delay() - 1;
+        if instruction.delay() > 0 {
+            // BRK and HLT
+            self.wait = instruction.delay() - 1;
+        }
         try!(self.op(instruction, devices));
 
         Ok(CpuState::Executing)

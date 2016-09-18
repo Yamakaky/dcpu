@@ -60,7 +60,7 @@ impl Device for Keyboard {
         Ok(0)
     }
 
-    fn tick(&mut self, cpu: &mut Cpu, _: u64) -> TickResult {
+    fn tick(&mut self, _: &mut Cpu, _: u64) -> TickResult {
         if self.backend.push_typed_keys(&mut self.key_buffer) && self.int_msg != 0 {
             TickResult::Interrupt(self.int_msg)
         } else {
