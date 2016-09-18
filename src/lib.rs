@@ -11,6 +11,7 @@ extern crate num;
 pub mod assembler;
 pub mod computer;
 pub mod cpu;
+pub mod debugger;
 pub mod device;
 pub mod iterators;
 pub mod preprocessor;

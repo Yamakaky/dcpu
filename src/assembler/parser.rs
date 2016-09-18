@@ -33,7 +33,7 @@ named!(bin_num<(&str, u32)>,
              |n| str::from_utf8(n).map(|n| (n, 2)))
 );
 
-named!(pos_number<u16>,
+named!(pub pos_number<u16>,
     map_res!(
         alt_complete!(hex_num | octal_num | bin_num | num),
         |(n, base)| u16::from_str_radix(n, base)
