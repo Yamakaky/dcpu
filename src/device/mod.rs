@@ -1,4 +1,5 @@
 pub mod clock;
+pub mod dummy;
 pub mod keyboard;
 pub mod lem1802;
 
