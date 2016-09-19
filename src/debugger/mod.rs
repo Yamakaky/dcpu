@@ -15,15 +15,18 @@ pub struct Debugger {
     cpu: cpu::Cpu,
     devices: Vec<Box<device::Device>>,
     breakpoints: Vec<u16>,
+    tick_number: u64,
 }
 
 impl Debugger {
     pub fn new(mut cpu: cpu::Cpu) -> Debugger {
         cpu.on_decode_error = cpu::OnDecodeError::Fail;
+        let clock = device::clock::Clock::new(100_000);
         Debugger {
             cpu: cpu,
-            devices: vec![],
+            devices: vec![Box::new(clock)],
             breakpoints: vec![],
+            tick_number: 0,
         }
     }
 
@@ -65,6 +68,18 @@ impl Debugger {
     }
 
     fn step(&mut self) -> Result<(), ()> {
+        use device::TickResult;
+        self.tick_number += 1;
+        for (i, device) in self.devices.iter_mut().enumerate() {
+            match device.tick(&mut self.cpu, self.tick_number) {
+                TickResult::Nothing => (),
+                TickResult::Interrupt(int) => {
+                    println!("Hardware interrupt from device {} with message {}",
+                             i, int);
+                    self.cpu.interrupts_queue.push_back(int);
+                }
+            }
+        }
         match self.cpu.tick(&mut self.devices) {
             Ok(cpu::CpuState::Executing) => Ok(()),
             Ok(cpu::CpuState::Waiting) => self.step(),
