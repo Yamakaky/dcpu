@@ -15,9 +15,22 @@ enum Command {
 
 #[derive(Debug)]
 pub struct Clock {
+    /// Should be 100_000
+    ticks_per_second: u64,
     speed: u16,
     int_msg: u16,
     last_call: u64,
+}
+
+impl Clock {
+    pub fn new(ticks_per_second: u64) -> Clock {
+        Clock {
+            ticks_per_second: ticks_per_second,
+            speed: 0,
+            int_msg: 0,
+            last_call: 0,
+        }
+    }
 }
 
 impl Device for Clock {
@@ -51,7 +64,7 @@ impl Device for Clock {
 
     fn tick(&mut self, _: &mut Cpu, current_tick: u64) -> TickResult {
         if self.speed != 0 && self.int_msg != 0 {
-            if current_tick % (6000000 / self.speed as u64) == 0 {
+            if current_tick % (60 * self.ticks_per_second / self.speed as u64) == 0 {
                 self.last_call += 1;
                 return TickResult::Interrupt(self.int_msg);
             }
