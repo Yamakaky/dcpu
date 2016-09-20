@@ -7,8 +7,8 @@ use cpu::Cpu;
 use device::*;
 
 const MASK_INDEX: u16 = 0xf;
-const SCREEN_HEIGHT: u16 = 128;
-const SCREEN_WIDTH: u16 = 96;
+pub const SCREEN_HEIGHT: u16 = 128;
+pub const SCREEN_WIDTH: u16 = 96;
 const CHAR_HEIGHT: u16 = 8;
 const CHAR_WIDTH: u16 = 4;
 const NB_CHARS: u16 = (SCREEN_HEIGHT / CHAR_HEIGHT) * (SCREEN_WIDTH / CHAR_WIDTH);
@@ -32,9 +32,9 @@ enum Command {
 
 #[derive(Default, Copy, Clone)]
 pub struct Color {
-    pub r: u16,
-    pub g: u16,
-    pub b: u16,
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
     pub blinking: bool,
 }
 pub type Screen = [Color; (SCREEN_HEIGHT * SCREEN_WIDTH) as usize];
@@ -42,16 +42,16 @@ pub type Screen = [Color; (SCREEN_HEIGHT * SCREEN_WIDTH) as usize];
 impl Color {
     fn from_packed(c: u16) -> Color {
         Color {
-            r: (c >> 8) & 0xf,
-            g: (c >> 4) & 0xf,
-            b: (c >> 0) & 0xf,
+            r: ((c >> 8) & 0xf) as f32 / 0xf as f32,
+            g: ((c >> 4) & 0xf) as f32 / 0xf as f32,
+            b: ((c >> 0) & 0xf) as f32 / 0xf as f32,
             blinking: false,
         }
     }
 }
 
 pub trait Backend: Debug {
-    fn tick(&mut self, cpu: &Cpu, tick_count: u64);
+    fn tick(&self, &Cpu, &LEM1802, tick_count: u64);
 }
 
 #[derive(Debug)]
@@ -91,7 +91,7 @@ impl Device for LEM1802 {
     }
 
     fn tick(&mut self, cpu: &mut Cpu, tick_count: u64) -> TickResult {
-        self.backend.tick(cpu, tick_count);
+        self.backend.tick(cpu, self, tick_count);
         TickResult::Nothing
     }
 }
