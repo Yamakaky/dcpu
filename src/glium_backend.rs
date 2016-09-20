@@ -35,7 +35,7 @@ pub struct ScreenBackend {
     // used for Drop
     #[allow(dead_code)]
     common: Rc<CommonBackend>,
-    screen_sender: mpsc::Sender<lem1802::Screen>,
+    screen_sender: mpsc::Sender<Box<lem1802::Screen>>,
 }
 
 pub fn start() -> (ScreenBackend, KeyboardBackend) {
@@ -117,9 +117,9 @@ impl Drop for CommonBackend {
 
 fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
                keyboard_sender: mpsc::Sender<KeyboardEvent>,
-               screen_receiver: mpsc::Receiver<lem1802::Screen>) {
+               screen_receiver: mpsc::Receiver<Box<lem1802::Screen>>) {
     let display = glium::glutin::WindowBuilder::new().build_glium().unwrap();
-    let mut current_screen = [lem1802::Color::default(); 12288];
+    let mut current_screen = Box::new([lem1802::Color::default(); 12288]);
 
     let vertex_buffer = {
         #[derive(Copy, Clone)]

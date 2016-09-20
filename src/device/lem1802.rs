@@ -109,11 +109,12 @@ impl<B: Backend> Device for LEM1802<B> {
 }
 
 impl<B: Backend> LEM1802<B> {
-    pub fn get_screen(&self, cpu: &Cpu) -> Screen {
-        let mut screen = [
+    pub fn get_screen(&self, cpu: &Cpu) -> Box<Screen> {
+        // Stack overflow if we don't use Box
+        let mut screen = Box::new([
             Color::default();
             (SCREEN_HEIGHT * SCREEN_WIDTH) as usize
-        ];
+        ]);
         for offset in 0..NB_CHARS {
             self.add_char(cpu, &mut screen, offset);
         }
