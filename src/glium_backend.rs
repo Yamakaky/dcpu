@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 use std::fmt;
 use std::thread;
+use std::rc::Rc;
 use std::sync::mpsc;
 
 use glium::{self, DisplayBuild, Surface};
@@ -17,37 +18,52 @@ enum KeyboardEvent {
     KeyReleased(keyboard::Key),
 }
 
-pub struct Backend {
+struct CommonBackend {
     thread_handle: Option<thread::JoinHandle<()>>,
     thread_command: mpsc::Sender<ThreadCommand>,
+}
+
+pub struct KeyboardBackend {
+    // used for Drop
+    #[allow(dead_code)]
+    common: Rc<CommonBackend>,
     keyboard_receiver: mpsc::Receiver<KeyboardEvent>,
     key_pressed: [bool; 0x92],
+}
+
+pub struct ScreenBackend {
+    // used for Drop
+    #[allow(dead_code)]
+    common: Rc<CommonBackend>,
     screen_sender: mpsc::Sender<lem1802::Screen>,
 }
 
-impl Backend {
-    pub fn new() -> Backend {
-        let (tx1, rx1) = mpsc::channel();
-        let (tx2, rx2) = mpsc::channel();
-        let (tx3, rx3) = mpsc::channel();
-        let handle = thread::spawn(move || thread_main(rx1, tx2, rx3));
-        Backend {
-            thread_handle: Some(handle),
-            thread_command: tx1,
-            keyboard_receiver: rx2,
-            key_pressed: [false; 0x92],
-            screen_sender: tx3,
-        }
-    }
+pub fn start() -> (ScreenBackend, KeyboardBackend) {
+    let (tx1, rx1) = mpsc::channel();
+    let (tx2, rx2) = mpsc::channel();
+    let (tx3, rx3) = mpsc::channel();
+    let handle = thread::spawn(move || thread_main(rx1, tx2, rx3));
+    let common = Rc::new(CommonBackend {
+        thread_handle: Some(handle),
+        thread_command: tx1,
+    });
+    (ScreenBackend {
+        common: common.clone(),
+        screen_sender: tx3,
+    },KeyboardBackend {
+        common: common,
+        keyboard_receiver: rx2,
+        key_pressed: [false; 0x92],
+    })
 }
 
-impl fmt::Debug for Backend {
+impl fmt::Debug for KeyboardBackend {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Glium backend")
     }
 }
 
-impl keyboard::Backend for Backend {
+impl keyboard::Backend for KeyboardBackend {
     fn is_key_pressed(&mut self, key: keyboard::Key) -> bool {
         self.key_pressed[key.encode() as usize]
     }
@@ -72,8 +88,17 @@ impl keyboard::Backend for Backend {
     }
 }
 
-impl lem1802::Backend for Backend {
-    fn tick(&self, cpu: &cpu::Cpu, lem: &lem1802::LEM1802, tick_count: u64) {
+impl fmt::Debug for ScreenBackend {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Glium backend")
+    }
+}
+
+impl lem1802::Backend for ScreenBackend {
+    fn tick<B: lem1802::Backend>(&self,
+                                 cpu: &cpu::Cpu,
+                                 lem: &lem1802::LEM1802<B>,
+                                 tick_count: u64) {
         // TODO: 10 fps for now by fear to fill the buffer
         if tick_count % 10_000 == 0 {
             self.screen_sender.send(lem.get_screen(cpu)).unwrap();
@@ -81,7 +106,7 @@ impl lem1802::Backend for Backend {
     }
 }
 
-impl Drop for Backend {
+impl Drop for CommonBackend {
     fn drop(&mut self) {
         if let Some(handle) = self.thread_handle.take() {
             let _ = self.thread_command.send(ThreadCommand::Stop);
@@ -145,7 +170,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
 
         void main() {
             v_color = color;
-            gl_position = vec4(
+            gl_Position = vec4(
                 (position[0] + float(i)) / (SCREEN_WIDTH + 1),
                 (position[1] + float(j)) / (SCREEN_HEIGHT + 1),
                 0.0,
@@ -155,7 +180,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
     ", "
         #version 140
         in vec3 v_color;
-        out vec3 f_color;
+        out vec4 f_color;
 
         void main() {
             f_color = vec4(v_color, 1.0);

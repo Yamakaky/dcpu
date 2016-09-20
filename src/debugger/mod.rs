@@ -10,6 +10,7 @@ use cpu;
 use device;
 use iterators;
 use debugger::parser::*;
+use glium_backend;
 
 pub struct Debugger {
     cpu: cpu::Cpu,
@@ -22,9 +23,14 @@ impl Debugger {
     pub fn new(mut cpu: cpu::Cpu) -> Debugger {
         cpu.on_decode_error = cpu::OnDecodeError::Fail;
         let clock = device::clock::Clock::new(100_000);
+        let (screen_backend, kb_backend) = glium_backend::start();
         Debugger {
             cpu: cpu,
-            devices: vec![Box::new(clock)],
+            devices: vec![
+                Box::new(clock),
+                Box::new(device::keyboard::Keyboard::new(kb_backend)),
+                Box::new(device::lem1802::LEM1802::new(screen_backend)),
+            ],
             breakpoints: vec![],
             tick_number: 0,
         }

@@ -18,13 +18,23 @@ enum Command {
 }
 
 #[derive(Debug)]
-pub struct Keyboard {
+pub struct Keyboard<B: Backend> {
     key_buffer: VecDeque<Key>,
     int_msg: u16,
-    backend: Backend,
+    backend: B,
 }
 
-impl Device for Keyboard {
+impl<B: Backend> Keyboard<B> {
+    pub fn new(backend: B) -> Keyboard<B> {
+        Keyboard {
+            key_buffer: VecDeque::new(),
+            int_msg: 0,
+            backend: backend,
+        }
+    }
+}
+
+impl<B: Backend> Device for Keyboard<B> {
     fn hardware_id(&self) -> u32 {
         0x30cf7406
     }

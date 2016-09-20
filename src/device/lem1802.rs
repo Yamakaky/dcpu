@@ -51,19 +51,31 @@ impl Color {
 }
 
 pub trait Backend: Debug {
-    fn tick(&self, &Cpu, &LEM1802, tick_count: u64);
+    fn tick<B: Backend>(&self, &Cpu, &LEM1802<B>, tick_count: u64);
 }
 
 #[derive(Debug)]
-pub struct LEM1802 {
+pub struct LEM1802<B: Backend> {
     video_map: Wrapping<u16>,
     font_map: Wrapping<u16>,
     palette_map: Wrapping<u16>,
     border_color_index: u16,
-    backend: Backend,
+    backend: B,
 }
 
-impl Device for LEM1802 {
+impl<B: Backend> LEM1802<B> {
+    pub fn new(backend: B) -> LEM1802<B> {
+        LEM1802 {
+            video_map: Wrapping(0),
+            font_map: Wrapping(0),
+            palette_map: Wrapping(0),
+            border_color_index: 0,
+            backend: backend,
+        }
+    }
+}
+
+impl<B: Backend> Device for LEM1802<B> {
     fn hardware_id(&self) -> u32 {
         0x7349f615
     }
@@ -96,7 +108,7 @@ impl Device for LEM1802 {
     }
 }
 
-impl LEM1802 {
+impl<B: Backend> LEM1802<B> {
     pub fn get_screen(&self, cpu: &Cpu) -> Screen {
         let mut screen = [
             Color::default();
