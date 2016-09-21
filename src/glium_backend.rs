@@ -138,28 +138,31 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
     };
 
     let mut per_instance = {
-        #[derive(Copy, Clone)]
+        #[derive(Debug, Copy, Clone)]
         struct Attr {
             i: u16,
             j: u16,
             color: [f32; 3],
         }
         implement_vertex!(Attr, i, j, color);
-        let data = current_screen.iter()
-                                 .enumerate()
-                                 .map(|(i, _)| Attr {
-                                     i: i as u16 % lem1802::SCREEN_WIDTH,
-                                     j: i as u16 / lem1802::SCREEN_HEIGHT,
-                                     color: [0.; 3],
-                                 }).collect::<Vec<_>>();
+        let mut data = Vec::with_capacity((lem1802::SCREEN_WIDTH * lem1802::SCREEN_HEIGHT) as usize);
+        for j in 0..lem1802::SCREEN_HEIGHT {
+            for i in 0..lem1802::SCREEN_WIDTH {
+                data.push(Attr {
+                    i: i,
+                    j: j,
+                    color: [0.; 3],
+                })
+            }
+        }
         glium::vertex::VertexBuffer::dynamic(&display, &data).unwrap()
     };
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TriangleStrip);
 
     let program = glium::Program::from_source(&display, "
         #version 140
-        #define SCREEN_WIDTH 128
-        #define SCREEN_HEIGHT 96
+        #define SCREEN_WIDTH 128.
+        #define SCREEN_HEIGHT 96.
 
         in uint i;
         in uint j;
@@ -168,11 +171,19 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
 
         out vec3 v_color;
 
+        uniform float aspect_ratio;
+
         void main() {
+            mat4 rot = mat4(
+                vec4(0, 1, 0, 0),
+                vec4(-aspect_ratio, 0, 0, 0),
+                vec4(0, 0, 1, 0),
+                vec4(0, 0, 0, 1)
+            );
             v_color = color;
-            gl_Position = vec4(
-                (position[0] + float(i)) / (SCREEN_WIDTH + 1),
-                (position[1] + float(j)) / (SCREEN_HEIGHT + 1),
+            gl_Position = rot * vec4(
+                ((position[0] + float(j)) / SCREEN_WIDTH * 2.) - 1.,
+                ((position[1] + float(i)) / SCREEN_HEIGHT * 2.) - 1.,
                 0.0,
                 1.0
             );
@@ -209,11 +220,15 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
 
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 1.0, 1.0);
+        let aspect_ratio = {
+            let (width, height) = target.get_dimensions();
+            height as f32 / width as f32
+        };
         target.draw(
             (&vertex_buffer, per_instance.per_instance().unwrap()),
             &indices,
             &program,
-            &glium::uniforms::EmptyUniforms,
+            &uniform! { aspect_ratio: aspect_ratio },
             &Default::default()
         ).unwrap();
         target.finish().unwrap();
