@@ -7,11 +7,13 @@ use cpu::Cpu;
 use device::*;
 
 const MASK_INDEX: u16 = 0xf;
-pub const SCREEN_HEIGHT: u16 = 128;
-pub const SCREEN_WIDTH: u16 = 96;
+pub const SCREEN_HEIGHT: u16 = 96;
+pub const SCREEN_WIDTH: u16 = 128;
+pub const SCREEN_SIZE: u16 = SCREEN_WIDTH * SCREEN_HEIGHT;
 const CHAR_HEIGHT: u16 = 8;
 const CHAR_WIDTH: u16 = 4;
-const NB_CHARS: u16 = (SCREEN_HEIGHT / CHAR_HEIGHT) * (SCREEN_WIDTH / CHAR_WIDTH);
+const CHAR_SIZE: u16 = CHAR_HEIGHT * CHAR_WIDTH;
+const NB_CHARS: u16 = 32 * 12;
 
 const MASK_BLINKING: u16 = 1 << 7;
 const MASK_COLOR_IDX: u16 = 0xf;
@@ -37,7 +39,7 @@ pub struct Color {
     pub b: f32,
     pub blinking: bool,
 }
-pub type Screen = [Color; (SCREEN_HEIGHT * SCREEN_WIDTH) as usize];
+pub type Screen = [Color; SCREEN_SIZE as usize];
 
 impl Color {
     fn from_packed(c: u16) -> Color {
@@ -111,24 +113,21 @@ impl<B: Backend> Device for LEM1802<B> {
 impl<B: Backend> LEM1802<B> {
     pub fn get_screen(&self, cpu: &Cpu) -> Box<Screen> {
         // Stack overflow if we don't use Box
-        let mut screen = Box::new([
-            Color::default();
-            (SCREEN_HEIGHT * SCREEN_WIDTH) as usize
-        ]);
+        let mut screen = Box::new([Color::default(); SCREEN_SIZE as usize]);
         for offset in 0..NB_CHARS {
             self.add_char(cpu, &mut screen, offset);
         }
         screen
     }
 
-    fn add_char(&self, cpu: &Cpu, screen: &mut Screen, offset: u16) {
-        let video_word = self.get_video_word(cpu, offset);
+    fn add_char(&self, cpu: &Cpu, screen: &mut Screen, char_offset: u16) {
+        let video_word = self.get_video_word(cpu, char_offset);
         let font_item = self.get_font(cpu, video_word.char_idx);
         // x and y are coordinates from top left, but the font items have a different layout so we
         // have to correct it.
         for x in 0..CHAR_WIDTH {
             for y in 0..CHAR_HEIGHT {
-                let bit = font_item >> (x * 8 + 7 - y) & 1;
+                let bit = (font_item >> (x * CHAR_HEIGHT + 7 - y)) & 1;
                 let mut color = self.get_color(cpu, if bit == 0 {
                     video_word.bg_idx
                 } else {
@@ -136,7 +135,8 @@ impl<B: Backend> LEM1802<B> {
                 });
                 color.blinking = video_word.blinking;
 
-                let idx = offset + x + (8 * y);
+                let idx = char_offset * CHAR_SIZE + x + (SCREEN_WIDTH * y);
+                println!("{} {} {} {}", char_offset, y, x, idx);
                 screen[idx as usize] = color;
             }
         }
