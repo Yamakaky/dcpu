@@ -161,7 +161,7 @@ impl<B: Backend> LEM1802<B> {
             let idx = self.font_map + Wrapping(char_idx * 2);
             (cpu.ram[idx.0 as usize], cpu.ram[idx.0 as usize + 1])
         };
-        (w0 as u32) << 16 & w1 as u32
+        (w0 as u32) << 16 | w1 as u32
     }
 
     fn get_color(&self, cpu: &Cpu, color_idx: u16) -> Color {
@@ -186,8 +186,8 @@ impl VideoWord {
     fn from_packed(w: u16) -> VideoWord {
         VideoWord {
             char_idx: w & MASK_CHAR,
-            bg_idx: (w & MASK_COLOR_IDX) >> SHIFT_BG,
-            fg_idx: (w & MASK_COLOR_IDX) >> SHIFT_FG,
+            bg_idx: (w >> SHIFT_BG) & MASK_COLOR_IDX,
+            fg_idx: (w >> SHIFT_FG) & MASK_COLOR_IDX,
             blinking: (w & MASK_BLINKING) != 0,
         }
     }
