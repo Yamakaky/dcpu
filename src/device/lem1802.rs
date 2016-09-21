@@ -147,7 +147,7 @@ impl<B: Backend> LEM1802<B> {
 
     fn get_video_word(&self, cpu: &Cpu, offset: u16) -> VideoWord {
         if self.video_map.0 == 0 {
-            unimplemented!()
+            unreachable!()
         } else {
             let idx = self.video_map + Wrapping(offset);
             VideoWord::from_packed(cpu.ram[idx.0 as usize])
