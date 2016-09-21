@@ -121,7 +121,11 @@ impl Drop for CommonBackend {
 fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
                keyboard_sender: mpsc::Sender<KeyboardEvent>,
                screen_receiver: mpsc::Receiver<Box<lem1802::Screen>>) {
-    let display = glium::glutin::WindowBuilder::new().build_glium().unwrap();
+    let display = glium::glutin::WindowBuilder::new()
+        .with_title(format!("Screen + keyboard"))
+        .with_vsync()
+        .build_glium()
+        .unwrap();
     let mut current_screen = Box::new([lem1802::Color::default(); 12288]);
 
     let vertex_buffer = {
