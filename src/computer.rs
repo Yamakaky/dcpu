@@ -9,15 +9,12 @@ pub struct Computer {
 }
 
 impl Computer {
-    pub fn new(cpu: cpu::Cpu) -> Computer {
+    pub fn new(cpu: cpu::Cpu, devices: Vec<Box<Device>>) -> Computer {
         Computer {
             cpu: cpu,
-            ..Default::default()
+            devices: devices,
+            current_tick: 0,
         }
-    }
-
-    pub fn add_device(&mut self, d: Box<Device>) {
-        self.devices.push(d);
     }
 
     pub fn tick(&mut self) -> Result<(), cpu::Error> {

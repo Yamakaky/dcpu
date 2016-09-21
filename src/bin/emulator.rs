@@ -13,16 +13,19 @@ use docopt::Docopt;
 
 use dcpu::cpu::Cpu;
 use dcpu::computer::Computer;
+use dcpu::debugger::Debugger;
+use dcpu::device::{clock, lem1802, keyboard, Device};
+use dcpu::glium_backend;
 
 const USAGE: &'static str = "
 Usage:
-  emulator [(-d <device>)...] [<file>]
+  emulator [--debugger] [(-d <device>)...] [<file>]
   emulator (--help | --version)
 
 Options:
   <file>             The binary file to execute.
-  -d, --device       Des super devices.
-  <file>             File to use instead of stdin.
+  -d, --device       clock or keyscreen.
+  --debugger         Launches the debugger.
   -h, --help         Show this message.
   --version          Show the version of disassembler.
 ";
@@ -31,6 +34,7 @@ Options:
 struct Args {
     arg_device: Option<Vec<String>>,
     arg_file: Option<String>,
+    flag_debugger: bool,
 }
 
 fn main() {
@@ -50,14 +54,37 @@ fn main() {
     let mut cpu = Cpu::default();
     cpu.load(&rom, 0);
 
-    let mut computer = Computer::new(cpu);
+    let devices = {
+        let mut devices: Vec<Box<Device>> = vec![];
+        if let Some(devs) = args.arg_device {
+            for d in devs {
+                match d.as_ref() {
+                    "clock" => devices.push(Box::new(clock::Clock::new(100_000))),
+                    "keyscreen" => {
+                        let (screen_backend, kb_backend) = glium_backend::start();
+                        devices.push(Box::new(keyboard::Keyboard::new(kb_backend)));
+                        devices.push(Box::new(lem1802::LEM1802::new(screen_backend)));
+                    }
+                    _ => println!("Device \"{}\" unknown, ignoring", d),
+                }
+            }
+        }
+        devices
+    };
 
-    loop {
-        match computer.tick() {
-            Ok(_) => (),
-            Err(e) => {
-                println!("{}", e);
-                break;
+    if args.flag_debugger {
+        let mut debugger = Debugger::new(cpu, devices);
+        debugger.run();
+    } else {
+        let mut computer = Computer::new(cpu, devices);
+
+        loop {
+            match computer.tick() {
+                Ok(_) => (),
+                Err(e) => {
+                    println!("{}", e);
+                    break;
+                }
             }
         }
     }
