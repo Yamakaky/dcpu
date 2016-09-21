@@ -139,7 +139,9 @@ impl<B: Backend> LEM1802<B> {
 
                 let byte_offset = (char_offset / 32) * (CHAR_SIZE * 32)
                                 + (char_offset % 32) * CHAR_WIDTH;
-                let idx = byte_offset + x + (SCREEN_WIDTH * y);
+                let idx = byte_offset
+                        + (CHAR_WIDTH - x - 1)
+                        + (SCREEN_WIDTH * (CHAR_HEIGHT - y - 1));
                 screen[idx as usize] = color;
             }
         }
