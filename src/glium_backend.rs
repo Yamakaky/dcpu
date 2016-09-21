@@ -42,7 +42,10 @@ pub fn start() -> (ScreenBackend, KeyboardBackend) {
     let (tx1, rx1) = mpsc::channel();
     let (tx2, rx2) = mpsc::channel();
     let (tx3, rx3) = mpsc::channel();
-    let handle = thread::spawn(move || thread_main(rx1, tx2, rx3));
+    let handle = thread::Builder::new()
+        .name("glium".into())
+        .spawn(move || thread_main(rx1, tx2, rx3))
+        .unwrap();
     let common = Rc::new(CommonBackend {
         thread_handle: Some(handle),
         thread_command: tx1,
