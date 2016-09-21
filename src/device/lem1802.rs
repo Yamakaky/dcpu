@@ -156,10 +156,12 @@ impl<B: Backend> LEM1802<B> {
 
     fn get_font(&self, cpu: &Cpu, char_idx: u16) -> u32 {
         let (w0, w1) = if self.font_map.0 == 0 {
-            (DEFAULT_FONT[char_idx as usize], DEFAULT_FONT[char_idx as usize + 1])
+            (DEFAULT_FONT[char_idx as usize * 2],
+             DEFAULT_FONT[char_idx as usize * 2 + 1])
         } else {
             let idx = self.font_map + Wrapping(char_idx * 2);
-            (cpu.ram[idx.0 as usize], cpu.ram[idx.0 as usize + 1])
+            (cpu.ram[idx.0 as usize],
+             cpu.ram[idx.0 as usize + 1])
         };
         (w0 as u32) << 16 | w1 as u32
     }
