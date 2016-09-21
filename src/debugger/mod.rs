@@ -10,7 +10,6 @@ use cpu;
 use device;
 use iterators;
 use debugger::parser::*;
-use glium_backend;
 
 pub struct Debugger {
     cpu: cpu::Cpu,
