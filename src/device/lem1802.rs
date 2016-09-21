@@ -114,8 +114,10 @@ impl<B: Backend> LEM1802<B> {
     pub fn get_screen(&self, cpu: &Cpu) -> Box<Screen> {
         // Stack overflow if we don't use Box
         let mut screen = Box::new([Color::default(); SCREEN_SIZE as usize]);
-        for offset in 0..NB_CHARS {
-            self.add_char(cpu, &mut screen, offset);
+        if self.video_map != 0 {
+            for offset in 0..NB_CHARS {
+                self.add_char(cpu, &mut screen, offset);
+            }
         }
         screen
     }
