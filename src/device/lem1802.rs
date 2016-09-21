@@ -137,8 +137,9 @@ impl<B: Backend> LEM1802<B> {
                 });
                 color.blinking = video_word.blinking;
 
-                let idx = char_offset * CHAR_SIZE + x + (SCREEN_WIDTH * y);
-                println!("{} {} {} {}", char_offset, y, x, idx);
+                let byte_offset = (char_offset / 32) * (CHAR_SIZE * 32)
+                                + (char_offset % 32) * CHAR_WIDTH;
+                let idx = byte_offset + x + (SCREEN_WIDTH * y);
                 screen[idx as usize] = color;
             }
         }
