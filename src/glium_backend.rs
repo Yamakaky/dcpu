@@ -204,7 +204,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
             match screen_receiver.try_recv() {
                 Ok(screen) => {
                     current_screen = screen;
-                    break 'main;
+                    break 'pote2;
                 }
                 Err(mpsc::TryRecvError::Empty) => break 'pote2,
                 Err(mpsc::TryRecvError::Disconnected) => break 'main,
