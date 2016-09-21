@@ -181,18 +181,12 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
         uniform float aspect_ratio;
 
         void main() {
-            mat4 rot = mat4(
-                vec4(0, 1, 0, 0),
-                vec4(-aspect_ratio, 0, 0, 0),
-                vec4(0, 0, 1, 0),
-                vec4(0, 0, 0, 1)
-            );
             v_color = color;
-            gl_Position = rot * vec4(
-                ((position[0] + float(j)) / SCREEN_WIDTH * 2.) - 1.,
-                ((position[1] + float(i)) / SCREEN_HEIGHT * 2.) - 1.,
-                0.0,
-                1.0
+            gl_Position = vec4(
+                ((position[0] + float(i)) / SCREEN_WIDTH - 0.5) * 2.,
+                (-(position[1] + float(j)) / SCREEN_HEIGHT + 0.5) * 2.,
+                0.,
+                1.
             );
         }
     ", "
