@@ -5,6 +5,7 @@ use std::fmt;
 use std::error::{self, Error as StdError};
 
 use emulator::device::Device;
+use emulator::ram::Ram;
 use types::*;
 use types::Value::*;
 use types::BasicOp::*;
@@ -70,7 +71,7 @@ pub enum OnDecodeError {
 }
 
 pub struct Cpu {
-    pub ram: [u16; 0x10000],
+    pub ram: Ram,
     pub registers: [u16; 8],
     pub pc: u16,
     pub sp: u16,
@@ -88,7 +89,7 @@ pub struct Cpu {
 impl Default for Cpu {
     fn default() -> Cpu {
         Cpu {
-            ram: [0x03e0; 0x10000],
+            ram: Ram([0x03e0; 0x10000]),
             registers: [0xdead; 8],
             pc: 0,
             sp: 0xffff,
@@ -114,32 +115,35 @@ impl Cpu {
 
     pub fn load(&mut self, data: &[u16], offset: u16) {
         for (i, d) in data.iter().enumerate() {
-            self.ram[offset.wrapping_add(i as u16) as usize] = *d;
+            self.ram[offset.wrapping_add(i as u16)] = *d;
         }
     }
 
     pub fn load_ops(&mut self, ops: &[Instruction], mut offset: u16) {
         for op in ops {
-            offset += op.encode(&mut self.ram[offset as usize..]);
+            offset += op.encode(&mut self.ram[offset..]);
         }
     }
 
     fn get(&mut self, i: Value) -> u16 {
         match i {
             Reg(r) => self.registers[r as usize],
-            AtReg(r) => self.ram[(self.registers[r as usize]) as usize],
-            AtRegPlus(r, off) => self.ram[off.wrapping_add(self.get(Reg(r))) as usize],
+            AtReg(r) => self.ram[self.registers[r as usize]],
+            AtRegPlus(r, off) => {
+                let i = off.wrapping_add(self.get(Reg(r)));
+                self.ram[i]
+            }
             Push => {
-                let v = self.ram[self.sp as usize];
+                let v = self.ram[self.sp];
                 self.sp = self.sp.wrapping_add(1);
                 v
             },
-            Peek => self.ram[self.sp as usize],
-            Pick(n) => self.ram[self.sp.wrapping_add(n) as usize],
+            Peek => self.ram[self.sp],
+            Pick(n) => self.ram[self.sp.wrapping_add(n)],
             SP => self.sp,
             PC => self.pc,
             EX => self.ex,
-            AtAddr(off) => self.ram[off as usize],
+            AtAddr(off) => self.ram[off],
             Litteral(n) => n
         }
     }
@@ -147,18 +151,21 @@ impl Cpu {
     fn set(&mut self, i: Value, val: u16) {
         match i {
             Reg(r) => self.registers[r as usize] = val,
-            AtReg(r) => self.ram[(self.registers[r as usize]) as usize] = val,
-            AtRegPlus(r, off) => self.ram[off.wrapping_add(self.get(Reg(r))) as usize] = val,
+            AtReg(r) => self.ram[(self.registers[r as usize])] = val,
+            AtRegPlus(r, off) => {
+                let i = off.wrapping_add(self.get(Reg(r)));
+                self.ram[i] = val;
+            }
             Push => {
                 self.sp = self.sp.wrapping_sub(1);
-                self.ram[self.sp as usize] = val;
+                self.ram[self.sp] = val;
             },
-            Peek => self.ram[self.sp as usize] = val,
-            Pick(n) => self.ram[self.sp.wrapping_add(n) as usize] = val,
+            Peek => self.ram[self.sp] = val,
+            Pick(n) => self.ram[self.sp.wrapping_add(n)] = val,
             SP => self.sp = val,
             PC => self.pc = val,
             EX => self.ex = val,
-            AtAddr(off) => self.ram[off as usize] = val,
+            AtAddr(off) => self.ram[off] = val,
             Litteral(_) => ()
         }
     }
@@ -184,7 +191,7 @@ impl Cpu {
             Ok(res) => res,
             Err(e) => match self.on_decode_error {
                 OnDecodeError::Continue => {
-                    warn!("Instruction decoding error: {:x}", self.ram[pc as usize]);
+                    warn!("Instruction decoding error: {:x}", self.ram[pc]);
                     self.pc += 1;
                     return Ok(CpuState::Executing);
                 },

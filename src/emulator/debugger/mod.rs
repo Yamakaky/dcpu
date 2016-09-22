@@ -112,7 +112,7 @@ impl Debugger {
     }
 
     fn examine(&self, from: u16, size: u16) {
-        println!("{:?}", &self.cpu.ram[from as usize..(from + size) as usize]);
+        println!("{:?}", &self.cpu.ram[from..from + size]);
     }
 
     fn show_breakpoints(&self) {
