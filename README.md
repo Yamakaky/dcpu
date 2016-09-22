@@ -25,4 +25,4 @@ All binaries support a `--help` flag.
 
 ## Documentation
 
-The library interface is documented [here](https://yamakaky.github.io/dcpu).
+The library interface is documented [here](https://docs.rs/dcpu).

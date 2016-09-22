@@ -1,12 +1,11 @@
 [package]
 authors = ["yamakaky"]
 name = "dcpu"
-version = "0.1.0"
+version = "0.1.1"
 description = "An assembler, debugger and emulator for the DCPU-16"
 homepage = "https://github.com/Yamakaky/dcpu"
 repository = "https://github.com/Yamakaky/dcpu"
-#documentation = "https://docs.rs/crate/dcpu"
-documentation = "https://yamakaky.github.io/dcpu"
+documentation = "https://docs.rs/dcpu"
 license = "LGPL-3.0"
 readme = "README.md"
 
