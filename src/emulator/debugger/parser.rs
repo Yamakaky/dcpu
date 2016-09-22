@@ -4,7 +4,7 @@ use assembler::parser::pos_number;
 
 #[derive(Debug, Clone)]
 pub enum Command {
-    Step,
+    Step(u16),
     PrintRegisters,
     Disassemble {
         from: u16,
@@ -42,7 +42,12 @@ named!(pub parse_command<Command>,
 );
 
 named!(cmd_step<Command>,
-    map!(char!('s'), |_| Command::Step)
+    chain!(
+        char!('s') ~
+        multispace ~
+        n: map!(opt!(pos_number), |x| Option::unwrap_or(x, 1)),
+        || Command::Step(n)
+    )
 );
 
 named!(cmd_print_regs<Command>,

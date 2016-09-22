@@ -45,8 +45,10 @@ impl Debugger {
 
     fn exec(&mut self, cmd: &Command) {
         match *cmd {
-            Command::Step => {
-                let _ = self.step();
+            Command::Step(n) => {
+                for _ in 0..n {
+                    let _ = self.step();
+                }
             }
             Command::PrintRegisters => self.print_registers(),
             Command::Disassemble {from, size} =>
