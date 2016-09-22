@@ -29,4 +29,8 @@ impl Device for Dummy {
     fn tick(&mut self, _: &mut Cpu, _: u64) -> TickResult {
         TickResult::Nothing
     }
+
+    fn inspect(&self) {
+        println!("Dummy device");
+    }
 }

@@ -72,4 +72,15 @@ impl Device for Clock {
 
         return TickResult::Nothing;
     }
+
+    fn inspect(&self) {
+        println!("Generic clock");
+        if self.speed == 0 {
+            println!("Currently disabled");
+        } else {
+            println!("FPS: {}", 60. / (self.speed as f32));
+            println!("Int message is {}", self.int_msg);
+            println!("Last call was {} ticks ago", self.last_call);
+        }
+    }
 }

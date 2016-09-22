@@ -44,6 +44,7 @@ impl Debugger {
                 Command::DeleteBreakpoint(b) =>
                     self.delete_breakpoint(b as usize),
                 Command::Continue => self.continue_exec(),
+                Command::ShowDevices => self.show_devices(),
             }
         }
     }
@@ -144,6 +145,14 @@ impl Debugger {
                 println!("Breakpoint {} triggered at {}", i, addr);
                 return;
             }
+        }
+    }
+
+    fn show_devices(&self) {
+        for (i, dev) in self.devices.iter().enumerate() {
+            print!("Device {}: ", i);
+            dev.inspect();
+            println!("");
         }
     }
 }

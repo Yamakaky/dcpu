@@ -32,7 +32,7 @@ enum Command {
 }
 }
 
-#[derive(Default, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct Color {
     pub r: f32,
     pub g: f32,
@@ -107,6 +107,27 @@ impl<B: Backend> Device for LEM1802<B> {
     fn tick(&mut self, cpu: &mut Cpu, tick_count: u64) -> TickResult {
         self.backend.tick(cpu, self, tick_count);
         TickResult::Nothing
+    }
+
+    fn inspect(&self) {
+        println!("LEM1802");
+        if self.video_map.0 == 0 {
+            println!("Currently disabled");
+        } else {
+            println!("Video ram starts at {:x}", self.video_map.0);
+            if self.font_map.0 == 0 {
+                println!("Use builtin font");
+            } else {
+                println!("Font starts at {:x}", self.font_map.0);
+            }
+            if self.palette_map.0 == 0 {
+                println!("Use builtin palette");
+            } else {
+                println!("Palette starts at {:x}", self.palette_map.0);
+            }
+            println!("Border color is {:?}",
+                     Color::from_packed(self.border_color_index));
+        }
     }
 }
 

@@ -17,6 +17,11 @@ enum Command {
 }
 }
 
+pub trait Backend: Debug {
+    fn is_key_pressed(&mut self, key: Key) -> bool;
+    fn push_typed_keys(&mut self, queue: &mut VecDeque<Key>) -> bool;
+}
+
 #[derive(Debug)]
 pub struct Keyboard<B: Backend> {
     key_buffer: VecDeque<Key>,
@@ -77,11 +82,12 @@ impl<B: Backend> Device for Keyboard<B> {
             TickResult::Nothing
         }
     }
-}
 
-pub trait Backend: Debug {
-    fn is_key_pressed(&mut self, key: Key) -> bool;
-    fn push_typed_keys(&mut self, queue: &mut VecDeque<Key>) -> bool;
+    fn inspect(&self) {
+        println!("Generic Keyboard");
+        println!("Int message is {}", self.int_msg);
+        println!("{} keys in the buffer", self.key_buffer.len());
+    }
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

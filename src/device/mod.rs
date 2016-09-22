@@ -21,4 +21,6 @@ pub trait Device: Debug {
 
     fn interrupt(&mut self, &mut Cpu) -> Result<InterruptDelay, ()>;
     fn tick(&mut self, &mut Cpu, current_tick: u64) -> TickResult;
+
+    fn inspect(&self);
 }

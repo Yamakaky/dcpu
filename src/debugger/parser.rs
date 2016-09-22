@@ -18,6 +18,7 @@ pub enum Command {
     Continue,
     ShowBreakpoints,
     DeleteBreakpoint(u16),
+    ShowDevices,
 }
 
 named!(pub parse_command<Command>,
@@ -31,7 +32,8 @@ named!(pub parse_command<Command>,
             cmd_breakpoint |
             cmd_continue |
             cmd_show_breakpoints |
-            cmd_delete_breakpoint
+            cmd_delete_breakpoint |
+            cmd_show_devices
         ),
         opt!(multispace)
     )
@@ -89,4 +91,8 @@ named!(cmd_delete_breakpoint<Command>,
 
 named!(cmd_continue<Command>,
     map!(char!('c'), |_| Command::Continue)
+);
+
+named!(cmd_show_devices<Command>,
+    map!(tag!("devices"), |_| Command::ShowDevices)
 );
