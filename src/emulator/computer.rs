@@ -1,5 +1,5 @@
-use cpu;
-use device::*;
+use emulator::cpu;
+use emulator::device::*;
 
 #[derive(Default)]
 pub struct Computer {

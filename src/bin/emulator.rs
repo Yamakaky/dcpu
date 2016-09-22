@@ -11,11 +11,10 @@ mod utils;
 
 use docopt::Docopt;
 
-use dcpu::cpu::Cpu;
-use dcpu::computer::Computer;
-use dcpu::debugger::Debugger;
-use dcpu::device::{clock, lem1802, keyboard, Device};
-use dcpu::glium_backend;
+use dcpu::emulator::Cpu;
+use dcpu::emulator::Computer;
+use dcpu::emulator::Debugger;
+use dcpu::emulator::device::*;
 
 const USAGE: &'static str = "
 Usage:

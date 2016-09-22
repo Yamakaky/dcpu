@@ -1,5 +1,5 @@
-use cpu::Cpu;
-use device::*;
+use emulator::cpu::Cpu;
+use emulator::device::*;
 
 #[derive(Debug)]
 pub struct Dummy {

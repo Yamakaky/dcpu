@@ -1,7 +1,7 @@
 use num::traits::FromPrimitive;
 
-use cpu::Cpu;
-use device::*;
+use emulator::cpu::Cpu;
+use emulator::device::*;
 
 enum_from_primitive! {
 #[allow(non_camel_case_types)]

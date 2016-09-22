@@ -3,8 +3,8 @@ use std::num::Wrapping;
 
 use num::traits::FromPrimitive;
 
-use cpu::Cpu;
-use device::*;
+use emulator::cpu::Cpu;
+use emulator::device::*;
 
 const MASK_INDEX: u16 = 0xf;
 pub const SCREEN_HEIGHT: u16 = 96;

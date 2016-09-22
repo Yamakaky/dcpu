@@ -6,8 +6,8 @@ use std::sync::mpsc;
 
 use glium::{self, DisplayBuild, Surface};
 
-use cpu;
-use device::{keyboard, lem1802};
+use emulator::cpu;
+use emulator::device::{keyboard, lem1802};
 
 enum ThreadCommand {
     Stop,
@@ -267,7 +267,7 @@ fn convert_kb_code(raw: u8,
                    code: glium::glutin::VirtualKeyCode)
     -> Option<keyboard::Key> {
     use glium::glutin::VirtualKeyCode;
-    use device::keyboard::Key;
+    use emulator::device::keyboard::Key;
     match code {
         VirtualKeyCode::Back => Some(Key::Backspace),
         VirtualKeyCode::Return => Some(Key::Return),

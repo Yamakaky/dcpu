@@ -76,7 +76,7 @@ fn main_ret() -> i32 {
         if args.flag_no_cpp {
             asm
         } else {
-            dcpu::preprocessor::preprocess(&asm).unwrap()
+            dcpu::assembler::preprocessor::preprocess(&asm).unwrap()
         }
     };
     let parsed = parser::parse(&preprocessed.as_bytes());

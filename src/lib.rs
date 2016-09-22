@@ -11,11 +11,6 @@ extern crate num;
 extern crate glium;
 
 pub mod assembler;
-pub mod computer;
-pub mod cpu;
-pub mod debugger;
-pub mod device;
-pub mod glium_backend;
+pub mod emulator;
 pub mod iterators;
-pub mod preprocessor;
 pub mod types;

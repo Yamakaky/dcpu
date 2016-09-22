@@ -3,9 +3,11 @@ pub mod dummy;
 pub mod keyboard;
 pub mod lem1802;
 
+pub mod glium_backend;
+
 use std::fmt::Debug;
 
-use cpu::Cpu;
+use emulator::cpu::Cpu;
 
 pub enum TickResult {
     Nothing,

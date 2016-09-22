@@ -4,7 +4,7 @@ use std::default::Default;
 use std::fmt;
 use std::error::{self, Error as StdError};
 
-use device::Device;
+use emulator::device::Device;
 use types::*;
 use types::Value::*;
 use types::BasicOp::*;

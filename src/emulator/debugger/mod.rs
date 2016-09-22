@@ -6,10 +6,9 @@ use std::iter::Iterator;
 
 use nom;
 
-use cpu;
-use device;
 use iterators;
-use debugger::parser::*;
+use emulator::{cpu, device};
+use emulator::debugger::parser::*;
 
 pub struct Debugger {
     cpu: cpu::Cpu,
@@ -68,12 +67,11 @@ impl Debugger {
     }
 
     fn step(&mut self) -> Result<(), ()> {
-        use device::TickResult;
         self.tick_number += 1;
         for (i, device) in self.devices.iter_mut().enumerate() {
             match device.tick(&mut self.cpu, self.tick_number) {
-                TickResult::Nothing => (),
-                TickResult::Interrupt(int) => {
+                device::TickResult::Nothing => (),
+                device::TickResult::Interrupt(int) => {
                     println!("Hardware interrupt from device {} with message {}",
                              i, int);
                     self.cpu.interrupts_queue.push_back(int);
