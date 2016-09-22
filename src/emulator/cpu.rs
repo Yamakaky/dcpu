@@ -6,6 +6,7 @@ use std::error::{self, Error as StdError};
 
 use emulator::device::Device;
 use emulator::ram::Ram;
+use emulator::registers::Registers;
 use types::*;
 use types::Value::*;
 use types::BasicOp::*;
@@ -72,7 +73,7 @@ pub enum OnDecodeError {
 
 pub struct Cpu {
     pub ram: Ram,
-    pub registers: [u16; 8],
+    pub registers: Registers,
     pub pc: u16,
     pub sp: u16,
     pub ex: u16,
@@ -90,7 +91,7 @@ impl Default for Cpu {
     fn default() -> Cpu {
         Cpu {
             ram: Ram([0x03e0; 0x10000]),
-            registers: [0xdead; 8],
+            registers: Registers([0xdead; 8]),
             pc: 0,
             sp: 0xffff,
             ex: 0,
@@ -127,8 +128,8 @@ impl Cpu {
 
     fn get(&mut self, i: Value) -> u16 {
         match i {
-            Reg(r) => self.registers[r as usize],
-            AtReg(r) => self.ram[self.registers[r as usize]],
+            Reg(r) => self.registers[r],
+            AtReg(r) => self.ram[self.registers[r]],
             AtRegPlus(r, off) => {
                 let i = off.wrapping_add(self.get(Reg(r)));
                 self.ram[i]
@@ -150,8 +151,8 @@ impl Cpu {
 
     fn set(&mut self, i: Value, val: u16) {
         match i {
-            Reg(r) => self.registers[r as usize] = val,
-            AtReg(r) => self.ram[(self.registers[r as usize])] = val,
+            Reg(r) => self.registers[r] = val,
+            AtReg(r) => self.ram[(self.registers[r])] = val,
             AtRegPlus(r, off) => {
                 let i = off.wrapping_add(self.get(Reg(r)));
                 self.ram[i] = val;
@@ -531,20 +532,20 @@ impl Cpu {
     fn op_sti(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
         self.set(b, val_a);
-        self.registers[Register::I as usize] =
-            self.registers[Register::I as usize].wrapping_add(1);
-        self.registers[Register::J as usize] =
-            self.registers[Register::J as usize].wrapping_add(1);
+        self.registers[Register::I] =
+            self.registers[Register::I].wrapping_add(1);
+        self.registers[Register::J] =
+            self.registers[Register::J].wrapping_add(1);
         Ok(())
     }
 
     fn op_std(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
         self.set(b, val_a);
-        self.registers[Register::I as usize] =
-            self.registers[Register::I as usize].wrapping_sub(1);
-        self.registers[Register::J as usize] =
-            self.registers[Register::J as usize].wrapping_sub(1);
+        self.registers[Register::I] =
+            self.registers[Register::I].wrapping_sub(1);
+        self.registers[Register::J] =
+            self.registers[Register::J].wrapping_sub(1);
         Ok(())
     }
 

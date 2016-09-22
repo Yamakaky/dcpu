@@ -5,6 +5,7 @@ use num::traits::FromPrimitive;
 
 use emulator::cpu::Cpu;
 use emulator::device::*;
+use types::Register;
 
 const MASK_INDEX: u16 = 0xf;
 pub const SCREEN_HEIGHT: u16 = 96;
@@ -91,8 +92,8 @@ impl<B: Backend> Device for LEM1802<B> {
     }
 
     fn interrupt(&mut self, cpu: &mut Cpu) -> Result<InterruptDelay, ()> {
-        let a = cpu.registers[0];
-        let b = cpu.registers[1];
+        let a = cpu.registers[Register::A];
+        let b = cpu.registers[Register::B];
         match Command::from_u16(a) {
             Some(Command::MEM_MAP_SCREEN) => self.video_map = Wrapping(b),
             Some(Command::MEM_MAP_FONT) => self.font_map = Wrapping(b),

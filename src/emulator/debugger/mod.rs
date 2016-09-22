@@ -9,6 +9,7 @@ use nom;
 use iterators;
 use emulator::{cpu, device};
 use emulator::debugger::parser::*;
+use types::Register;
 
 pub struct Debugger {
     cpu: cpu::Cpu,
@@ -91,10 +92,11 @@ impl Debugger {
     fn print_registers(&self) {
         let regs = &self.cpu.registers;
         println!(" A {:>4x} |  B {:>4x} |  C {:>4x}",
-                 regs[0], regs[1], regs[2]);
-        println!(" I {:>4x} |  J {:>4x}", regs[3], regs[4]);
+                 regs[Register::A], regs[Register::B], regs[Register::C]);
+        println!(" I {:>4x} |  J {:>4x}",
+                 regs[Register::I], regs[Register::J]);
         println!(" X {:>4x} |  Y {:>4x} |  Z {:>4x}",
-                 regs[5], regs[6], regs[7]);
+                 regs[Register::X], regs[Register::Y], regs[Register::Z]);
 
         println!("PC {:>4x} | SP {:>4x} | EX {:>4x} | IA {:>4x}",
                  self.cpu.pc, self.cpu.sp, self.cpu.ex, self.cpu.ia);

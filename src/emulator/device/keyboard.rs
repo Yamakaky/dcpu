@@ -5,6 +5,7 @@ use num::traits::FromPrimitive;
 
 use emulator::cpu::Cpu;
 use emulator::device::*;
+use types::Register;
 
 enum_from_primitive! {
 #[allow(non_camel_case_types)]
@@ -53,21 +54,21 @@ impl<B: Backend> Device for Keyboard<B> {
     }
 
     fn interrupt(&mut self, cpu: &mut Cpu) -> Result<InterruptDelay, ()> {
-        let a = cpu.registers[0];
-        let b = cpu.registers[1];
+        let a = cpu.registers[Register::A];
+        let b = cpu.registers[Register::B];
         match Command::from_u16(a) {
             Some(Command::CLEAR_BUFFER) => self.key_buffer.clear(),
             Some(Command::GET_NEXT) =>
-                cpu.registers[2] = self.key_buffer
-                                       .pop_front()
-                                       .map(Key::encode)
-                                       .unwrap_or(0),
+                cpu.registers[Register::C] = self.key_buffer
+                                                 .pop_front()
+                                                 .map(Key::encode)
+                                                 .unwrap_or(0),
             Some(Command::CHECK_KEY) => {
                 let key = match Key::decode(b) {
                     Ok(k) => k,
                     Err(()) => return Err(()),
                 };
-                cpu.registers[2] = self.backend.is_key_pressed(key) as u16;
+                cpu.registers[Register::C] = self.backend.is_key_pressed(key) as u16;
             },
             Some(Command::SET_INT) => self.int_msg = b,
             _ => return Err(()),

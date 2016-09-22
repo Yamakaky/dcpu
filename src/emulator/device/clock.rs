@@ -2,6 +2,7 @@ use num::traits::FromPrimitive;
 
 use emulator::cpu::Cpu;
 use emulator::device::*;
+use types::Register;
 
 enum_from_primitive! {
 #[allow(non_camel_case_types)]
@@ -47,12 +48,12 @@ impl Device for Clock {
     }
 
     fn interrupt(&mut self, cpu: &mut Cpu) -> Result<InterruptDelay, ()> {
-        let a = cpu.registers[0];
-        let b = cpu.registers[1];
+        let a = cpu.registers[Register::A];
+        let b = cpu.registers[Register::B];
         match Command::from_u16(a) {
             Some(Command::SET_SPEED) => self.speed = b,
             Some(Command::GET_TICKS) => {
-                cpu.registers[2] = self.last_call as u16;
+                cpu.registers[Register::C] = self.last_call as u16;
                 self.last_call = 0;
             },
             Some(Command::SET_INT) => self.int_msg = b,
