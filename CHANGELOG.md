@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `hook` debugger command
 - Empty command in the debugger repeats the last command
 
+### Fixed
+
+- IF* conditions where inverted
+
 ### Changed
 
 - Enable LTO on release

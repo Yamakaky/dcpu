@@ -450,49 +450,49 @@ impl Cpu {
     fn op_ifb(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
         let val_b = self.get(b);
-        self.exec_if((val_a & val_b) != 0)
+        self.exec_if((val_b & val_a) != 0)
     }
 
     fn op_ifc(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
         let val_b = self.get(b);
-        self.exec_if((val_a & val_b) == 0)
+        self.exec_if((val_b & val_a) == 0)
     }
 
     fn op_ife(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
         let val_b = self.get(b);
-        self.exec_if(val_a == val_b)
+        self.exec_if(val_b == val_a)
     }
 
     fn op_ifn(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
         let val_b = self.get(b);
-        self.exec_if(val_a != val_b)
+        self.exec_if(val_b != val_a)
     }
 
     fn op_ifg(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
         let val_b = self.get(b);
-        self.exec_if(val_a > val_b)
+        self.exec_if(val_b > val_a)
     }
 
     fn op_ifa(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a) as i16;
         let val_b = self.get(b) as i16;
-        self.exec_if(val_a > val_b)
+        self.exec_if(val_b > val_a)
     }
 
     fn op_ifl(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a);
         let val_b = self.get(b);
-        self.exec_if(val_a < val_b)
+        self.exec_if(val_b < val_a)
     }
 
     fn op_ifu(&mut self, b: Value, a: Value) -> Result<(), Error> {
         let val_a = self.get(a) as i16;
         let val_b = self.get(b) as i16;
-        self.exec_if(val_a < val_b)
+        self.exec_if(val_b < val_a)
     }
 
     fn op_adx(&mut self, b: Value, a: Value) -> Result<(), Error> {
