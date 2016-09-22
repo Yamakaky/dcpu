@@ -201,13 +201,13 @@ impl Cpu {
         };
         self.pc = self.pc.wrapping_add(words_used);
 
-        if self.check_if_cascade {
-            trace!("Skipping cascade");
-            self.check_if_cascade = instruction.is_if();
-            if instruction.is_if() {
-                return Ok(CpuState::Waiting);
-            }
-        }
+        //if self.check_if_cascade {
+        //    trace!("Skipping cascade");
+        //    self.check_if_cascade = instruction.is_if();
+        //    if instruction.is_if() {
+        //        return Ok(CpuState::Waiting);
+        //    }
+        //}
 
         trace!("Executing {:?}", instruction);
         // BRK and HLT have a 0 delay
