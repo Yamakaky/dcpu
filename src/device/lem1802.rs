@@ -114,16 +114,16 @@ impl<B: Backend> Device for LEM1802<B> {
         if self.video_map.0 == 0 {
             println!("Currently disabled");
         } else {
-            println!("Video ram starts at {:x}", self.video_map.0);
+            println!("Video ram starts at 0x{:x}", self.video_map.0);
             if self.font_map.0 == 0 {
                 println!("Use builtin font");
             } else {
-                println!("Font starts at {:x}", self.font_map.0);
+                println!("Font starts at 0x{:x}", self.font_map.0);
             }
             if self.palette_map.0 == 0 {
                 println!("Use builtin palette");
             } else {
-                println!("Palette starts at {:x}", self.palette_map.0);
+                println!("Palette starts at 0x{:x}", self.palette_map.0);
             }
             println!("Border color is {:?}",
                      Color::from_packed(self.border_color_index));

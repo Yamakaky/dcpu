@@ -79,7 +79,7 @@ impl Device for Clock {
             println!("Currently disabled");
         } else {
             println!("FPS: {}", 60. / (self.speed as f32));
-            println!("Int message is {}", self.int_msg);
+            println!("Int message is 0x{:x}", self.int_msg);
             println!("Last call was {} ticks ago", self.last_call);
         }
     }
