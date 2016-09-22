@@ -175,7 +175,7 @@ impl Cpu {
 
         if !self.is_queue_enabled {
             if let Some(interrupt) = self.interrupts_queue.pop_front() {
-                self.trigger_interrupt(interrupt);
+                self.exec_interrupt(interrupt);
             }
         }
 
@@ -218,7 +218,7 @@ impl Cpu {
         Instruction::decode(&bin)
     }
 
-    pub fn trigger_interrupt(&mut self, i: u16) {
+    fn exec_interrupt(&mut self, i: u16) {
         if self.ia != 0 {
             self.is_queue_enabled = true;
             let pc = self.get(PC);
@@ -228,6 +228,12 @@ impl Cpu {
             let ia = self.ia;
             self.set(PC, ia);
             self.set(Reg(Register::A), i);
+        }
+    }
+
+    pub fn hardware_interrupt(&mut self, msg: u16) {
+        if self.ia != 0 {
+            self.interrupts_queue.push_back(msg);
         }
     }
 

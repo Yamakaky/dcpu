@@ -71,10 +71,10 @@ impl Debugger {
         for (i, device) in self.devices.iter_mut().enumerate() {
             match device.tick(&mut self.cpu, self.tick_number) {
                 device::TickResult::Nothing => (),
-                device::TickResult::Interrupt(int) => {
+                device::TickResult::Interrupt(msg) => {
                     println!("Hardware interrupt from device {} with message {}",
-                             i, int);
-                    self.cpu.interrupts_queue.push_back(int);
+                             i, msg);
+                    self.cpu.hardware_interrupt(msg);
                 }
             }
         }
