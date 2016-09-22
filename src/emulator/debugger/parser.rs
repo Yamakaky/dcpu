@@ -2,7 +2,7 @@ use nom::*;
 
 use assembler::parser::pos_number;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum Command {
     Step,
     PrintRegisters,
@@ -19,6 +19,7 @@ pub enum Command {
     ShowBreakpoints,
     DeleteBreakpoint(u16),
     ShowDevices,
+    Hook(Box<Command>),
 }
 
 named!(pub parse_command<Command>,
@@ -33,7 +34,8 @@ named!(pub parse_command<Command>,
             cmd_continue |
             cmd_show_breakpoints |
             cmd_delete_breakpoint |
-            cmd_show_devices
+            cmd_show_devices |
+            cmd_hook
         ),
         opt!(multispace)
     )
@@ -95,4 +97,13 @@ named!(cmd_continue<Command>,
 
 named!(cmd_show_devices<Command>,
     map!(tag!("devices"), |_| Command::ShowDevices)
+);
+
+named!(cmd_hook<Command>,
+    chain!(
+        tag!("hook") ~
+        multispace ~
+        c: parse_command,
+        || Command::Hook(Box::new(c))
+    )
 );

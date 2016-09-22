@@ -16,6 +16,8 @@ pub struct Debugger {
     devices: Vec<Box<device::Device>>,
     breakpoints: Vec<u16>,
     tick_number: u64,
+    hooks: Vec<Command>,
+    last_command: Option<Command>,
 }
 
 impl Debugger {
@@ -26,38 +28,54 @@ impl Debugger {
             devices: devices,
             breakpoints: vec![],
             tick_number: 0,
+            hooks: vec![],
+            last_command: None,
         }
     }
 
     pub fn run(&mut self) {
-        while let Some(cmd) = Self::get_command() {
-            match cmd {
-                Command::Step => {
-                    let _ = self.step();
-                }
-                Command::PrintRegisters => self.print_registers(),
-                Command::Disassemble {from, size} =>
-                    self.disassemble(from, size),
-                Command::Examine {from, size} => self.examine(from, size),
-                Command::Breakpoint(b) => self.breakpoints.push(b),
-                Command::ShowBreakpoints => self.show_breakpoints(),
-                Command::DeleteBreakpoint(b) =>
-                    self.delete_breakpoint(b as usize),
-                Command::Continue => self.continue_exec(),
-                Command::ShowDevices => self.show_devices(),
+        while let Some(cmd) = self.get_command() {
+            self.exec(&cmd);
+            for cmd in self.hooks.clone() {
+                self.exec(&cmd);
             }
+            self.last_command = Some(cmd);
         }
     }
 
-    fn get_command() -> Option<Command> {
+    fn exec(&mut self, cmd: &Command) {
+        match *cmd {
+            Command::Step => {
+                let _ = self.step();
+            }
+            Command::PrintRegisters => self.print_registers(),
+            Command::Disassemble {from, size} =>
+                self.disassemble(from, size),
+            Command::Examine {from, size} => self.examine(from, size),
+            Command::Breakpoint(b) => self.breakpoints.push(b),
+            Command::ShowBreakpoints => self.show_breakpoints(),
+            Command::DeleteBreakpoint(b) =>
+                self.delete_breakpoint(b as usize),
+            Command::Continue => self.continue_exec(),
+            Command::ShowDevices => self.show_devices(),
+            Command::Hook(ref cmd) => self.hooks.push(*cmd.clone()),
+        }
+    }
+
+    fn get_command(&self) -> Option<Command> {
         let stdin = io::stdin();
 
         print!("> ");
         io::stdout().flush().unwrap();
         for line in stdin.lock().lines() {
             let line = line.unwrap();
+            if line == "" {
+                if let Some(ref cmd) = self.last_command {
+                    return Some(cmd.clone());
+                }
+            }
             match parser::parse_command(line.as_bytes()) {
-                nom::IResult::Done(ref i, o) if i.len() == 0 => return Some(o),
+                nom::IResult::Done(ref i, ref o) if i.len() == 0 => return Some(o.clone()),
                 _ => println!("Unknown command: {}", line),
             }
             print!("> ");

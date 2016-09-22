@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `hook` debugger command
+- Empty command in the debugger repeats the last command
+
 ### Changed
 
 - Enable LTO on release
