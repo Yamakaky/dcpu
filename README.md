@@ -16,12 +16,19 @@
 
 ## Usage
 
+Compiled versions for Windows and Linux are available at
+https://pydio.chocolytech.info:4443/data/public/051666. No dependencies are
+required.
+
+All binaries support a `--help` flag for more infos.
+
+## Building
+
 You need to install the [rust compiler](https://www.rust-lang.org/) to build this software.
 
 `cargo run --release --bin <bin> -- <bin-args>`
 
 Available binaries are assemble, disassemble and emulator.
-All binaries support a `--help` flag.
 
 ## Documentation
 
