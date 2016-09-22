@@ -120,6 +120,7 @@ impl Debugger {
 
         println!("PC {:>4x} | SP {:>4x} | EX {:>4x} | IA {:>4x}",
                  self.cpu.pc, self.cpu.sp, self.cpu.ex, self.cpu.ia);
+        println!("Tick number: {}", self.tick_number);
     }
 
     fn disassemble(&self, from: u16, size: u16) {
