@@ -6,12 +6,13 @@
 
 - [x] Full instruction set
 - [x] Tick accurate
-- [ ] Devices support
-  - [ ] Clock
-  - [ ] Screen
-  - [ ] Keyboard
+- [x] Devices support
+  - [x] Clock
+  - [x] LEM1802
+  - [x] Keyboard
 - [x] Disassembler
 - [x] Assembler
+- [x] gdb-like debugger
 
 ## Usage
 
