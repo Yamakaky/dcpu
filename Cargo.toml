@@ -19,3 +19,6 @@ num = "~0.1.31"
 rustc-serialize = "~0.3.19"
 simplelog = "~0.2.0"
 glium = "0.15"
+
+[profile.release]
+lto = true
