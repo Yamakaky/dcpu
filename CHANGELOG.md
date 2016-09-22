@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Enable LTO on release
 
+### Misc
+
+- Add helper script to compiler on linux and windows
+
 ## [0.1.1]
 
 ### Changed
