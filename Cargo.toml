@@ -1,7 +1,7 @@
 [package]
 authors = ["yamakaky"]
 name = "dcpu"
-version = "0.1.1"
+version = "0.1.2"
 description = "An assembler, debugger and emulator for the DCPU-16"
 homepage = "https://github.com/Yamakaky/dcpu"
 repository = "https://github.com/Yamakaky/dcpu"
