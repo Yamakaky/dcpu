@@ -53,25 +53,23 @@ impl<B: Backend> Device for Keyboard<B> {
         0x1c6c8b36
     }
 
-    fn interrupt(&mut self, cpu: &mut Cpu) -> Result<InterruptDelay, ()> {
+    fn interrupt(&mut self, cpu: &mut Cpu) -> InterruptResult {
         let a = cpu.registers[Register::A];
         let b = cpu.registers[Register::B];
-        match Command::from_u16(a) {
-            Some(Command::CLEAR_BUFFER) => self.key_buffer.clear(),
-            Some(Command::GET_NEXT) =>
+        match try!(Command::from_u16(a)
+                           .ok_or(InterruptError::InvalidCommand(a))) {
+            Command::CLEAR_BUFFER => self.key_buffer.clear(),
+            Command::GET_NEXT =>
                 cpu.registers[Register::C] = self.key_buffer
                                                  .pop_front()
                                                  .map(Key::encode)
                                                  .unwrap_or(0),
-            Some(Command::CHECK_KEY) => {
-                let key = match Key::decode(b) {
-                    Ok(k) => k,
-                    Err(()) => return Err(()),
-                };
+            Command::CHECK_KEY => {
+                // TODO: fix error case
+                let key = try!(Key::decode(b).map_err(|_| InterruptError::InvalidCommand(0xffff)));
                 cpu.registers[Register::C] = self.backend.is_key_pressed(key) as u16;
             },
-            Some(Command::SET_INT) => self.int_msg = b,
-            _ => return Err(()),
+            Command::SET_INT => self.int_msg = b,
         }
         Ok(0)
     }

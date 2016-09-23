@@ -23,8 +23,7 @@ impl Computer {
         for device in self.devices.iter_mut() {
             match device.tick(&mut self.cpu, self.current_tick) {
                 TickResult::Nothing => (),
-                TickResult::Interrupt(msg) =>
-                    self.cpu.hardware_interrupt(msg),
+                TickResult::Interrupt(msg) => self.cpu.hardware_interrupt(msg),
             }
         }
 

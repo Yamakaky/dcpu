@@ -4,7 +4,7 @@ use std::default::Default;
 use std::fmt;
 use std::error::{self, Error as StdError};
 
-use emulator::device::Device;
+use emulator::device::{self, Device};
 use emulator::ram::Ram;
 use emulator::registers::Registers;
 use types::*;
@@ -16,7 +16,7 @@ use types::SpecialOp::*;
 pub enum Error {
     DecodeError(DecodeError),
     InvalidHardwareId(u16),
-    InterruptError,
+    InterruptError(device::InterruptError),
     InFire,
     Halted,
     Break(u16),
@@ -28,6 +28,8 @@ impl fmt::Display for Error {
             Error::DecodeError(ref e) => write!(f, "instruction decoding error: {}", e),
             Error::InvalidHardwareId(ref id) => write!(f, "invalid device id: {}", id),
             Error::Break(msg) => write!(f, "hardware breakpoint triggered with message {}", msg),
+            Error::InterruptError(device::InterruptError::InvalidCommand(msg)) =>
+                write!(f, "invalid hardware command: {}", msg),
             _ => write!(f, "{}", self.description()),
         }
     }
@@ -39,7 +41,7 @@ impl error::Error for Error {
             Error::DecodeError(ref e) => e.description(),
             Error::InvalidHardwareId(_) => "invalid hardware id",
             Error::Break(_) => "hardware breakpoint triggered",
-            Error::InterruptError => "invalid hardware int",
+            Error::InterruptError(_) => "invalid device command",
             Error::InFire => "dcpu in fire, run for your lives!",
             Error::Halted => "cpu halted",
         }
@@ -56,6 +58,12 @@ impl error::Error for Error {
 impl From<DecodeError> for Error {
     fn from(e: DecodeError) -> Error {
         Error::DecodeError(e)
+    }
+}
+
+impl From<device::InterruptError> for Error {
+    fn from(e: device::InterruptError) -> Error {
+        Error::InterruptError(e)
     }
 }
 
@@ -622,7 +630,7 @@ impl Cpu {
         let val_a = self.get(a) as usize;
 
         if val_a < devices.len() {
-            self.wait += try!(devices[val_a].interrupt(self).map_err(|_| Error::InterruptError));
+            self.wait += try!(devices[val_a].interrupt(self));
             Ok(())
         } else {
             Err(Error::InvalidHardwareId(val_a as u16))

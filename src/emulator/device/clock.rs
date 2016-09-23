@@ -47,17 +47,18 @@ impl Device for Clock {
         0x1c6c8b36
     }
 
-    fn interrupt(&mut self, cpu: &mut Cpu) -> Result<InterruptDelay, ()> {
+    fn interrupt(&mut self, cpu: &mut Cpu)
+        -> InterruptResult {
         let a = cpu.registers[Register::A];
         let b = cpu.registers[Register::B];
-        match Command::from_u16(a) {
-            Some(Command::SET_SPEED) => self.speed = b,
-            Some(Command::GET_TICKS) => {
+        match try!(Command::from_u16(a)
+                           .ok_or(InterruptError::InvalidCommand(a))) {
+            Command::SET_SPEED => self.speed = b,
+            Command::GET_TICKS => {
                 cpu.registers[Register::C] = self.last_call as u16;
                 self.last_call = 0;
             },
-            Some(Command::SET_INT) => self.int_msg = b,
-            None => return Err(())
+            Command::SET_INT => self.int_msg = b,
         }
 
         Ok(0)

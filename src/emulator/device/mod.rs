@@ -15,13 +15,18 @@ pub enum TickResult {
 }
 
 pub type InterruptDelay = u16;
+#[derive(Debug)]
+pub enum InterruptError {
+    InvalidCommand(u16),
+}
+pub type InterruptResult = Result<InterruptDelay, InterruptError>;
 
 pub trait Device: Debug {
     fn hardware_id(&self) -> u32;
     fn hardware_version(&self) -> u16;
     fn manufacturer(&self) -> u32;
 
-    fn interrupt(&mut self, &mut Cpu) -> Result<InterruptDelay, ()>;
+    fn interrupt(&mut self, &mut Cpu) -> InterruptResult;
     fn tick(&mut self, &mut Cpu, current_tick: u64) -> TickResult;
 
     fn inspect(&self);
