@@ -13,6 +13,7 @@ extern crate nom;
 extern crate num;
 #[macro_use]
 extern crate glium;
+extern crate rustyline;
 
 pub mod assembler;
 pub mod emulator;

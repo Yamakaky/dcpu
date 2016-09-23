@@ -1,8 +1,8 @@
 mod parser;
 
-use std::io;
-use std::io::prelude::*;
 use std::iter::Iterator;
+use std::io;
+use std::path::Path;
 
 use nom;
 
@@ -46,13 +46,53 @@ impl Debugger {
         self.log_map = log_map;
     }
 
-    pub fn run(&mut self) {
-        while let Some(cmd) = self.get_command() {
-            self.exec(&cmd);
-            for cmd in self.hooks.clone() {
-                self.exec(&cmd);
+    pub fn run<P: AsRef<Path>>(&mut self, history_path: P) {
+        use rustyline::error::ReadlineError;
+        use rustyline::Editor;
+
+        let mut rl = Editor::<()>::new();
+        if let Err(e) = rl.load_history(&history_path) {
+            if let ReadlineError::Io(io_err) = e {
+                if io_err.kind() != io::ErrorKind::NotFound {
+                    println!("Error while opening the history file: {}",
+                             io_err);
+                }
             }
-            self.last_command = Some(cmd);
+        }
+
+        loop {
+            match rl.readline(">> ") {
+                Ok(line) => {
+                    let maybe_cmd = if line == "" {
+                        self.last_command.clone()
+                    } else {
+                        match parser::parse_command(line.as_bytes()) {
+                            nom::IResult::Done(ref i, ref o) if i.len() == 0 => {
+                                rl.add_history_entry(&line);
+                                Some(o.clone())
+                            }
+                            _ => None,
+                        }
+                    };
+
+                    if let Some(cmd) = maybe_cmd {
+                        self.exec(&cmd);
+                        for cmd in self.hooks.clone() {
+                            self.exec(&cmd);
+                        }
+                        self.last_command = Some(cmd);
+                    } else {
+                        println!("Unknown command: {}", line);
+                    }
+                }
+                Err(ReadlineError::Interrupted) => (),
+                Err(ReadlineError::Eof) => break,
+                Err(err) => println!("Error: {:?}", err),
+            }
+        }
+
+        if let Err(e) = rl.save_history(&history_path) {
+            println!("Error while saving the history file: {}", e);
         }
     }
 
@@ -76,29 +116,6 @@ impl Debugger {
             Command::Hook(ref cmd) => self.hooks.push(*cmd.clone()),
             Command::Logs => self.show_logs(),
         }
-    }
-
-    fn get_command(&self) -> Option<Command> {
-        let stdin = io::stdin();
-
-        print!("> ");
-        io::stdout().flush().unwrap();
-        for line in stdin.lock().lines() {
-            let line = line.unwrap();
-            if line == "" {
-                if let Some(ref cmd) = self.last_command {
-                    return Some(cmd.clone());
-                }
-            }
-            match parser::parse_command(line.as_bytes()) {
-                nom::IResult::Done(ref i, ref o) if i.len() == 0 => return Some(o.clone()),
-                _ => println!("Unknown command: {}", line),
-            }
-            print!("> ");
-            io::stdout().flush().unwrap();
-        }
-        println!("");
-        None
     }
 
     fn step(&mut self) -> Result<(), ()> {

@@ -33,6 +33,8 @@ Options:
   -d, --device       clock or keyscreen.
   --debugger         Launches the debugger.
   --log-map <file>   Mapping between LOG n and string
+  --debug-history <file>   Use this file for the debugger history
+                     [default: debug_history]
   -h, --help         Show this message.
   --version          Show the version of disassembler.
 ";
@@ -45,6 +47,7 @@ struct Args {
     flag_debugger: bool,
     flag_tps: bool,
     flag_limit: bool,
+    flag_debug_history: String,
 }
 
 fn main() {
@@ -94,7 +97,7 @@ fn main() {
             };
             debugger.log_map(log_map);
         }
-        debugger.run();
+        debugger.run(args.flag_debug_history);
     } else {
         let mut computer = Computer::new(cpu, devices);
         let mut timer_tps = time::SystemTime::now();

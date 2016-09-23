@@ -20,7 +20,7 @@ error_chain!(
     errors {
         InvalidCommand(cmd: u16) {
             description("invalid hardware command")
-            display("invalid hardware command: {}", cmd)
+            display("invalid hardware command: {:#x}", cmd)
         }
     }
 );
