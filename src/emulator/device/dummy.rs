@@ -22,7 +22,7 @@ impl Device for Dummy {
         self.manufacturer
     }
 
-    fn interrupt(&mut self, _: &mut Cpu) -> InterruptResult {
+    fn interrupt(&mut self, _: &mut Cpu) -> Result<InterruptDelay> {
         Ok(self.interrupt_delay)
     }
 

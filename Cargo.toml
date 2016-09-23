@@ -1,24 +1,27 @@
 [package]
 authors = ["yamakaky"]
-name = "dcpu"
-version = "0.1.2"
 description = "An assembler, debugger and emulator for the DCPU-16"
-homepage = "https://github.com/Yamakaky/dcpu"
-repository = "https://github.com/Yamakaky/dcpu"
 documentation = "https://docs.rs/dcpu"
+homepage = "https://github.com/Yamakaky/dcpu"
 license = "LGPL-3.0"
+name = "dcpu"
 readme = "README.md"
+repository = "https://github.com/Yamakaky/dcpu"
+version = "0.1.2"
 
 [dependencies]
 byteorder = "~0.5.1"
 docopt = "~0.6.80"
 enum_primitive = "~0.1.0"
+error-chain = "*"
+glium = "0.15"
 log = "~0.3.6"
 nom = "~1.2.2"
 num = "~0.1.31"
 rustc-serialize = "~0.3.19"
 simplelog = "~0.2.0"
-glium = "0.15"
+
+[profile]
 
 [profile.release]
 lto = true

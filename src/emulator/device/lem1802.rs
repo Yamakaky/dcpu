@@ -91,11 +91,11 @@ impl<B: Backend> Device for LEM1802<B> {
         0x1c6c8b36
     }
 
-    fn interrupt(&mut self, cpu: &mut Cpu) -> InterruptResult {
+    fn interrupt(&mut self, cpu: &mut Cpu) -> Result<InterruptDelay> {
         let a = cpu.registers[Register::A];
         let b = cpu.registers[Register::B];
         match try!(Command::from_u16(a)
-                           .ok_or(InterruptError::InvalidCommand(a))) {
+                           .ok_or(ErrorKind::InvalidCommand(a))) {
             Command::MEM_MAP_SCREEN => self.video_map = Wrapping(b),
             Command::MEM_MAP_FONT => self.font_map = Wrapping(b),
             Command::MEM_MAP_PALETTE => self.palette_map = Wrapping(b),

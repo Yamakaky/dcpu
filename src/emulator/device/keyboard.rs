@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::fmt::Debug;
+use std::result::Result as StdResult;
 
 use num::traits::FromPrimitive;
 
@@ -53,11 +54,11 @@ impl<B: Backend> Device for Keyboard<B> {
         0x1c6c8b36
     }
 
-    fn interrupt(&mut self, cpu: &mut Cpu) -> InterruptResult {
+    fn interrupt(&mut self, cpu: &mut Cpu) -> Result<InterruptDelay> {
         let a = cpu.registers[Register::A];
         let b = cpu.registers[Register::B];
         match try!(Command::from_u16(a)
-                           .ok_or(InterruptError::InvalidCommand(a))) {
+                           .ok_or(ErrorKind::InvalidCommand(a))) {
             Command::CLEAR_BUFFER => self.key_buffer.clear(),
             Command::GET_NEXT =>
                 cpu.registers[Register::C] = self.key_buffer
@@ -66,7 +67,7 @@ impl<B: Backend> Device for Keyboard<B> {
                                                  .unwrap_or(0),
             Command::CHECK_KEY => {
                 // TODO: fix error case
-                let key = try!(Key::decode(b).map_err(|_| InterruptError::InvalidCommand(0xffff)));
+                let key = try!(Key::decode(b).map_err(|_| ErrorKind::InvalidCommand(0xffff)));
                 cpu.registers[Register::C] = self.backend.is_key_pressed(key) as u16;
             },
             Command::SET_INT => self.int_msg = b,
@@ -109,7 +110,7 @@ pub enum Key {
 }
 
 impl Key {
-    pub fn from_char(c: char) -> Result<Key, ()> {
+    pub fn from_char(c: char) -> StdResult<Key, ()> {
         let n = c as u32 as u16;
         if 0x20 <= n && n <= 0x7f {
             Ok(Key::ASCII(n))
@@ -134,7 +135,7 @@ impl Key {
         }
     }
 
-    pub fn decode(c: u16) -> Result<Key, ()> {
+    pub fn decode(c: u16) -> StdResult<Key, ()> {
         match c {
             0x10 => Ok(Key::Backspace),
             0x11 => Ok(Key::Return),

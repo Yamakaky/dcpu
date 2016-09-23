@@ -1,5 +1,5 @@
 use emulator::cpu;
-use emulator::device::*;
+use emulator::device::{Device, TickResult};
 
 #[derive(Default)]
 pub struct Computer {

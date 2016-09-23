@@ -1,6 +1,6 @@
-use std::error::Error;
 use std::fmt;
 use std::str::FromStr;
+use std::error;
 
 use num::FromPrimitive;
 
@@ -9,35 +9,43 @@ pub const SHIFT_A: u16 = 10;
 pub const SHIFT_B: u16 = 5;
 pub const MASK_B: u16 = 0b11111;
 
-#[derive(Debug)]
-pub enum DecodeError {
-    BasicOp(u16),
-    SpecialOp(u16)
-}
-
-impl fmt::Display for DecodeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            DecodeError::BasicOp(ref e) => write!(f, "invalid basic opcode: {:x}", e),
-            DecodeError::SpecialOp(ref e) => write!(f, "invalid special opcode: {:x}", e),
-        }
-    }
-}
-
-impl Error for DecodeError {
+impl error::Error for DecodeError {
     fn description(&self) -> &str {
-        match *self {
-            DecodeError::BasicOp(_) => "invalid basic opcode",
-            DecodeError::SpecialOp(_) => "invalid special opcode"
-        }
+        DecodeError::description(self)
     }
 }
 
-pub enum ParseError {
-    BasicOp,
-    SpecialOp,
-    Register
-}
+quick_error!(
+    #[derive(Debug)]
+    pub enum DecodeError {
+        BasicOp(val: u16) {
+            description("invalid basic opcode")
+            display("invalid basic opcode: {:#x}", val)
+        }
+        SpecialOp(val: u16) {
+            description("invalid special opcode")
+            display("invalid special opcode: {:#x}", val)
+        }
+    }
+);
+
+quick_error!(
+    #[derive(Debug)]
+    pub enum ParseError {
+        BasicOp {
+            description("invalid basic operator")
+            display("invalid basic operator")
+        }
+        SpecialOp {
+            description("invalid special operator")
+            display("invalid special operator")
+        }
+        Register {
+            description("invalid register")
+            display("invalid register")
+        }
+    }
+);
 
 #[derive(Debug)]
 pub struct Ast {
