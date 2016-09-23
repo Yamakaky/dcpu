@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Don't drop hardware interrupts when queuing is enabled
 - Better error reporting when hwi with invalid command
-- Much better debugging interface
+- Much better debugging interface with command completer
 
 ### Fixed
 

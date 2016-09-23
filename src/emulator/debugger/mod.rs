@@ -1,15 +1,49 @@
 mod parser;
 
+use std::collections::BTreeSet;
 use std::iter::Iterator;
 use std::io;
 use std::path::Path;
 
 use nom;
+use rustyline;
 
 use iterators;
 use emulator::{cpu, device};
 use emulator::debugger::parser::*;
 use types::Register;
+
+struct DebuggerCompleter;
+
+impl rustyline::completion::Completer for DebuggerCompleter {
+    fn complete(&self, line: &str, pos: usize)
+        -> rustyline::Result<(usize, Vec<String>)> {
+
+        let break_chars = {
+            let mut set = BTreeSet::new();
+            set.insert(' ');
+            set
+        };
+        let cmds = [
+            "r", "x", "b", "s", "c",
+            "devices",
+            "disassemble",
+            "breakpoints",
+            "delete",
+            "hooks",
+            "logs",
+        ];
+        let (i, word) = rustyline::completion::extract_word(line,
+                                                            pos,
+                                                            &break_chars);
+        let completions = cmds.iter()
+                              .filter(|cmd| cmd.starts_with(word))
+                              .cloned()
+                              .map(|s| (*s).into())
+                              .collect();
+        Ok((i, completions))
+    }
+}
 
 pub struct Debugger {
     cpu: cpu::Cpu,
@@ -49,10 +83,9 @@ impl Debugger {
     pub fn run<P: AsRef<Path>>(&mut self, history_path: P) {
         use rustyline::error::ReadlineError;
         use rustyline::Editor;
-        use rustyline::completion::FilenameCompleter;
 
         let mut rl = Editor::new();
-        rl.set_completer(Some(FilenameCompleter::new()));
+        rl.set_completer(Some(DebuggerCompleter));
         if let Err(e) = rl.load_history(&history_path) {
             if let ReadlineError::Io(io_err) = e {
                 if io_err.kind() != io::ErrorKind::NotFound {
