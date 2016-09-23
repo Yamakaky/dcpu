@@ -20,6 +20,7 @@ pub enum Command {
     DeleteBreakpoint(u16),
     ShowDevices,
     Hook(Box<Command>),
+    Logs,
 }
 
 named!(pub parse_command<Command>,
@@ -35,7 +36,8 @@ named!(pub parse_command<Command>,
             cmd_show_breakpoints |
             cmd_delete_breakpoint |
             cmd_show_devices |
-            cmd_hook
+            cmd_hook |
+            cmd_logs
         ),
         opt!(multispace)
     )
@@ -111,4 +113,8 @@ named!(cmd_hook<Command>,
         c: parse_command,
         || Command::Hook(Box::new(c))
     )
+);
+
+named!(cmd_logs<Command>,
+    map!(tag!("logs"), |_| Command::Logs)
 );

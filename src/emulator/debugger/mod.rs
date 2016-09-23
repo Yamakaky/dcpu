@@ -18,6 +18,7 @@ pub struct Debugger {
     tick_number: u64,
     hooks: Vec<Command>,
     last_command: Option<Command>,
+    log_map: [Option<String>; 64]
 }
 
 impl Debugger {
@@ -30,7 +31,19 @@ impl Debugger {
             tick_number: 0,
             hooks: vec![],
             last_command: None,
+            // Wow, such many None
+            log_map: [None, None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None, None, None,
+            None, None, None, None, None],
         }
+    }
+
+    pub fn log_map(&mut self, log_map: [Option<String>; 64]) {
+        self.log_map = log_map;
     }
 
     pub fn run(&mut self) {
@@ -61,6 +74,7 @@ impl Debugger {
             Command::Continue => self.continue_exec(),
             Command::ShowDevices => self.show_devices(),
             Command::Hook(ref cmd) => self.hooks.push(*cmd.clone()),
+            Command::Logs => self.show_logs(),
         }
     }
 
@@ -173,6 +187,16 @@ impl Debugger {
         for (i, dev) in self.devices.iter().enumerate() {
             print!("Device {}: ", i);
             dev.inspect();
+            println!("");
+        }
+    }
+
+    fn show_logs(&mut self) {
+        for log in self.cpu.log_queue.drain(..) {
+            print!("{}", log);
+            if let Some(ref s) = self.log_map[log as usize] {
+                print!(" - {}", s);
+            }
             println!("");
         }
     }

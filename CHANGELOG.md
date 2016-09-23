@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Ticks per second counter for the emulator
 - Add tickrate limiter
+- Ability to map LOG n to human-readable strings
 
 ### Changed
 

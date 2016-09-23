@@ -10,6 +10,9 @@ extern crate simplelog;
 mod utils;
 
 use std::{time, thread};
+use std::fs::File;
+use std::io::{self, BufReader};
+use std::io::prelude::*;
 
 use docopt::Docopt;
 
@@ -20,7 +23,7 @@ use dcpu::emulator::device::*;
 
 const USAGE: &'static str = "
 Usage:
-  emulator [--tps] [--limit] [--debugger] [(-d <device>)...] [<file>]
+  emulator [options] [(-d <device>)...] [<file>]
   emulator (--help | --version)
 
 Options:
@@ -29,6 +32,7 @@ Options:
   --limit            Try to limit the tick rate to 100_000/s
   -d, --device       clock or keyscreen.
   --debugger         Launches the debugger.
+  --log-map <file>   Mapping between LOG n and string
   -h, --help         Show this message.
   --version          Show the version of disassembler.
 ";
@@ -37,6 +41,7 @@ Options:
 struct Args {
     arg_device: Option<Vec<String>>,
     arg_file: Option<String>,
+    flag_log_map: Option<String>,
     flag_debugger: bool,
     flag_tps: bool,
     flag_limit: bool,
@@ -79,6 +84,16 @@ fn main() {
 
     if args.flag_debugger {
         let mut debugger = Debugger::new(cpu, devices);
+        if let Some(path) = args.flag_log_map {
+            let log_map = match load_log_map(&path) {
+                Ok(map) => map,
+                Err(e) => {
+                    println!("Some troube loading the log map: {}", e);
+                    return;
+                }
+            };
+            debugger.log_map(log_map);
+        }
         debugger.run();
     } else {
         let mut computer = Computer::new(cpu, devices);
@@ -125,4 +140,31 @@ fn main() {
             }
         }
     }
+}
+
+fn load_log_map(path: &str) -> io::Result<[Option<String>; 64]> {
+    let file = BufReader::new(try!(File::open(path)));
+    let mut log_map = [
+        None, None, None, None, None, None, None, None,
+        None, None, None, None, None, None, None, None,
+        None, None, None, None, None, None, None, None,
+        None, None, None, None, None, None, None, None,
+        None, None, None, None, None, None, None, None,
+        None, None, None, None, None, None, None, None,
+        None, None, None, None, None, None, None, None,
+        None, None, None, None, None, None, None, None,
+    ];
+    for line in file.lines() {
+        let line = try!(line);
+        let mut fields = line.splitn(2, ' ');
+        if let Some(i) = fields.next() {
+            if let Ok(i) = i.parse() {
+                let i: usize = i;
+                if let Some(s) = fields.next() {
+                    log_map[i] = Some(s.into());
+                }
+            }
+        }
+    }
+    Ok(log_map)
 }
