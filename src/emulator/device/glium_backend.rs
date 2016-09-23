@@ -167,7 +167,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TriangleStrip);
 
     let program = glium::Program::from_source(&display, "
-        #version 140
+        #version 130
         #define SCREEN_WIDTH 128.
         #define SCREEN_HEIGHT 96.
 
@@ -190,7 +190,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
             );
         }
     ", "
-        #version 140
+        #version 130
         in vec3 v_color;
         out vec4 f_color;
 
