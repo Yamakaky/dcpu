@@ -9,7 +9,7 @@ extern crate simplelog;
 #[macro_use]
 mod utils;
 
-use std::time;
+use std::{time, thread};
 
 use docopt::Docopt;
 
@@ -20,12 +20,13 @@ use dcpu::emulator::device::*;
 
 const USAGE: &'static str = "
 Usage:
-  emulator [--tps] [--debugger] [(-d <device>)...] [<file>]
+  emulator [--tps] [--limit] [--debugger] [(-d <device>)...] [<file>]
   emulator (--help | --version)
 
 Options:
   <file>             The binary file to execute.
   --tps              Print the number of ticks by second
+  --limit            Try to limit the tick rate to 100_000/s
   -d, --device       clock or keyscreen.
   --debugger         Launches the debugger.
   -h, --help         Show this message.
@@ -38,6 +39,7 @@ struct Args {
     arg_file: Option<String>,
     flag_debugger: bool,
     flag_tps: bool,
+    flag_limit: bool,
 }
 
 fn main() {
@@ -80,9 +82,15 @@ fn main() {
         debugger.run();
     } else {
         let mut computer = Computer::new(cpu, devices);
-        let mut timer = time::SystemTime::now();
+        let mut timer_tps = time::SystemTime::now();
+        let mut timer_limit = time::SystemTime::now();
         let normal_tickrate = 100_000;
-        let interval = 10 * normal_tickrate;
+        let limit_check = 10_000;
+        let tps_check = if args.flag_limit {
+            normal_tickrate
+        } else {
+            10 * normal_tickrate
+        };
 
         loop {
             match computer.tick() {
@@ -93,15 +101,27 @@ fn main() {
                 }
             }
 
-            if args.flag_tps && computer.current_tick % interval == 0 {
-                if let Ok(delay) = timer.elapsed() {
-                    let tps = interval * 0xffffffff / delay.subsec_nanos() as u64;
+            if args.flag_tps && computer.current_tick % tps_check == 0 {
+                if let Ok(delay) = timer_tps.elapsed() {
+                    let tps = tps_check * 1_000_000_000 / delay.subsec_nanos() as u64;
                     println!("{} tics per second, {}x speedup",
                              tps,
                              tps as f32 / normal_tickrate as f32);
                 }
 
-                timer = time::SystemTime::now();
+                timer_tps = time::SystemTime::now();
+            }
+            if args.flag_limit && computer.current_tick % limit_check == 0 {
+                if let Ok(delay) = timer_limit.elapsed() {
+                    let elapsed_ms = (delay.subsec_nanos() / 1_000_000) as u64;
+                    let normal_duration = limit_check * 1_000 / normal_tickrate;
+                    if elapsed_ms < normal_duration {
+                        thread::sleep(time::Duration::from_millis(normal_duration
+                                                                  - elapsed_ms));
+                    }
+                }
+
+                timer_limit = time::SystemTime::now();
             }
         }
     }

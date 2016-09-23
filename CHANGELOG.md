@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Ticks per second counter for the emulator
+- Add tickrate limiter
 
 ## [0.1.2]
 
