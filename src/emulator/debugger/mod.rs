@@ -49,8 +49,10 @@ impl Debugger {
     pub fn run<P: AsRef<Path>>(&mut self, history_path: P) {
         use rustyline::error::ReadlineError;
         use rustyline::Editor;
+        use rustyline::completion::FilenameCompleter;
 
-        let mut rl = Editor::<()>::new();
+        let mut rl = Editor::new();
+        rl.set_completer(Some(FilenameCompleter::new()));
         if let Err(e) = rl.load_history(&history_path) {
             if let ReadlineError::Io(io_err) = e {
                 if io_err.kind() != io::ErrorKind::NotFound {
