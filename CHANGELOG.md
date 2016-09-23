@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Don't drop hardware interrupts when queuing is enabled
 - Better error reporting when hwi with invalid command
 
+### Fixed
+
+- Fix memory leak
+
 ### Misc
 
 - Use `error-chain` crate
