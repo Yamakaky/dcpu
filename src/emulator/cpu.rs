@@ -240,9 +240,7 @@ impl Cpu {
     }
 
     pub fn hardware_interrupt(&mut self, msg: u16) {
-        if self.ia != 0 {
-            self.interrupts_queue.push_back(msg);
-        }
+        self.interrupts_queue.push_back(msg);
     }
 
     fn op(&mut self, i: Instruction, devices: &mut [Box<Device>]) -> Result<(), Error> {

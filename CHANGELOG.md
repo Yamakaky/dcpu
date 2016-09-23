@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Ticks per second counter for the emulator
 - Add tickrate limiter
 
+### Changed
+
+- Don't drop hardware interrupts when queuing is enabled
+
 ## [0.1.2]
 
 ### Added
