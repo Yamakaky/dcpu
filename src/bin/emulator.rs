@@ -9,6 +9,8 @@ extern crate simplelog;
 #[macro_use]
 mod utils;
 
+use std::time;
+
 use docopt::Docopt;
 
 use dcpu::emulator::Cpu;
@@ -18,11 +20,12 @@ use dcpu::emulator::device::*;
 
 const USAGE: &'static str = "
 Usage:
-  emulator [--debugger] [(-d <device>)...] [<file>]
+  emulator [--tps] [--debugger] [(-d <device>)...] [<file>]
   emulator (--help | --version)
 
 Options:
   <file>             The binary file to execute.
+  --tps              Print the number of ticks by second
   -d, --device       clock or keyscreen.
   --debugger         Launches the debugger.
   -h, --help         Show this message.
@@ -34,6 +37,7 @@ struct Args {
     arg_device: Option<Vec<String>>,
     arg_file: Option<String>,
     flag_debugger: bool,
+    flag_tps: bool,
 }
 
 fn main() {
@@ -76,6 +80,9 @@ fn main() {
         debugger.run();
     } else {
         let mut computer = Computer::new(cpu, devices);
+        let mut timer = time::SystemTime::now();
+        let normal_tickrate = 100_000;
+        let interval = 10 * normal_tickrate;
 
         loop {
             match computer.tick() {
@@ -84,6 +91,17 @@ fn main() {
                     println!("{}", e);
                     break;
                 }
+            }
+
+            if args.flag_tps && computer.current_tick % interval == 0 {
+                if let Ok(delay) = timer.elapsed() {
+                    let tps = interval * 0xffffffff / delay.subsec_nanos() as u64;
+                    println!("{} tics per second, {}x speedup",
+                             tps,
+                             tps as f32 / normal_tickrate as f32);
+                }
+
+                timer = time::SystemTime::now();
             }
         }
     }

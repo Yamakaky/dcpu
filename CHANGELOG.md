@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Ticks per second counter for the emulator
+
 ## [0.1.2]
 
 ### Added

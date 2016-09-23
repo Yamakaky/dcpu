@@ -5,7 +5,7 @@ use emulator::device::*;
 pub struct Computer {
     cpu: cpu::Cpu,
     devices: Vec<Box<Device>>,
-    current_tick: u64,
+    pub current_tick: u64,
 }
 
 impl Computer {
