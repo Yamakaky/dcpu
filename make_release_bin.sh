@@ -7,4 +7,3 @@ cargo build --target=x86_64-pc-windows-gnu --release
 
 mkdir -p target/bins
 cp target/*/release/{emulator,emulator.exe,assembler,assembler.exe,disassembler,disassembler.exe} target/bins/
-strip target/bins/*
