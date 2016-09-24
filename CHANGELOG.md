@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 
 - Fix memory leak
+- Part of the keyboard keys
 
 ### Misc
 

@@ -236,9 +236,9 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
         for ev in display.poll_events() {
             match ev {
                 glium::glutin::Event::Closed => break 'main,
-                glium::glutin::Event::KeyboardInput(state, raw, code) => {
+                glium::glutin::Event::KeyboardInput(state, _, code) => {
                     if let Some(code) = code {
-                        if let Some(converted) = convert_kb_code(raw, code) {
+                        if let Some(converted) = convert_kb_code(code) {
                             keyboard_sender.send(match state {
                                 glium::glutin::ElementState::Pressed =>
                                     KeyboardEvent::KeyPressed(converted),
@@ -262,8 +262,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
     }
 }
 
-fn convert_kb_code(raw: u8,
-                   code: glium::glutin::VirtualKeyCode)
+fn convert_kb_code(code: glium::glutin::VirtualKeyCode)
     -> Option<keyboard::Key> {
     use glium::glutin::VirtualKeyCode;
     use emulator::device::keyboard::Key;
@@ -278,7 +277,43 @@ fn convert_kb_code(raw: u8,
         VirtualKeyCode::Right => Some(Key::Right),
         VirtualKeyCode::LShift | VirtualKeyCode::RShift => Some(Key::Shift),
         VirtualKeyCode::LControl | VirtualKeyCode::RControl=> Some(Key::Control),
-        _ if 0x20 <= raw && raw <= 0x7f => Some(Key::ASCII(raw as u16)),
+        VirtualKeyCode::Key1 => Some(Key::ASCII('1' as u16)),
+        VirtualKeyCode::Key2 => Some(Key::ASCII('2' as u16)),
+        VirtualKeyCode::Key3 => Some(Key::ASCII('3' as u16)),
+        VirtualKeyCode::Key4 => Some(Key::ASCII('4' as u16)),
+        VirtualKeyCode::Key5 => Some(Key::ASCII('5' as u16)),
+        VirtualKeyCode::Key6 => Some(Key::ASCII('6' as u16)),
+        VirtualKeyCode::Key7 => Some(Key::ASCII('7' as u16)),
+        VirtualKeyCode::Key8 => Some(Key::ASCII('8' as u16)),
+        VirtualKeyCode::Key9 => Some(Key::ASCII('9' as u16)),
+        VirtualKeyCode::Key0 => Some(Key::ASCII('0' as u16)),
+        VirtualKeyCode::A => Some(Key::ASCII('a' as u16)),
+        VirtualKeyCode::B => Some(Key::ASCII('b' as u16)),
+        VirtualKeyCode::C => Some(Key::ASCII('c' as u16)),
+        VirtualKeyCode::D => Some(Key::ASCII('d' as u16)),
+        VirtualKeyCode::E => Some(Key::ASCII('e' as u16)),
+        VirtualKeyCode::F => Some(Key::ASCII('f' as u16)),
+        VirtualKeyCode::G => Some(Key::ASCII('g' as u16)),
+        VirtualKeyCode::H => Some(Key::ASCII('h' as u16)),
+        VirtualKeyCode::I => Some(Key::ASCII('i' as u16)),
+        VirtualKeyCode::J => Some(Key::ASCII('j' as u16)),
+        VirtualKeyCode::K => Some(Key::ASCII('k' as u16)),
+        VirtualKeyCode::L => Some(Key::ASCII('l' as u16)),
+        VirtualKeyCode::M => Some(Key::ASCII('m' as u16)),
+        VirtualKeyCode::N => Some(Key::ASCII('n' as u16)),
+        VirtualKeyCode::O => Some(Key::ASCII('o' as u16)),
+        VirtualKeyCode::P => Some(Key::ASCII('p' as u16)),
+        VirtualKeyCode::Q => Some(Key::ASCII('q' as u16)),
+        VirtualKeyCode::R => Some(Key::ASCII('r' as u16)),
+        VirtualKeyCode::S => Some(Key::ASCII('s' as u16)),
+        VirtualKeyCode::T => Some(Key::ASCII('t' as u16)),
+        VirtualKeyCode::U => Some(Key::ASCII('u' as u16)),
+        VirtualKeyCode::V => Some(Key::ASCII('v' as u16)),
+        VirtualKeyCode::W => Some(Key::ASCII('w' as u16)),
+        VirtualKeyCode::X => Some(Key::ASCII('x' as u16)),
+        VirtualKeyCode::Y => Some(Key::ASCII('y' as u16)),
+        VirtualKeyCode::Z => Some(Key::ASCII('z' as u16)),
+        VirtualKeyCode::Space => Some(Key::ASCII(' ' as u16)),
         _ => None,
     }
 }
