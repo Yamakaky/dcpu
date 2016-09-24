@@ -236,16 +236,14 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
         for ev in display.poll_events() {
             match ev {
                 glium::glutin::Event::Closed => break 'main,
-                glium::glutin::Event::KeyboardInput(state, _, code) => {
-                    if let Some(code) = code {
-                        if let Some(converted) = convert_kb_code(code) {
-                            keyboard_sender.send(match state {
-                                glium::glutin::ElementState::Pressed =>
-                                    KeyboardEvent::KeyPressed(converted),
-                                glium::glutin::ElementState::Released =>
-                                    KeyboardEvent::KeyReleased(converted)
-                            }).unwrap();
-                        }
+                glium::glutin::Event::KeyboardInput(state, raw, code) => {
+                    if let Some(converted) = convert_kb_code(raw, code) {
+                        keyboard_sender.send(match state {
+                            glium::glutin::ElementState::Pressed =>
+                                KeyboardEvent::KeyPressed(converted),
+                            glium::glutin::ElementState::Released =>
+                                KeyboardEvent::KeyReleased(converted)
+                        }).unwrap();
                     }
                 }
                 _ => ()
@@ -262,11 +260,11 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
     }
 }
 
-fn convert_kb_code(code: glium::glutin::VirtualKeyCode)
+fn convert_kb_code(raw: u8, maybe_code: Option<glium::glutin::VirtualKeyCode>)
     -> Option<keyboard::Key> {
     use glium::glutin::VirtualKeyCode;
     use emulator::device::keyboard::Key;
-    match code {
+    maybe_code.and_then(|code| match code {
         VirtualKeyCode::Back => Some(Key::Backspace),
         VirtualKeyCode::Return => Some(Key::Return),
         VirtualKeyCode::Insert => Some(Key::Insert),
@@ -315,5 +313,11 @@ fn convert_kb_code(code: glium::glutin::VirtualKeyCode)
         VirtualKeyCode::Z => Some(Key::ASCII('z' as u16)),
         VirtualKeyCode::Space => Some(Key::ASCII(' ' as u16)),
         _ => None,
-    }
+    }).or(match raw {
+            // 0-9
+            19 => Some(Key::ASCII('0' as u16)),
+            x if 10 <= x && x <= 18 =>
+                Some(Key::ASCII('1' as u16 + x as u16 - 10)),
+            _ => None,
+    })
 }
