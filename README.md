@@ -28,7 +28,7 @@ You need to install the [rust compiler](https://www.rust-lang.org/) to build thi
 
 `cargo run --release --bin <bin> -- <bin-args>`
 
-Available binaries are assemble, disassemble and emulator.
+Available binaries are assembler, disassembler, emulator and sprite.
 
 ## Documentation
 
