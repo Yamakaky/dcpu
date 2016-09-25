@@ -185,7 +185,7 @@ impl<B: Backend> LEM1802<B> {
             unreachable!()
         } else {
             let idx = self.video_map + Wrapping(offset);
-            VideoWord::from_packed(cpu.ram[idx.0])
+            VideoWord::from_packed(cpu.ram[idx])
         }
     }
 
@@ -195,8 +195,8 @@ impl<B: Backend> LEM1802<B> {
              DEFAULT_FONT[char_idx as usize * 2 + 1])
         } else {
             let idx = self.font_map + Wrapping(char_idx * 2);
-            (cpu.ram[idx.0],
-             cpu.ram[idx.0 + 1])
+            (cpu.ram[idx],
+             cpu.ram[idx + Wrapping(1)])
         };
         (w0 as u32) << 16 | w1 as u32
     }
@@ -206,7 +206,7 @@ impl<B: Backend> LEM1802<B> {
             Color::from_packed(DEFAULT_PALETTE[color_idx as usize])
         } else {
             let idx = self.palette_map + Wrapping(color_idx);
-            let color = cpu.ram[idx.0];
+            let color = cpu.ram[idx];
             Color::from_packed(color)
         }
     }

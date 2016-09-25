@@ -1,4 +1,5 @@
 use std::ops::*;
+use std::num::Wrapping;
 
 pub type InnerRam = [u16; 0x10000];
 pub struct Ram(pub InnerRam);
@@ -22,6 +23,14 @@ impl Index<u16> for Ram {
 
     fn index(&self, i: u16) -> &u16{
         &self.0[i as usize]
+    }
+}
+
+impl Index<Wrapping<u16>> for Ram {
+    type Output = u16;
+
+    fn index(&self, i: Wrapping<u16>) -> &u16{
+        &self.0[i.0 as usize]
     }
 }
 
@@ -52,6 +61,12 @@ impl Index<RangeTo<u16>> for Ram {
 impl IndexMut<u16> for Ram {
     fn index_mut(&mut self, i: u16) -> &mut u16{
         &mut self.0[i as usize]
+    }
+}
+
+impl IndexMut<Wrapping<u16>> for Ram {
+    fn index_mut(&mut self, i: Wrapping<u16>) -> &mut u16{
+        &mut self.0[i.0 as usize]
     }
 }
 
