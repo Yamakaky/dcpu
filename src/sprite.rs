@@ -2,14 +2,16 @@ use image;
 
 const CHAR_HEIGHT: u32 = 8;
 const CHAR_WIDTH: u32 = 4;
-const NB_CHARS_HEIGHT: u32 = 8;
-const NB_CHARS_WIDTH: u32 = 16;
-const FILE_HEIGHT: u32 = CHAR_HEIGHT * NB_CHARS_HEIGHT;
-const FILE_WIDTH: u32 = CHAR_WIDTH * NB_CHARS_WIDTH;
+const NB_CHARS: u32 = 128;
+const NB_PIXELS_TOTAL: u32 = NB_CHARS * CHAR_WIDTH * CHAR_HEIGHT;
 
 pub fn encode_font(img: image::RgbImage) -> Result<[u16; 256], String> {
-    if img.dimensions() != (FILE_WIDTH, FILE_HEIGHT) {
-        return Err("The font image must be 64x64px".into());
+    let (img_width, img_heigth) = img.dimensions();
+    if img_width * img_heigth != NB_PIXELS_TOTAL ||
+       img_width % CHAR_WIDTH != 0 ||
+       img_heigth % CHAR_HEIGHT != 0 {
+        return Err("The font image must be rectangular, with x and y multiples \
+of 4 and 8 respectively, like 64*64px, 32x128px...".into());
     }
 
     let mut font = [0u16; 256];
@@ -24,7 +26,8 @@ pub fn encode_font(img: image::RgbImage) -> Result<[u16; 256], String> {
                         x, y)
             );
         };
-        let char_id = (x / CHAR_WIDTH) + (y / CHAR_HEIGHT) * NB_CHARS_WIDTH;
+        let char_id = (x / CHAR_WIDTH)
+            + (y / CHAR_HEIGHT) * (img_width / CHAR_WIDTH);
         let char_rel_x = x % 2;
         let char_rel_y = y % CHAR_HEIGHT;
         let shift = char_rel_x * (CHAR_HEIGHT) + 7 - char_rel_y;

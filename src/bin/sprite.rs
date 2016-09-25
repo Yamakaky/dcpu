@@ -18,8 +18,9 @@ Usage:
   sprite (--help | --version)
 
 Options:
-  --font-file <file>     Input black and white font file.
-                         It's a 64x64px, 16x8 8x4px characters image.
+  --font-file <file>     Input black and white font image file.
+                         It's a grid with 4x8px characters: 64x64px,
+                         32x128px... 4x512px
   --palette-file <file>  Input RGB palette file. At most 16 pixels
                          will be used.
   --format <format>      Output format to use.
