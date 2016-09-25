@@ -148,7 +148,11 @@ impl Debugger {
                 self.delete_breakpoint(b as usize),
             Command::Continue => self.continue_exec(),
             Command::ShowDevices => self.show_devices(),
-            Command::Hook(ref cmd) => self.hooks.push(*cmd.clone()),
+            Command::Hook(ref cmd) => if let Command::Hook(_) = **cmd {
+                println!("You can't hook hooks!");
+            } else {
+                self.hooks.push(*cmd.clone());
+            },
             Command::Logs => self.show_logs(),
         }
     }
