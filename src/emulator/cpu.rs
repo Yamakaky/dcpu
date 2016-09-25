@@ -129,7 +129,7 @@ impl Cpu {
     fn set(&mut self, i: Value, val: u16) {
         match i {
             Reg(r) => self.registers[r] = val,
-            AtReg(r) => self.ram[(self.registers[r])] = val,
+            AtReg(r) => self.ram[self.registers[r]] = val,
             AtRegPlus(r, off) => {
                 let i = off.wrapping_add(self.get(Reg(r)));
                 self.ram[i] = val;
