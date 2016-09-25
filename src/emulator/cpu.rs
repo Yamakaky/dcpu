@@ -1,6 +1,7 @@
 use std::cmp::max;
 use std::collections::VecDeque;
 use std::default::Default;
+use std::num::Wrapping;
 
 use emulator::device::{self, Device};
 use emulator::ram::Ram;
@@ -52,8 +53,8 @@ pub enum OnDecodeError {
 pub struct Cpu {
     pub ram: Ram,
     pub registers: Registers,
-    pub pc: u16,
-    pub sp: u16,
+    pub pc: Wrapping<u16>,
+    pub sp: Wrapping<u16>,
     pub ex: u16,
     pub ia: u16,
     pub wait: u16,
@@ -69,8 +70,8 @@ impl Default for Cpu {
         Cpu {
             ram: Ram([0x03e0; 0x10000]),
             registers: Registers([0xdead; 8]),
-            pc: 0,
-            sp: 0xffff,
+            pc: Wrapping(0),
+            sp: Wrapping(0xffff),
             ex: 0,
             ia: 0,
             wait: 0,
@@ -112,13 +113,13 @@ impl Cpu {
             }
             Push => {
                 let v = self.ram[self.sp];
-                self.sp = self.sp.wrapping_add(1);
+                self.sp += Wrapping(1);
                 v
             },
             Peek => self.ram[self.sp],
-            Pick(n) => self.ram[self.sp.wrapping_add(n)],
-            SP => self.sp,
-            PC => self.pc,
+            Pick(n) => self.ram[self.sp + Wrapping(n)],
+            SP => self.sp.0,
+            PC => self.pc.0,
             EX => self.ex,
             AtAddr(off) => self.ram[off],
             Litteral(n) => n
@@ -134,13 +135,14 @@ impl Cpu {
                 self.ram[i] = val;
             }
             Push => {
-                self.sp = self.sp.wrapping_sub(1);
+                self.sp -= Wrapping(1);
                 self.ram[self.sp] = val;
             },
             Peek => self.ram[self.sp] = val,
-            Pick(n) => self.ram[self.sp.wrapping_add(n)] = val,
-            SP => self.sp = val,
-            PC => self.pc = val,
+            // TODO verify...
+            Pick(n) => self.ram[self.sp + Wrapping(n)] = val,
+            SP => self.sp = Wrapping(val),
+            PC => self.pc = Wrapping(val),
             EX => self.ex = val,
             AtAddr(off) => self.ram[off] = val,
             Litteral(_) => ()
@@ -164,18 +166,18 @@ impl Cpu {
         }
 
         let pc = self.pc;
-        let (words_used, instruction) = match self.decode(pc) {
+        let (words_used, instruction) = match self.decode(pc.0) {
             Ok(res) => res,
             Err(e) => match self.on_decode_error {
                 OnDecodeError::Continue => {
-                    warn!("Instruction decoding error: {:x}", self.ram[pc]);
-                    self.pc += 1;
+                    warn!("Instruction decoding error: {:x}", self.ram[self.pc]);
+                    self.pc += Wrapping(1);
                     return Ok(CpuState::Executing);
                 },
                 OnDecodeError::Fail => return Err(e.into()),
             }
         };
-        self.pc = self.pc.wrapping_add(words_used);
+        self.pc += Wrapping(words_used);
 
         trace!("Executing {:?}", instruction);
         // BRK and HLT have a 0 delay
@@ -408,8 +410,8 @@ impl Cpu {
 
             loop {
                 let pc = self.pc;
-                let (offset, op) = try!(self.decode(pc));
-                self.pc = self.pc.wrapping_add(offset);
+                let (offset, op) = try!(self.decode(pc.0));
+                self.pc += Wrapping(offset);
 
                 if op.is_if() {
                     trace!("Skipping cascade");
@@ -473,15 +475,12 @@ impl Cpu {
     fn op_adx(&mut self, b: Value, a: Value) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
-        let ex = self.ex;
-        self.ex = 0;
-        let (new_b, overflow) = val_b.overflowing_add(val_a);
-        if overflow {
+        let (new_b, overflow1) = val_b.overflowing_add(val_a);
+        let (new_b, overflow2) = new_b.overflowing_add(self.ex);
+        if overflow1 || overflow2 {
             self.ex = 1;
-        }
-        let (new_b, overflow) = new_b.overflowing_add(ex);
-        if overflow {
-            self.ex = 1;
+        } else {
+            self.ex = 0;
         }
         self.set(b, new_b);
         Ok(())
@@ -490,15 +489,12 @@ impl Cpu {
     fn op_sbx(&mut self, b: Value, a: Value) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
-        let ex = self.ex;
-        self.ex = 0;
-        let (new_b, overflow) = val_b.overflowing_sub(val_a);
-        if overflow {
+        let (new_b, overflow1) = val_b.overflowing_sub(val_a);
+        let (new_b, overflow2) = new_b.overflowing_add(self.ex);
+        if overflow1 || overflow2 {
             self.ex = 0xffff;
-        }
-        let (new_b, overflow) = new_b.overflowing_add(ex);
-        if overflow {
-            self.ex = 0xffff;
+        } else {
+            self.ex = 0;
         }
         self.set(b, new_b);
         Ok(())
@@ -526,9 +522,9 @@ impl Cpu {
 
     fn op_jsr(&mut self, a: Value) -> Result<()> {
         let val_a = self.get(a);
-        let new_pc = Litteral(self.pc);
+        let new_pc = Litteral(self.pc.0);
         try!(self.op_set(Push, new_pc));
-        self.pc = val_a;
+        self.pc = Wrapping(val_a);
         Ok(())
     }
 

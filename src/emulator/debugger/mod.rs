@@ -231,7 +231,7 @@ impl Debugger {
             if let Some((i, addr)) = self.breakpoints
                                  .iter()
                                  .enumerate()
-                                 .filter(|&(_, x)| *x == self.cpu.pc)
+                                 .filter(|&(_, x)| *x == self.cpu.pc.0)
                                  .next() {
                 println!("Breakpoint {} triggered at {}", i, addr);
                 return;
