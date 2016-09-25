@@ -58,7 +58,6 @@ pub struct Cpu {
     pub ia: u16,
     pub wait: u16,
     pub on_decode_error: OnDecodeError,
-    pub check_if_cascade: bool,
     pub is_queue_enabled: bool,
     pub interrupts_queue: VecDeque<u16>,
     pub log_queue: VecDeque<u16>,
@@ -76,7 +75,6 @@ impl Default for Cpu {
             ia: 0,
             wait: 0,
             on_decode_error: OnDecodeError::Continue,
-            check_if_cascade: true,
             is_queue_enabled: false,
             interrupts_queue: VecDeque::new(),
             log_queue: VecDeque::new(),
@@ -178,15 +176,6 @@ impl Cpu {
             }
         };
         self.pc = self.pc.wrapping_add(words_used);
-
-        // TODO: fix
-        //if self.check_if_cascade {
-        //    trace!("Skipping cascade");
-        //    self.check_if_cascade = instruction.is_if();
-        //    if instruction.is_if() {
-        //        return Ok(CpuState::Waiting);
-        //    }
-        //}
 
         trace!("Executing {:?}", instruction);
         // BRK and HLT have a 0 delay
@@ -415,11 +404,21 @@ impl Cpu {
 
     fn exec_if(&mut self, cond: bool) -> Result<()> {
         if !cond {
-            let next_i = self.pc;
-            let (offset, _) = try!(self.decode(next_i));
-            self.pc = self.pc.wrapping_add(offset);
-            self.check_if_cascade = true;
             self.wait += 1;
+            let mut next_i = self.pc;
+
+            loop {
+                let (offset, op) = try!(self.decode(next_i));
+                self.pc = self.pc.wrapping_add(offset);
+
+                if op.is_if() {
+                    trace!("Skipping cascade");
+                    self.wait += 1;
+                    next_i = next_i.wrapping_add(offset);
+                } else {
+                    break;
+                }
+            }
         }
         Ok(())
     }

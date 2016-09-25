@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Utility to generate LEM font and palette from image
 
+### Fixed
+
+- If cascade handling
+
 ## [0.2.0]
 
 ### Added
