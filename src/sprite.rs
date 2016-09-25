@@ -7,8 +7,10 @@ const NB_CHARS_WIDTH: u32 = 16;
 const FILE_HEIGHT: u32 = CHAR_HEIGHT * NB_CHARS_HEIGHT;
 const FILE_WIDTH: u32 = CHAR_WIDTH * NB_CHARS_WIDTH;
 
-pub fn encode_font(img: image::RgbImage) -> [u16; 256] {
-    assert_eq!(img.dimensions(), (FILE_WIDTH, FILE_HEIGHT));
+pub fn encode_font(img: image::RgbImage) -> Result<[u16; 256], String> {
+    if img.dimensions() != (FILE_WIDTH, FILE_HEIGHT) {
+        return Err("The font image must be 64x64px".into());
+    }
 
     let mut font = [0u16; 256];
     for (x, y, pixel) in img.enumerate_pixels() {
@@ -17,7 +19,10 @@ pub fn encode_font(img: image::RgbImage) -> [u16; 256] {
         } else if pixel.data == [255, 255, 255] {
             0
         } else {
-            unreachable!()
+            return Err(
+                format!("Invalid pixel at ({}, {}), should be black or white",
+                        x, y)
+            );
         };
         let char_id = (x / CHAR_WIDTH) + (y / CHAR_HEIGHT) * NB_CHARS_WIDTH;
         let char_rel_x = x % 2;
@@ -26,7 +31,7 @@ pub fn encode_font(img: image::RgbImage) -> [u16; 256] {
         font[2 * char_id as usize + if x % CHAR_WIDTH < 2 {0} else {1}]
             |= bit << (15 - shift);
     }
-    font
+    Ok(font)
 }
 
 pub fn encode_palette<'a, It>(colors: It) -> [u16; 16]

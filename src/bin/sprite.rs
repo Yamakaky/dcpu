@@ -59,20 +59,28 @@ fn main() {
     if let Some(font_path) = args.flag_font_file {
         match image::open(&font_path) {
             Ok(font_img) => {
-                let font = dcpu::sprite::encode_font(font_img.to_rgb());
-                let output_path = format!("{}.{}",
-                                          font_path,
-                                          args.flag_format.to_ext());
-                let mut output = OpenOptions::new()
-                                             .write(true)
-                                             .truncate(true)
-                                             .create(true)
-                                             .open(&output_path)
-                                             .unwrap();
-                encode_output(&mut output, &font, args.flag_format).unwrap();
-                println!("Font written to {}", output_path);
+                match  dcpu::sprite::encode_font(font_img.to_rgb()) {
+                    Ok(font) => {
+                        let output_path = format!("{}.{}",
+                                                  font_path,
+                                                  args.flag_format.to_ext());
+                        let mut output = OpenOptions::new()
+                            .write(true)
+                            .truncate(true)
+                            .create(true)
+                            .open(&output_path)
+                            .unwrap();
+                        encode_output(&mut output,
+                                      &font,
+                                      args.flag_format).unwrap();
+                        println!("Font written to {}", output_path);
+                    }
+                    Err(e) => {
+                        println!("{}", e);
+                    }
+                }
             }
-            Err(e) => println!("{:?}", e),
+            Err(e) => println!("{}", e),
         }
     }
     if let Some(palette_path) = args.flag_palette_file {
@@ -92,7 +100,7 @@ fn main() {
                 encode_output(&mut output, &palette, args.flag_format).unwrap();
                 println!("Palette written to {}", output_path);
             }
-            Err(e) => println!("{:?}", e),
+            Err(e) => println!("{}", e),
         }
     }
 }
