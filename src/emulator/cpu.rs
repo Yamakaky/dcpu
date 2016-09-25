@@ -405,16 +405,15 @@ impl Cpu {
     fn exec_if(&mut self, cond: bool) -> Result<()> {
         if !cond {
             self.wait += 1;
-            let mut next_i = self.pc;
 
             loop {
-                let (offset, op) = try!(self.decode(next_i));
+                let pc = self.pc;
+                let (offset, op) = try!(self.decode(pc));
                 self.pc = self.pc.wrapping_add(offset);
 
                 if op.is_if() {
                     trace!("Skipping cascade");
                     self.wait += 1;
-                    next_i = next_i.wrapping_add(offset);
                 } else {
                     break;
                 }
