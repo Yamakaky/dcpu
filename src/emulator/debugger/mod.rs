@@ -30,7 +30,7 @@ impl rustyline::completion::Completer for DebuggerCompleter {
             "disassemble",
             "breakpoints",
             "delete",
-            "hooks",
+            "hook",
             "logs",
         ];
         let (i, word) = rustyline::completion::extract_word(line,
