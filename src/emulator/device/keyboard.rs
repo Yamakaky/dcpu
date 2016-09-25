@@ -86,7 +86,7 @@ impl<B: Backend> Device for Keyboard<B> {
     fn inspect(&self) {
         println!("Generic Keyboard");
         if self.int_msg == 0 {
-            println!("Currently disabled");
+            println!("Interrupts disabled");
         } else {
             println!("Int message is 0x{:x}", self.int_msg);
             println!("{} keys in the buffer", self.key_buffer.len());

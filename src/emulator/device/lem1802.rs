@@ -55,6 +55,8 @@ impl Color {
 
 pub trait Backend: Debug {
     fn tick<B: Backend>(&self, &Cpu, &LEM1802<B>, tick_count: u64);
+    fn hide(&self);
+    fn show<B: Backend>(&self, &Cpu, &LEM1802<B>);
 }
 
 #[derive(Debug)]
@@ -96,7 +98,14 @@ impl<B: Backend> Device for LEM1802<B> {
         let b = cpu.registers[Register::B];
         match try!(Command::from_u16(a)
                            .ok_or(ErrorKind::InvalidCommand(a))) {
-            Command::MEM_MAP_SCREEN => self.video_map = Wrapping(b),
+            Command::MEM_MAP_SCREEN => {
+                self.video_map = Wrapping(b);
+                if self.video_map.0 == 0 {
+                    self.backend.hide();
+                } else {
+                    self.backend.show(cpu, self);
+                }
+            }
             Command::MEM_MAP_FONT => self.font_map = Wrapping(b),
             Command::MEM_MAP_PALETTE => self.palette_map = Wrapping(b),
             Command::SET_BORDER_COLOR =>
@@ -133,15 +142,17 @@ impl<B: Backend> Device for LEM1802<B> {
 }
 
 impl<B: Backend> LEM1802<B> {
-    pub fn get_screen(&self, cpu: &Cpu) -> Box<Screen> {
+    pub fn get_screen(&self, cpu: &Cpu) -> Option<Box<Screen>> {
         // Stack overflow if we don't use Box
-        let mut screen = Box::new([Color::default(); SCREEN_SIZE as usize]);
         if self.video_map.0 != 0 {
+            let mut screen = Box::new([Color::default(); SCREEN_SIZE as usize]);
             for offset in 0..NB_CHARS {
                 self.add_char(cpu, &mut screen, offset);
             }
+            Some(screen)
+        } else {
+            None
         }
-        screen
     }
 
     fn add_char(&self, cpu: &Cpu, screen: &mut Screen, char_offset: u16) {

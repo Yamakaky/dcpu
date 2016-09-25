@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 
 - If cascade handling
+- Better screen visibility accuracy
 
 ## [0.2.0]
 

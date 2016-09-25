@@ -18,6 +18,11 @@ enum KeyboardEvent {
     KeyReleased(keyboard::Key),
 }
 
+enum ScreenCommand {
+    Show(Box<lem1802::Screen>),
+    Hide,
+}
+
 struct CommonBackend {
     thread_handle: Option<thread::JoinHandle<()>>,
     thread_command: mpsc::Sender<ThreadCommand>,
@@ -35,7 +40,7 @@ pub struct ScreenBackend {
     // used for Drop
     #[allow(dead_code)]
     common: Rc<CommonBackend>,
-    screen_sender: mpsc::Sender<Box<lem1802::Screen>>,
+    screen_sender: mpsc::Sender<ScreenCommand>,
 }
 
 pub fn start() -> (ScreenBackend, KeyboardBackend) {
@@ -104,7 +109,31 @@ impl lem1802::Backend for ScreenBackend {
                                  tick_count: u64) {
         // TODO: 10 fps for now by fear to fill the buffer
         if tick_count % 10_000 == 0 {
-            self.screen_sender.send(lem.get_screen(cpu)).unwrap();
+            self.try_show(cpu, lem);
+        }
+    }
+
+    fn hide(&self) {
+        self.screen_sender
+            .send(ScreenCommand::Hide)
+            .unwrap();
+    }
+
+    fn show<B: lem1802::Backend>(&self,
+                                 cpu: &cpu::Cpu,
+                                 lem: &lem1802::LEM1802<B>) {
+        self.try_show(cpu, lem);
+    }
+}
+
+impl ScreenBackend {
+    fn try_show<B: lem1802::Backend>(&self,
+                                     cpu: &cpu::Cpu,
+                                     lem: &lem1802::LEM1802<B>) {
+        if let Some(screen) = lem.get_screen(cpu) {
+            self.screen_sender
+                .send(ScreenCommand::Show(screen))
+                .unwrap();
         }
     }
 }
@@ -120,10 +149,11 @@ impl Drop for CommonBackend {
 
 fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
                keyboard_sender: mpsc::Sender<KeyboardEvent>,
-               screen_receiver: mpsc::Receiver<Box<lem1802::Screen>>) {
+               screen_receiver: mpsc::Receiver<ScreenCommand>) {
     let display = glium::glutin::WindowBuilder::new()
         .with_title(format!("Screen + keyboard"))
         .with_vsync()
+        .with_visibility(false)
         .build_glium()
         .unwrap();
     let mut current_screen = Box::new([lem1802::Color::default(); 12288]);
@@ -203,8 +233,12 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
     'main: loop {
         'pote2: loop {
             match screen_receiver.try_recv() {
-                Ok(screen) => {
+                Ok(ScreenCommand::Show(screen)) => {
                     current_screen = screen;
+                    display.get_window().map(|w| w.show());
+                }
+                Ok(ScreenCommand::Hide) => {
+                    display.get_window().map(|w| w.show());
                 }
                 Err(mpsc::TryRecvError::Empty) => break 'pote2,
                 Err(mpsc::TryRecvError::Disconnected) => break 'main,
