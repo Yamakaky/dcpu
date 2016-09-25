@@ -139,7 +139,6 @@ impl Cpu {
                 self.ram[self.sp] = val;
             },
             Peek => self.ram[self.sp] = val,
-            // TODO verify...
             Pick(n) => self.ram[self.sp + Wrapping(n)] = val,
             SP => self.sp = Wrapping(val),
             PC => self.pc = Wrapping(val),
