@@ -24,8 +24,8 @@ pub fn encode_image(mut img: image::RgbImage) -> Result<(Frame, Font, Palette),
     let mut frame_i = 0;
     let mut font = vec![];
     let mut palette = vec![];
-    for x in 0..FRAME_WIDTH_CHAR {
-        for y in 0..FRAME_HEIGHT_CHAR {
+    for y in 0..FRAME_HEIGHT_CHAR {
+        for x in 0..FRAME_WIDTH_CHAR {
             let cell = img.sub_image(x * CHAR_WIDTH,
                                      y * CHAR_HEIGHT,
                                      CHAR_WIDTH,
@@ -41,7 +41,7 @@ pub fn encode_image(mut img: image::RgbImage) -> Result<(Frame, Font, Palette),
                 (i, id_bg_color, id_fg_color)
             } else {
                 font.push(font_item);
-                (frame_i as u16, id_fg_color, id_bg_color)
+                (font.len() as u16 - 1, id_fg_color, id_bg_color)
             };
             frame_i += 1;
         }
