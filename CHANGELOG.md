@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Utility to generate LEM font and palette from image
+- Utility to convert an image to frame + font + palette
 
 ### Fixed
 

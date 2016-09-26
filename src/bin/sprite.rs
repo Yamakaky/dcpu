@@ -23,6 +23,7 @@ Options:
                          32x128px... 4x512px
   --palette-file <file>  Input RGB palette file. At most 16 pixels
                          will be used.
+  --image <file>         Image to convert.
   --format <format>      Output format to use.
                          Valid values: dat, bin, hex
                          [default: hex]
@@ -32,6 +33,7 @@ Options:
 struct Args {
     flag_font_file: Option<String>,
     flag_palette_file: Option<String>,
+    flag_image: Option<String>,
     flag_format: OutputFormat,
 }
 
@@ -60,21 +62,15 @@ fn main() {
     if let Some(font_path) = args.flag_font_file {
         match image::open(&font_path) {
             Ok(font_img) => {
-                match  dcpu::sprite::encode_font(font_img.to_rgb()) {
+                match  dcpu::sprite::encode_font(&mut font_img.to_rgb()) {
                     Ok(font) => {
                         let output_path = format!("{}.{}",
                                                   font_path,
                                                   args.flag_format.to_ext());
-                        let mut output = OpenOptions::new()
-                            .write(true)
-                            .truncate(true)
-                            .create(true)
-                            .open(&output_path)
-                            .unwrap();
-                        encode_output(&mut output,
-                                      &font,
-                                      args.flag_format).unwrap();
-                        println!("Font written to {}", output_path);
+                        get_it_out(&output_path,
+                                   "Font",
+                                   &font,
+                                   args.flag_format);
                     }
                     Err(e) => {
                         println!("{}", e);
@@ -92,18 +88,60 @@ fn main() {
                 let output_path = format!("{}.{}",
                                           palette_path,
                                           args.flag_format.to_ext());
-                let mut output = OpenOptions::new()
-                                             .write(true)
-                                             .truncate(true)
-                                             .create(true)
-                                             .open(&output_path)
-                                             .unwrap();
-                encode_output(&mut output, &palette, args.flag_format).unwrap();
-                println!("Palette written to {}", output_path);
+                get_it_out(&output_path,
+                           "Palette",
+                           &palette,
+                           args.flag_format);
             }
             Err(e) => println!("{}", e),
         }
     }
+    if let Some(image_path) = args.flag_image {
+        match image::open(&image_path) {
+            Ok(img) => {
+                match  dcpu::sprite::encode_image(img.to_rgb()) {
+                    Ok((frame, font, palette)) => {
+                        let output_path = format!("{}.frame.{}",
+                                                  image_path,
+                                                  args.flag_format.to_ext());
+                        get_it_out(&output_path,
+                                   "Image's frame",
+                                   &frame,
+                                   args.flag_format);
+                        let output_path = format!("{}.font.{}",
+                                                  image_path,
+                                                  args.flag_format.to_ext());
+                        get_it_out(&output_path,
+                                   "Image's font",
+                                   &font,
+                                   args.flag_format);
+                        let output_path = format!("{}.palette.{}",
+                                                  image_path,
+                                                  args.flag_format.to_ext());
+                        get_it_out(&output_path,
+                                   "Font",
+                                   &palette,
+                                   args.flag_format);
+                    }
+                    Err(e) => {
+                        println!("{}", e);
+                    }
+                }
+            }
+            Err(e) => println!("{}", e),
+        }
+    }
+}
+
+fn get_it_out(path: &str, which: &str, items: &[u16], format: OutputFormat) {
+    let mut output = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(&path)
+        .unwrap();
+    encode_output(&mut output, &items, format).unwrap();
+    println!("{} written to {}", which, path);
 }
 
 fn encode_output(output: &mut Write,
