@@ -238,7 +238,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
                     display.get_window().map(|w| w.show());
                 }
                 Ok(ScreenCommand::Hide) => {
-                    display.get_window().map(|w| w.show());
+                    display.get_window().map(|w| w.hide());
                 }
                 Err(mpsc::TryRecvError::Empty) => break 'pote2,
                 Err(mpsc::TryRecvError::Disconnected) => break 'main,
@@ -258,13 +258,12 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
             let (width, height) = target.get_dimensions();
             height as f32 / width as f32
         };
-        target.draw(
-            (&vertex_buffer, per_instance.per_instance().unwrap()),
-            &indices,
-            &program,
-            &uniform! { aspect_ratio: aspect_ratio },
-            &Default::default()
-        ).unwrap();
+        target.draw((&vertex_buffer, per_instance.per_instance().unwrap()),
+                    &indices,
+                    &program,
+                    &uniform! { aspect_ratio: aspect_ratio },
+                    &Default::default())
+              .unwrap();
         target.finish().unwrap();
 
         for ev in display.poll_events() {
