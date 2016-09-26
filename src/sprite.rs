@@ -32,8 +32,10 @@ pub fn encode_image(mut img: image::RgbImage) -> Result<(Frame, Font, Palette),
                                      CHAR_HEIGHT);
             let fg_color = cell.get_pixel(0, 0);
             let (font_item, bg_color) = try!(img_to_font_item(&cell, fg_color));
-            let id_fg_color = insert_vec_id(fg_color, &mut palette);
-            let id_bg_color = insert_vec_id(bg_color, &mut palette);
+            let id_fg_color =
+                insert_vec_id(encode_color(fg_color), &mut palette);
+            let id_bg_color =
+                insert_vec_id(encode_color(bg_color), &mut palette);
             frame_idxs[frame_i] = if let Some(i) = find_id(font_item, &font) {
                 (i, id_fg_color, id_bg_color)
             } else if let Some(i) = find_id(invert_font_item(font_item),
@@ -59,9 +61,9 @@ pub fn encode_image(mut img: image::RgbImage) -> Result<(Frame, Font, Palette),
            id_color_bg), to) in frame_idxs.iter().zip(frame.iter_mut()) {
         *to = encode_char(id_font_item, id_color_fg, id_color_bg);
     }
-    Ok((frame,
-        encode_font_items(&font),
-        encode_palette(palette.iter())))
+    let mut palette_array = [0; 16];
+    palette_array[..palette.len()].copy_from_slice(&palette);
+    Ok((frame, encode_font_items(&font), palette_array))
 }
 
 fn invert_font_item(item: FontItem) -> FontItem {
@@ -182,11 +184,14 @@ pub fn encode_palette<'a, It>(colors: It) -> [u16; 16]
 
     let mut palette = [0; 16];
     for (color, encoded) in colors.into_iter().zip(palette.iter_mut()) {
-        let r = (color.data[0] / 16) as u16;
-        let g = (color.data[1] / 16) as u16;
-        let b = (color.data[2] / 16) as u16;
-        *encoded = r << 8 | g << 4 | b;
+        *encoded = encode_color(*color);
     }
     palette
 }
 
+fn encode_color(color: image::Rgb<u8>) -> u16 {
+    let r = (color.data[0] / 16) as u16;
+    let g = (color.data[1] / 16) as u16;
+    let b = (color.data[2] / 16) as u16;
+    r << 8 | g << 4 | b
+}
