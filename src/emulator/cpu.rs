@@ -103,6 +103,23 @@ impl Cpu {
         }
     }
 
+    pub fn get_str(&self, address: u16) -> String {
+        use std::char::from_u32;
+
+        let mut msg = String::new();
+        for i in address..0xffff {
+            if self.ram[i] == 0 {
+                break;
+            }
+            if let Some(c) = from_u32(self.ram[i] as u32) {
+                msg.push(c);
+            } else {
+                break;
+            }
+        }
+        msg
+    }
+
     fn get(&mut self, i: Value) -> u16 {
         match i {
             Reg(r) => self.registers[r],

@@ -3,7 +3,7 @@ use emulator::device::{Device, TickResult};
 
 #[derive(Default)]
 pub struct Computer {
-    cpu: cpu::Cpu,
+    pub cpu: cpu::Cpu,
     devices: Vec<Box<Device>>,
     pub current_tick: u64,
 }

@@ -52,7 +52,7 @@ pub struct Debugger {
     tick_number: u64,
     hooks: Vec<Command>,
     last_command: Option<Command>,
-    log_map: [Option<String>; 64]
+    log_litterals: bool,
 }
 
 impl Debugger {
@@ -65,19 +65,12 @@ impl Debugger {
             tick_number: 0,
             hooks: vec![],
             last_command: None,
-            // Wow, such many None
-            log_map: [None, None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None, None, None,
-            None, None, None, None, None],
+            log_litterals: false,
         }
     }
 
-    pub fn log_map(&mut self, log_map: [Option<String>; 64]) {
-        self.log_map = log_map;
+    pub fn log_litterals(&mut self, enabled: bool) {
+        self.log_litterals = enabled;
     }
 
     pub fn run<P: AsRef<Path>>(&mut self, history_path: P) {
@@ -248,12 +241,13 @@ impl Debugger {
     }
 
     fn show_logs(&mut self) {
-        for log in self.cpu.log_queue.drain(..) {
-            print!("{}", log);
-            if let Some(ref s) = self.log_map[log as usize] {
-                print!(" - {}", s);
+        for msg in &self.cpu.log_queue {
+            if self.log_litterals {
+                println!("LOG 0x{:0>4x}: {}", msg, self.cpu.get_str(*msg));
+            } else {
+                println!("LOG 0x{:0>4x}", msg);
             }
-            println!("");
         }
+        self.cpu.log_queue.clear();
     }
 }

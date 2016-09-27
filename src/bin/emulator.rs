@@ -10,8 +10,6 @@ extern crate simplelog;
 mod utils;
 
 use std::{time, thread};
-use std::fs::File;
-use std::io::{self, BufReader};
 use std::io::prelude::*;
 
 use docopt::Docopt;
@@ -32,7 +30,8 @@ Options:
   --limit            Try to limit the tick rate to 100_000/s
   -d, --device       clock or keyscreen.
   --debugger         Launches the debugger.
-  --log-map <file>   Mapping between LOG n and string
+  --log-litterals    When a `LOG n` is triggered, print
+                     `(char*)n`.
   --debug-history <file>   Use this file for the debugger history
                      [default: debug_history]
   -h, --help         Show this message.
@@ -43,7 +42,7 @@ Options:
 struct Args {
     arg_device: Option<Vec<String>>,
     arg_file: Option<String>,
-    flag_log_map: Option<String>,
+    flag_log_litterals: bool,
     flag_debugger: bool,
     flag_tps: bool,
     flag_limit: bool,
@@ -90,13 +89,7 @@ fn main_ret() -> i32 {
 
     if args.flag_debugger {
         let mut debugger = Debugger::new(cpu, devices);
-        if let Some(path) = args.flag_log_map {
-            let log_map = match load_log_map(&path) {
-                Ok(map) => map,
-                Err(e) => die!(1, "Some troube loading the log map: {}", e),
-            };
-            debugger.log_map(log_map);
-        }
+        debugger.log_litterals(args.flag_log_litterals);
         debugger.run(args.flag_debug_history);
     } else {
         let mut computer = Computer::new(cpu, devices);
@@ -115,6 +108,15 @@ fn main_ret() -> i32 {
                 Ok(_) => (),
                 Err(e) => die!(1, "{}", e),
             }
+
+            for msg in &computer.cpu.log_queue {
+                if args.flag_log_litterals {
+                    println!("LOG 0x{:0>4x}: {}", msg, computer.cpu.get_str(*msg));
+                } else {
+                    println!("LOG 0x{:0>4x}", msg);
+                }
+            }
+            computer.cpu.log_queue.clear();
 
             if args.flag_tps && computer.current_tick % tps_check == 0 {
                 if let Ok(delay) = timer_tps.elapsed() {
@@ -145,31 +147,4 @@ fn main_ret() -> i32 {
 
 fn main() {
     std::process::exit(main_ret());
-}
-
-fn load_log_map(path: &str) -> io::Result<[Option<String>; 64]> {
-    let file = BufReader::new(try!(File::open(path)));
-    let mut log_map = [
-        None, None, None, None, None, None, None, None,
-        None, None, None, None, None, None, None, None,
-        None, None, None, None, None, None, None, None,
-        None, None, None, None, None, None, None, None,
-        None, None, None, None, None, None, None, None,
-        None, None, None, None, None, None, None, None,
-        None, None, None, None, None, None, None, None,
-        None, None, None, None, None, None, None, None,
-    ];
-    for line in file.lines() {
-        let line = try!(line);
-        let mut fields = line.splitn(2, ' ');
-        if let Some(i) = fields.next() {
-            if let Ok(i) = i.parse() {
-                let i: usize = i;
-                if let Some(s) = fields.next() {
-                    log_map[i] = Some(s.into());
-                }
-            }
-        }
-    }
-    Ok(log_map)
 }
