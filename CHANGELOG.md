@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Replace `--log-map` with `--log-litterals`.
+- Better logging of executed instructions.
 
 ## [0.3.0]
 

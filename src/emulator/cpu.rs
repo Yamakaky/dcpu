@@ -195,7 +195,7 @@ impl Cpu {
         };
         self.pc += Wrapping(words_used);
 
-        trace!("Executing {:?}", instruction);
+        debug!("Executing {}", instruction);
         // BRK and HLT have a 0 delay
         self.wait = max(instruction.delay(), 1) - 1;
         try!(self.op(instruction, devices));
