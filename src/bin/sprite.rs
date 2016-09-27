@@ -23,7 +23,7 @@ Options:
                          32x128px... 4x512px
   --palette-file <file>  Input RGB palette file. At most 16 pixels
                          will be used.
-  --image <file>         Image to convert.
+  --image <file>         Image to convert to frame + font + palette.
   --format <format>      Output format to use.
                          Valid values: dat, bin, hex
                          [default: hex]
