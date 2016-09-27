@@ -111,9 +111,9 @@ fn main_ret() -> i32 {
 
             for msg in &computer.cpu.log_queue {
                 if args.flag_log_litterals {
-                    println!("LOG 0x{:0>4x}: {}", msg, computer.cpu.get_str(*msg));
+                    info!("LOG 0x{:0>4x}: {}", msg, computer.cpu.get_str(*msg));
                 } else {
-                    println!("LOG 0x{:0>4x}", msg);
+                    info!("LOG 0x{:0>4x}", msg);
                 }
             }
             computer.cpu.log_queue.clear();

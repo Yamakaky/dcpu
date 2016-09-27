@@ -243,9 +243,9 @@ impl Debugger {
     fn show_logs(&mut self) {
         for msg in &self.cpu.log_queue {
             if self.log_litterals {
-                println!("LOG 0x{:0>4x}: {}", msg, self.cpu.get_str(*msg));
+                info!("LOG 0x{:0>4x}: {}", msg, self.cpu.get_str(*msg));
             } else {
-                println!("LOG 0x{:0>4x}", msg);
+                info!("LOG 0x{:0>4x}", msg);
             }
         }
         self.cpu.log_queue.clear();
