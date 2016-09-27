@@ -4,21 +4,25 @@
 
 ## Features
 
-- [x] Full instruction set
-- [x] Tick accurate
-- [x] Devices support
-  - [x] Clock
-  - [x] LEM1802
-  - [x] Keyboard
-- [x] Disassembler
-- [x] Assembler
-- [x] gdb-like debugger
+- Full instruction set
+- Tick accurate
+- Devices support
+  - Clock
+  - LEM1802
+  - Keyboard
+- Disassembler
+- Assembler
+- gdb-like debugger
+- Image-to-LEM-compatible-format utility
 
-## Usage
+## Quick usage
 
 Compiled versions for Windows and Linux are available at
 https://pydio.chocolytech.info:4443/data/public/051666. No dependencies are
 required.
+
+Note: the Windows version of the emulation currently fails with an OpenGL error.
+If anyone knows why...
 
 All binaries support a `--help` flag for more infos.
 
@@ -29,6 +33,14 @@ You need to install the [rust compiler](https://www.rust-lang.org/) to build thi
 `cargo run --release --bin <bin> -- <bin-args>`
 
 Available binaries are assembler, disassembler, emulator and sprite.
+
+## Convert images to LEM format
+
+The `sprite` utility can:
+
+- Convert a font image (`--font-file`) and a palette image (`--palette-file`) to
+  a LEM1802-compatible format, either binary or hexadecimal
+- Convert an image (`--image`) to VRam + font + palette
 
 ## Documentation
 
