@@ -1,5 +1,5 @@
 use std::fs::{File, OpenOptions};
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
 
 use byteorder;
 use byteorder::ReadBytesExt;
@@ -19,11 +19,14 @@ impl<I: ReadBytesExt> Iterator for IterU16<I> {
 }
 
 #[allow(dead_code)]
-pub fn get_input(i: Option<String>) -> Box<Read> {
+pub fn get_input(i: Option<String>) -> Result<Box<Read>, io::Error> {
     if let Some(path) = i {
-        Box::new(File::open(path).expect("Open file error"))
+        match File::open(path) {
+            Ok(f) => Ok(Box::new(f)),
+            Err(e) => Err(e),
+        }
     } else {
-        Box::new(::std::io::stdin())
+        Ok(Box::new(::std::io::stdin()))
     }
 }
 

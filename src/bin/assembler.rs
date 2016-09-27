@@ -67,7 +67,10 @@ fn main_ret() -> i32 {
 
     let asm = {
         let mut asm = String::new();
-        let mut input = utils::get_input(args.arg_file);
+        let mut input = match utils::get_input(args.arg_file) {
+            Ok(input) => input,
+            Err(e) => die!(1, "Error while opening the input: {}", e),
+        };
         input.read_to_string(&mut asm).unwrap();
         asm
     };

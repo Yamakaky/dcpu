@@ -50,7 +50,7 @@ struct Args {
     flag_debug_history: String,
 }
 
-fn main() {
+fn main_ret() -> i32 {
     simplelog::TermLogger::init(simplelog::LogLevelFilter::Info).unwrap();
 
     let args: Args = Docopt::new(USAGE)
@@ -58,7 +58,10 @@ fn main() {
                             .unwrap_or_else(|e| e.exit());
 
     let rom = {
-        let input = utils::get_input(args.arg_file);
+        let input = match utils::get_input(args.arg_file) {
+            Ok(input) => input,
+            Err(e) => die!(1, "Error while opening the input: {}", e),
+        };
         let mut rom = Vec::new();
         rom.extend(utils::IterU16{input: input});
         rom
@@ -78,7 +81,7 @@ fn main() {
                         devices.push(Box::new(keyboard::Keyboard::new(kb_backend)));
                         devices.push(Box::new(lem1802::LEM1802::new(screen_backend)));
                     }
-                    _ => println!("Device \"{}\" unknown, ignoring", d),
+                    _ => die!(1, "Device \"{}\" unknown", d),
                 }
             }
         }
@@ -90,10 +93,7 @@ fn main() {
         if let Some(path) = args.flag_log_map {
             let log_map = match load_log_map(&path) {
                 Ok(map) => map,
-                Err(e) => {
-                    println!("Some troube loading the log map: {}", e);
-                    return;
-                }
+                Err(e) => die!(1, "Some troube loading the log map: {}", e),
             };
             debugger.log_map(log_map);
         }
@@ -113,10 +113,7 @@ fn main() {
         loop {
             match computer.tick() {
                 Ok(_) => (),
-                Err(e) => {
-                    println!("{}", e);
-                    break;
-                }
+                Err(e) => die!(1, "{}", e),
             }
 
             if args.flag_tps && computer.current_tick % tps_check == 0 {
@@ -143,6 +140,11 @@ fn main() {
             }
         }
     }
+    0
+}
+
+fn main() {
+    std::process::exit(main_ret());
 }
 
 fn load_log_map(path: &str) -> io::Result<[Option<String>; 64]> {

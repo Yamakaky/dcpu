@@ -35,14 +35,17 @@ struct Args {
     flag_o: Option<String>,
 }
 
-fn main() {
+fn main_ret() -> i32 {
     simplelog::TermLogger::init(simplelog::LogLevelFilter::Info).unwrap();
 
     let args: Args = Docopt::new(USAGE)
                             .and_then(|d| d.decode())
                             .unwrap_or_else(|e| e.exit());
 
-    let input = utils::get_input(args.arg_file);
+    let input = match utils::get_input(args.arg_file) {
+        Ok(input) => input,
+        Err(e) => die!(1, "Error while opening the input: {}", e),
+    };
     let mut output = utils::get_output(args.flag_o);
 
     for i in U16ToInstruction::chain(utils::IterU16{input: input}) {
@@ -52,4 +55,9 @@ fn main() {
             writeln!(output, "{}", i).unwrap();
         }
     }
+    0
+}
+
+fn main() {
+    std::process::exit(main_ret());
 }

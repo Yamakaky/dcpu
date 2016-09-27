@@ -4,6 +4,9 @@ extern crate docopt;
 extern crate image;
 extern crate rustc_serialize;
 
+#[macro_use]
+mod utils;
+
 use std::fs::OpenOptions;
 use std::io::{self, Write};
 
@@ -54,7 +57,7 @@ impl OutputFormat {
     }
 }
 
-fn main() {
+fn main_ret() -> i32 {
     let args: Args = Docopt::new(USAGE)
                             .and_then(|d| d.decode())
                             .unwrap_or_else(|e| e.exit());
@@ -72,12 +75,10 @@ fn main() {
                                    &font,
                                    args.flag_format);
                     }
-                    Err(e) => {
-                        println!("{}", e);
-                    }
+                    Err(e) => die!(1, "{}", e),
                 }
             }
-            Err(e) => println!("{}", e),
+            Err(e) => die!(1, "{}", e),
         }
     }
     if let Some(palette_path) = args.flag_palette_file {
@@ -93,7 +94,7 @@ fn main() {
                            &palette,
                            args.flag_format);
             }
-            Err(e) => println!("{}", e),
+            Err(e) => die!(1, "{}", e),
         }
     }
     if let Some(image_path) = args.flag_image {
@@ -124,13 +125,18 @@ fn main() {
                                    args.flag_format);
                     }
                     Err(e) => {
-                        println!("{}", e);
+                        die!(1, "{}", e);
                     }
                 }
             }
-            Err(e) => println!("{}", e),
+            Err(e) => die!(1, "{}", e),
         }
     }
+    0
+}
+
+fn main() {
+    std::process::exit(main_ret());
 }
 
 fn get_it_out(path: &str, which: &str, items: &[u16], format: OutputFormat) {
