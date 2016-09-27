@@ -140,14 +140,18 @@ fn main() {
 }
 
 fn get_it_out(path: &str, which: &str, items: &[u16], format: OutputFormat) {
-    let mut output = OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .create(true)
-        .open(&path)
-        .unwrap();
-    encode_output(&mut output, &items, format).unwrap();
-    println!("{} written to {}", which, path);
+    OpenOptions::new()
+                .write(true)
+                .truncate(true)
+                .create(true)
+                .open(&path)
+                .and_then(|mut output| encode_output(&mut output,
+                                                     &items,
+                                                     format))
+                .map(|_| println!("{} written to {}", which, path))
+                .unwrap_or_else(|e| println!("Error while opening \"{}\": {}",
+                                             path,
+                                             e));
 }
 
 fn encode_output(output: &mut Write,
