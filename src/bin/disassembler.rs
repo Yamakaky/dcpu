@@ -46,7 +46,10 @@ fn main_ret() -> i32 {
         Ok(input) => input,
         Err(e) => die!(1, "Error while opening the input: {}", e),
     };
-    let mut output = utils::get_output(args.flag_o);
+    let mut output = match utils::get_output(args.flag_o) {
+        Ok(o) => o,
+        Err(e) => die!(1, "Error while opening the output: {}", e),
+    };
 
     for i in U16ToInstruction::chain(utils::IterU16{input: input}) {
         if args.flag_ast {

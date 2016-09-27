@@ -1,5 +1,5 @@
 use std::fs::{File, OpenOptions};
-use std::io::{self, Read, Write};
+use std::io::{self, Read, Write, BufReader, BufWriter};
 
 use byteorder;
 use byteorder::ReadBytesExt;
@@ -22,7 +22,7 @@ impl<I: ReadBytesExt> Iterator for IterU16<I> {
 pub fn get_input(i: Option<String>) -> Result<Box<Read>, io::Error> {
     if let Some(path) = i {
         match File::open(path) {
-            Ok(f) => Ok(Box::new(f)),
+            Ok(f) => Ok(Box::new(BufReader::new(f))),
             Err(e) => Err(e),
         }
     } else {
@@ -31,16 +31,18 @@ pub fn get_input(i: Option<String>) -> Result<Box<Read>, io::Error> {
 }
 
 #[allow(dead_code)]
-pub fn get_output(o: Option<String>) -> Box<Write> {
+pub fn get_output(o: Option<String>) -> Result<Box<Write>, io::Error> {
     if let Some(path) = o {
-        Box::new(OpenOptions::new()
-                             .write(true)
-                             .create(true)
-                             .truncate(true)
-                             .open(path)
-                             .expect("Open file error"))
+        match OpenOptions::new()
+                          .write(true)
+                          .create(true)
+                          .truncate(true)
+                          .open(path) {
+            Ok(f) => Ok(Box::new(BufWriter::new(f))),
+            Err(e) => Err(e),
+        }
     } else {
-        Box::new(::std::io::stdout())
+        Ok(Box::new(::std::io::stdout()))
     }
 }
 
