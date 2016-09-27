@@ -7,7 +7,7 @@ license = "LGPL-3.0"
 name = "dcpu"
 readme = "README.md"
 repository = "https://github.com/Yamakaky/dcpu"
-version = "0.2.0"
+version = "0.3.0"
 
 [dependencies]
 byteorder = "~0.5.1"
