@@ -591,10 +591,10 @@ impl Cpu {
     fn op_hwq(&mut self, a: Value, devices: &mut [Box<Device>]) -> Result<()> {
         let val_a = self.get(a) as usize;
 
-        if val_a < devices.len() {
-            let id = devices[val_a].hardware_id();
-            let version = devices[val_a].hardware_version();
-            let manufacturer = devices[val_a].manufacturer();
+        if let Some(device) = devices.get(val_a) {
+            let id = device.hardware_id();
+            let version = device.hardware_version();
+            let manufacturer = device.manufacturer();
 
             self.set(Reg(Register::A), id as u16);
             self.set(Reg(Register::B), (id >> 16) as u16);
@@ -610,8 +610,8 @@ impl Cpu {
     fn op_hwi(&mut self, a: Value, devices: &mut [Box<Device>]) -> Result<()> {
         let val_a = self.get(a) as usize;
 
-        if val_a < devices.len() {
-            self.wait += try!(devices[val_a].interrupt(self));
+        if let Some(device) = devices.get_mut(val_a) {
+            self.wait += try!(device.interrupt(self));
             Ok(())
         } else {
             Err(ErrorKind::InvalidHardwareId(val_a as u16).into())
