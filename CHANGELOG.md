@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Replace `--log-map` with `--log-litterals`.
 - Better logging of executed instructions.
+- Use generics for types::*
 
 ## [0.3.0]
 

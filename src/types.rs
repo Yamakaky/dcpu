@@ -47,28 +47,14 @@ quick_error!(
     }
 );
 
-#[derive(Debug)]
-pub struct Ast {
-    pub instructions: Vec<Instruction>
-}
-
-impl fmt::Display for Ast {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for i in self.instructions.iter() {
-            try!(write!(f, "{}\n", i));
-        }
-        write!(f, "")
-    }
-}
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum Instruction {
+pub enum Instruction<I> {
     /// op b a
-    BasicOp(BasicOp, Value, Value),
-    SpecialOp(SpecialOp, Value)
+    BasicOp(BasicOp, Value<I>, Value<I>),
+    SpecialOp(SpecialOp, Value<I>)
 }
 
-impl Instruction {
+impl Instruction<u16> {
     pub fn delay(&self) -> u16 {
         match *self {
             Instruction::BasicOp(op, b, a) => op.delay() + a.delay(true) + b.delay(false),
@@ -111,7 +97,8 @@ impl Instruction {
         }
     }
 
-    pub fn decode(data: &[u16; 3]) -> Result<(u16, Instruction), DecodeError> {
+    pub fn decode(data: &[u16; 3]) -> Result<(u16, Instruction<u16>),
+                                             DecodeError> {
         let op_bin = data[0] & MASK_OP;
         let a_bin = data[0] >> SHIFT_A;
         let b_bin = (data[0] >> SHIFT_B) & MASK_B;
@@ -136,7 +123,7 @@ impl Instruction {
     }
 }
 
-impl fmt::Display for Instruction {
+impl fmt::Display for Instruction<u16> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Instruction::BasicOp(op, b, a) => write!(f, "{:?} {:b}, {:o}", op, b, a),
@@ -184,21 +171,21 @@ impl FromStr for Register {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum Value {
+pub enum Value<I> {
     Reg(Register),
     AtReg(Register),
-    AtRegPlus(Register, u16),
+    AtRegPlus(Register, I),
     Push,
     Peek,
-    Pick(u16),
+    Pick(I),
     SP,
     PC,
     EX,
-    AtAddr(u16),
-    Litteral(u16)
+    AtAddr(I),
+    Litteral(I)
 }
 
-impl Value {
+impl Value<u16> {
     pub fn delay(&self, is_a: bool) -> u16 {
         match *self {
             Value::AtRegPlus(_, _) |
@@ -236,7 +223,7 @@ impl Value {
         }
     }
 
-    pub fn decode(val: u16, next: u16, is_a: bool) -> (u16, Value) {
+    pub fn decode(val: u16, next: u16, is_a: bool) -> (u16, Value<u16>) {
         match val {
             x if x <= 0x17 => {
                 let reg = Register::from_u16(x % 0x8).unwrap();
@@ -264,7 +251,7 @@ impl Value {
     }
 }
 
-impl fmt::Binary for Value {
+impl fmt::Binary for Value<u16> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Value::Reg(r) => write!(f, "{:?}", r),
@@ -279,7 +266,7 @@ impl fmt::Binary for Value {
     }
 }
 
-impl fmt::Octal for Value {
+impl fmt::Octal for Value<u16> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Value::Reg(r) => write!(f, "{:?}", r),

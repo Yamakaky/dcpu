@@ -19,9 +19,9 @@ impl<I: Iterator<Item=u16>> U16ToInstruction<I> {
 }
 
 impl<I: Iterator<Item=u16>> Iterator for U16ToInstruction<I> {
-    type Item = Instruction;
+    type Item = Instruction<u16>;
 
-    fn next(&mut self) -> Option<Instruction> {
+    fn next(&mut self) -> Option<Instruction<u16>> {
         while self.len_buffer < 3 {
             if let Some(u) = self.it.next() {
                 self.buffer[self.len_buffer] = u;
@@ -54,7 +54,7 @@ pub struct InstructionToU16<I> {
     len_buffer: usize
 }
 
-impl<I: Iterator<Item=Instruction>> InstructionToU16<I> {
+impl<I: Iterator<Item=Instruction<u16>>> InstructionToU16<I> {
     pub fn chain(it: I) -> InstructionToU16<I> {
         InstructionToU16 {
             it: it,
@@ -64,7 +64,7 @@ impl<I: Iterator<Item=Instruction>> InstructionToU16<I> {
     }
 }
 
-impl<I: Iterator<Item=Instruction>> Iterator for InstructionToU16<I> {
+impl<I: Iterator<Item=Instruction<u16>>> Iterator for InstructionToU16<I> {
     type Item = u16;
 
     fn next(&mut self) -> Option<u16> {

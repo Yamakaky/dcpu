@@ -94,7 +94,7 @@ impl ParsedInstruction {
     pub fn solve(&self,
                  globals: &Globals,
                  locals: &Locals)
-                 -> Result<Instruction, Error> {
+                 -> Result<Instruction<u16>, Error> {
         match *self {
             ParsedInstruction::BasicOp(op, ref b, ref a) => {
                 Ok(Instruction::BasicOp(op,
@@ -127,7 +127,7 @@ impl ParsedValue {
     fn solve(&self,
              globals: &HashMap<String, u16>,
              locals: &HashMap<String, u16>)
-             -> Result<Value, Error> {
+             -> Result<Value<u16>, Error> {
         match *self {
             ParsedValue::Reg(r) => Ok(Value::Reg(r)),
             ParsedValue::AtReg(r) => Ok(Value::AtReg(r)),

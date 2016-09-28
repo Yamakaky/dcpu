@@ -97,7 +97,7 @@ impl Cpu {
         }
     }
 
-    pub fn load_ops(&mut self, ops: &[Instruction], mut offset: u16) {
+    pub fn load_ops(&mut self, ops: &[Instruction<u16>], mut offset: u16) {
         for op in ops {
             offset += op.encode(&mut self.ram[offset..]);
         }
@@ -120,7 +120,7 @@ impl Cpu {
         msg
     }
 
-    fn get(&mut self, i: Value) -> u16 {
+    fn get(&mut self, i: Value<u16>) -> u16 {
         match i {
             Reg(r) => self.registers[r],
             AtReg(r) => self.ram[self.registers[r]],
@@ -143,7 +143,7 @@ impl Cpu {
         }
     }
 
-    fn set(&mut self, i: Value, val: u16) {
+    fn set(&mut self, i: Value<u16>, val: u16) {
         match i {
             Reg(r) => self.registers[r] = val,
             AtReg(r) => self.ram[self.registers[r]] = val,
@@ -203,7 +203,7 @@ impl Cpu {
         Ok(CpuState::Executing)
     }
 
-    fn decode(&mut self, offset: u16) -> Result<(u16, Instruction)> {
+    fn decode(&mut self, offset: u16) -> Result<(u16, Instruction<u16>)> {
         let bin = [
             self.get(AtAddr(offset)),
             self.get(AtAddr(offset.wrapping_add(1))),
@@ -229,14 +229,14 @@ impl Cpu {
         self.interrupts_queue.push_back(msg);
     }
 
-    fn op(&mut self, i: Instruction, devices: &mut [Box<Device>]) -> Result<()> {
+    fn op(&mut self, i: Instruction<u16>, devices: &mut [Box<Device>]) -> Result<()> {
         match i {
             Instruction::BasicOp(op, b, a) => self.basic_op(op, b, a),
             Instruction::SpecialOp(op, a) => self.special_op(op, a, devices)
         }
     }
 
-    fn basic_op(&mut self, op: BasicOp, b: Value, a: Value) -> Result<()> {
+    fn basic_op(&mut self, op: BasicOp, b: Value<u16>, a: Value<u16>) -> Result<()> {
         match op {
             SET => self.op_set(b, a),
             ADD => self.op_add(b, a),
@@ -268,7 +268,7 @@ impl Cpu {
         }
     }
 
-    fn special_op(&mut self, op: SpecialOp, a: Value, devices: &mut [Box<Device>]) -> Result<()> {
+    fn special_op(&mut self, op: SpecialOp, a: Value<u16>, devices: &mut [Box<Device>]) -> Result<()> {
         match op {
             JSR => self.op_jsr(a),
             INT => self.op_int(a),
@@ -285,13 +285,13 @@ impl Cpu {
         }
     }
 
-    fn op_set(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_set(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         self.set(b, val_a);
         Ok(())
     }
 
-    fn op_add(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_add(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         let (new_b, overflow) = val_b.overflowing_add(val_a);
@@ -300,7 +300,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_sub(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_sub(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         let (new_b, overflow) = val_b.overflowing_sub(val_a);
@@ -309,7 +309,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_mul(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_mul(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a) as u32;
         let val_b = self.get(b) as u32;
         let new_b = val_a * val_b;
@@ -318,7 +318,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_mli(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_mli(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a) as i16 as i32;
         let val_b = self.get(b) as i16 as i32;
         let new_b = (val_a * val_b) as u32;
@@ -327,7 +327,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_div(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_div(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         if val_a == 0 {
             self.set(b, 0);
@@ -340,7 +340,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_dvi(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_dvi(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a) as i16;
         if val_a == 0 {
             self.set(b, 0);
@@ -353,7 +353,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_mod(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_mod(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         if val_a == 0 {
             self.set(b, 0);
@@ -364,7 +364,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_mdi(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_mdi(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a) as i16;
         if val_a == 0 {
             self.set(b, 0);
@@ -375,28 +375,28 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_and(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_and(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         self.set(b, val_b & val_a);
         Ok(())
     }
 
-    fn op_bor(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_bor(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         self.set(b, val_b | val_a);
         Ok(())
     }
 
-    fn op_xor(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_xor(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         self.set(b, val_b ^ val_a);
         Ok(())
     }
 
-    fn op_shr(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_shr(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         self.set(b, val_b >> val_a);
@@ -404,7 +404,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_asr(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_asr(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b) as i16;
         self.set(b, (val_b >> val_a) as u16);
@@ -412,7 +412,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_shl(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_shl(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         self.set(b, val_b << val_a);
@@ -440,55 +440,55 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_ifb(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_ifb(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         self.exec_if((val_b & val_a) != 0)
     }
 
-    fn op_ifc(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_ifc(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         self.exec_if((val_b & val_a) == 0)
     }
 
-    fn op_ife(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_ife(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         self.exec_if(val_b == val_a)
     }
 
-    fn op_ifn(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_ifn(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         self.exec_if(val_b != val_a)
     }
 
-    fn op_ifg(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_ifg(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         self.exec_if(val_b > val_a)
     }
 
-    fn op_ifa(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_ifa(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a) as i16;
         let val_b = self.get(b) as i16;
         self.exec_if(val_b > val_a)
     }
 
-    fn op_ifl(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_ifl(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         self.exec_if(val_b < val_a)
     }
 
-    fn op_ifu(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_ifu(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a) as i16;
         let val_b = self.get(b) as i16;
         self.exec_if(val_b < val_a)
     }
 
-    fn op_adx(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_adx(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         let (new_b, overflow1) = val_b.overflowing_add(val_a);
@@ -502,7 +502,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_sbx(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_sbx(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let val_b = self.get(b);
         let (new_b, overflow1) = val_b.overflowing_sub(val_a);
@@ -516,7 +516,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_sti(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_sti(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         self.set(b, val_a);
         self.registers[Register::I] =
@@ -526,7 +526,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_std(&mut self, b: Value, a: Value) -> Result<()> {
+    fn op_std(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         self.set(b, val_a);
         self.registers[Register::I] =
@@ -536,7 +536,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_jsr(&mut self, a: Value) -> Result<()> {
+    fn op_jsr(&mut self, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         let new_pc = Litteral(self.pc.0);
         try!(self.op_set(Push, new_pc));
@@ -544,7 +544,7 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_int(&mut self, a: Value) -> Result<()> {
+    fn op_int(&mut self, a: Value<u16>) -> Result<()> {
         if self.ia != 0 {
             if self.interrupts_queue.len() >= 256 {
                 return Err(ErrorKind::InFire.into());
@@ -555,19 +555,19 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_iag(&mut self, a: Value) -> Result<()> {
+    fn op_iag(&mut self, a: Value<u16>) -> Result<()> {
         let ia = self.ia;
         self.set(a, ia);
         Ok(())
     }
 
-    fn op_ias(&mut self, a: Value) -> Result<()> {
+    fn op_ias(&mut self, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         self.ia = val_a;
         Ok(())
     }
 
-    fn op_rfi(&mut self, _: Value) -> Result<()> {
+    fn op_rfi(&mut self, _: Value<u16>) -> Result<()> {
         self.is_queue_enabled = false;
         let v1 = self.get(Push);
         self.set(Reg(Register::A), v1);
@@ -576,19 +576,19 @@ impl Cpu {
         Ok(())
     }
 
-    fn op_iaq(&mut self, a: Value) -> Result<()> {
+    fn op_iaq(&mut self, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         self.is_queue_enabled = val_a == 0;
         Ok(())
     }
 
-    fn op_hwn(&mut self, a: Value, devices: &mut [Box<Device>]) -> Result<()> {
+    fn op_hwn(&mut self, a: Value<u16>, devices: &mut [Box<Device>]) -> Result<()> {
         let nb_devices = devices.len();
         self.set(a, nb_devices as u16);
         Ok(())
     }
 
-    fn op_hwq(&mut self, a: Value, devices: &mut [Box<Device>]) -> Result<()> {
+    fn op_hwq(&mut self, a: Value<u16>, devices: &mut [Box<Device>]) -> Result<()> {
         let val_a = self.get(a) as usize;
 
         if let Some(device) = devices.get(val_a) {
@@ -607,7 +607,7 @@ impl Cpu {
         }
     }
 
-    fn op_hwi(&mut self, a: Value, devices: &mut [Box<Device>]) -> Result<()> {
+    fn op_hwi(&mut self, a: Value<u16>, devices: &mut [Box<Device>]) -> Result<()> {
         let val_a = self.get(a) as usize;
 
         if let Some(device) = devices.get_mut(val_a) {
@@ -618,13 +618,13 @@ impl Cpu {
         }
     }
 
-    fn op_log(&mut self, a: Value) -> Result<()> {
+    fn op_log(&mut self, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         self.log_queue.push_back(val_a);
         Ok(())
     }
 
-    fn op_brk(&mut self, a: Value) -> Result<()> {
+    fn op_brk(&mut self, a: Value<u16>) -> Result<()> {
         let val_a = self.get(a);
         Err(ErrorKind::Break(val_a).into())
     }
