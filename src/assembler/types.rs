@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::iter;
 
-use types::{BasicOp, SpecialOp, Register, Value, Instruction};
+pub use types::{BasicOp, SpecialOp, Register, Value, Instruction};
 use assembler::linker::{Error, Globals, Locals};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -80,68 +80,47 @@ pub enum ParsedItem {
     Directive(Directive),
     LabelDecl(String),
     LocalLabelDecl(String),
-    ParsedInstruction(ParsedInstruction),
+    Instruction(Instruction<Expression>),
     Comment(String),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum ParsedInstruction {
-    BasicOp(BasicOp, ParsedValue, ParsedValue),
-    SpecialOp(SpecialOp, ParsedValue),
-}
-
-impl ParsedInstruction {
+impl Instruction<Expression> {
     pub fn solve(&self,
                  globals: &Globals,
                  locals: &Locals)
                  -> Result<Instruction<u16>, Error> {
         match *self {
-            ParsedInstruction::BasicOp(op, ref b, ref a) => {
+            Instruction::BasicOp(op, ref b, ref a) => {
                 Ok(Instruction::BasicOp(op,
                                         try!(b.solve(globals, locals)),
                                         try!(a.solve(globals, locals))))
             }
-            ParsedInstruction::SpecialOp(op, ref a) => {
+            Instruction::SpecialOp(op, ref a) => {
                 Ok(Instruction::SpecialOp(op, try!(a.solve(globals, locals))))
             }
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum ParsedValue {
-    Reg(Register),
-    AtReg(Register),
-    AtRegPlus(Register, Expression),
-    Push,
-    Peek,
-    Pick(Expression),
-    SP,
-    PC,
-    EX,
-    AtAddr(Expression),
-    Litteral(Expression),
-}
-
-impl ParsedValue {
+impl Value<Expression> {
     fn solve(&self,
              globals: &HashMap<String, u16>,
              locals: &HashMap<String, u16>)
              -> Result<Value<u16>, Error> {
         match *self {
-            ParsedValue::Reg(r) => Ok(Value::Reg(r)),
-            ParsedValue::AtReg(r) => Ok(Value::AtReg(r)),
-            ParsedValue::AtRegPlus(r, ref e) => {
+            Value::Reg(r) => Ok(Value::Reg(r)),
+            Value::AtReg(r) => Ok(Value::AtReg(r)),
+            Value::AtRegPlus(r, ref e) => {
                 Ok(Value::AtRegPlus(r, try!(e.solve(globals, locals))))
             }
-            ParsedValue::Push => Ok(Value::Push),
-            ParsedValue::Peek => Ok(Value::Peek),
-            ParsedValue::Pick(ref e) => Ok(Value::Pick(try!(e.solve(globals, locals)))),
-            ParsedValue::SP => Ok(Value::SP),
-            ParsedValue::PC => Ok(Value::PC),
-            ParsedValue::EX => Ok(Value::EX),
-            ParsedValue::AtAddr(ref e) => Ok(Value::AtAddr(try!(e.solve(globals, locals)))),
-            ParsedValue::Litteral(ref e) => Ok(Value::Litteral(try!(e.solve(globals, locals)))),
+            Value::Push => Ok(Value::Push),
+            Value::Peek => Ok(Value::Peek),
+            Value::Pick(ref e) => Ok(Value::Pick(try!(e.solve(globals, locals)))),
+            Value::SP => Ok(Value::SP),
+            Value::PC => Ok(Value::PC),
+            Value::EX => Ok(Value::EX),
+            Value::AtAddr(ref e) => Ok(Value::AtAddr(try!(e.solve(globals, locals)))),
+            Value::Litteral(ref e) => Ok(Value::Litteral(try!(e.solve(globals, locals)))),
         }
     }
 }

@@ -4,7 +4,6 @@ use std::str::FromStr;
 use nom::*;
 
 use assembler::types::*;
-use types::{BasicOp, SpecialOp, Register};
 
 fn bytes_to_type<I: FromStr>(i: &[u8]) -> Result<I, ()> {
     str::from_utf8(i)
@@ -71,11 +70,11 @@ named!(basic_op<BasicOp>,
     )
 );
 
-named!(instruction<ParsedInstruction>,
+named!(instruction<Instruction<Expression> >,
     alt_complete!(basic_instruction | special_instruction)
 );
 
-named!(basic_instruction<ParsedInstruction>,
+named!(basic_instruction<Instruction<Expression> >,
     chain!(
         op: basic_op ~
         multispace ~
@@ -85,7 +84,7 @@ named!(basic_instruction<ParsedInstruction>,
         multispace? ~
         a: a_value,
 
-        || ParsedInstruction::BasicOp(op, b, a)
+        || Instruction::BasicOp(op, b, a)
     )
 );
 
@@ -96,13 +95,13 @@ named!(special_op<SpecialOp>,
     )
 );
 
-named!(special_instruction<ParsedInstruction>,
+named!(special_instruction<Instruction<Expression> >,
     chain!(
         op: special_op ~
         multispace ~
         a: a_value,
 
-        || ParsedInstruction::SpecialOp(op, a)
+        || Instruction::SpecialOp(op, a)
     )
 );
 
@@ -113,7 +112,7 @@ named!(register<Register>,
     )
 );
 
-named!(at_reg_plus<ParsedValue>,
+named!(at_reg_plus<Value<Expression> >,
     chain!(
         char!('[') ~
         multispace? ~
@@ -124,13 +123,13 @@ named!(at_reg_plus<ParsedValue>,
         e: expression ~
         multispace? ~
         char!(']'),
-        || ParsedValue::AtRegPlus(reg, e)
+        || Value::AtRegPlus(reg, e)
     )
 );
 
-named!(value<ParsedValue>,
+named!(value<Value<Expression> >,
     alt_complete!(
-        map!(register, ParsedValue::Reg) |
+        map!(register, Value::Reg) |
         at_reg_plus |
         map!(chain!(char!('[') ~
                     multispace? ~
@@ -138,14 +137,14 @@ named!(value<ParsedValue>,
                     multispace? ~
                     char!(']'),
                     || r),
-             ParsedValue::AtReg) |
+             Value::AtReg) |
         map!(chain!(char!('[') ~
                     multispace? ~
                     e: expression ~
                     multispace? ~
                     char!(']'),
                     || e),
-             ParsedValue::AtAddr) |
+             Value::AtAddr) |
         map!(
             chain!(
                 tag!("PICK") ~
@@ -153,13 +152,13 @@ named!(value<ParsedValue>,
                 n: expression,
                 || n
             ),
-            ParsedValue::Pick
+            Value::Pick
         ) |
-        map!(tag!("PEEK"), |_| ParsedValue::Peek) |
-        map!(tag!("SP"), |_| ParsedValue::SP) |
-        map!(tag!("PC"), |_| ParsedValue::PC) |
-        map!(tag!("EX"), |_| ParsedValue::EX) |
-        map!(expression, ParsedValue::Litteral)
+        map!(tag!("PEEK"), |_| Value::Peek) |
+        map!(tag!("SP"), |_| Value::SP) |
+        map!(tag!("PC"), |_| Value::PC) |
+        map!(tag!("EX"), |_| Value::EX) |
+        map!(expression, Value::Litteral)
     )
 );
 
@@ -303,16 +302,16 @@ named!(expression<Expression>,
     )
 );
 
-named!(a_value<ParsedValue>,
+named!(a_value<Value<Expression> >,
     alt_complete!(
-        map!(tag!("POP"), |_| ParsedValue::Push) |
+        map!(tag!("POP"), |_| Value::Push) |
         value
     )
 );
 
-named!(b_value<ParsedValue>,
+named!(b_value<Value<Expression> >,
     alt_complete!(
-        map!(tag!("PUSH"), |_| ParsedValue::Push) |
+        map!(tag!("PUSH"), |_| Value::Push) |
         value
     )
 );
@@ -409,7 +408,7 @@ named!(pub parse< Vec<ParsedItem> >,
                         alt_complete!(
                             map!(directive, ParsedItem::Directive) |
                             map!(instruction,
-                                 ParsedItem::ParsedInstruction) |
+                                 ParsedItem::Instruction) |
                             comment |
                             local_label_decl |
                             label_decl
@@ -438,9 +437,9 @@ fn test_num() {
 fn test_instruction() {
     assert_eq!(instruction("ADD A, B".as_bytes()),
                IResult::Done(EMPTY,
-                             ParsedInstruction::BasicOp(BasicOp::ADD,
-                                                        ParsedValue::Reg(Register::A),
-                                                        ParsedValue::Reg(Register::B))));
+                             Instruction::BasicOp(BasicOp::ADD,
+                                                  Value::Reg(Register::A),
+                                                  Value::Reg(Register::B))));
 }
 
 #[cfg(test)]

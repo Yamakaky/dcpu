@@ -61,7 +61,7 @@ pub fn link(ast: &[ParsedItem]) -> Result<Vec<u16>, Error> {
                         *ptr = index;
                     }
                 }
-                ParsedItem::ParsedInstruction(ref i) => {
+                ParsedItem::Instruction(ref i) => {
                     let solved = match last_global {
                         Some(ref s) => try!(i.solve(&globals, locals.get(*s).unwrap())),
                         None => try!(i.solve(&globals, &HashMap::new())),
