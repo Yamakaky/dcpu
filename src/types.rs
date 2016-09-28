@@ -1,5 +1,4 @@
 use std::fmt;
-use std::str::FromStr;
 use std::error;
 
 use num::FromPrimitive;
@@ -25,24 +24,6 @@ quick_error!(
         SpecialOp(val: u16) {
             description("invalid special opcode")
             display("invalid special opcode: {:#x}", val)
-        }
-    }
-);
-
-quick_error!(
-    #[derive(Debug)]
-    pub enum ParseError {
-        BasicOp {
-            description("invalid basic operator")
-            display("invalid basic operator")
-        }
-        SpecialOp {
-            description("invalid special operator")
-            display("invalid special operator")
-        }
-        Register {
-            description("invalid register")
-            display("invalid register")
         }
     }
 );
@@ -149,24 +130,6 @@ pub enum Register {
 impl Register {
     pub fn offset(&self) -> u16 {
         *self as u16
-    }
-}
-
-impl FromStr for Register {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<Register, ParseError> {
-        match s.to_uppercase().as_str() {
-            "A" => Ok(Register::A),
-            "B" => Ok(Register::B),
-            "C" => Ok(Register::C),
-            "I" => Ok(Register::I),
-            "J" => Ok(Register::J),
-            "X" => Ok(Register::X),
-            "Y" => Ok(Register::Y),
-            "Z" => Ok(Register::Z),
-            _ => Err(ParseError::Register)
-        }
     }
 }
 
@@ -343,42 +306,6 @@ impl BasicOp {
     }
 }
 
-impl FromStr for BasicOp {
-    type Err = ParseError;
-    fn from_str(s: &str) -> Result<BasicOp, ParseError> {
-        match s.to_uppercase().as_str() {
-            "SET" => Ok(BasicOp::SET),
-            "ADD" => Ok(BasicOp::ADD),
-            "SUB" => Ok(BasicOp::SUB),
-            "MUL" => Ok(BasicOp::MUL),
-            "MLI" => Ok(BasicOp::MLI),
-            "DIV" => Ok(BasicOp::DIV),
-            "DVI" => Ok(BasicOp::DVI),
-            "MOD" => Ok(BasicOp::MOD),
-            "MDI" => Ok(BasicOp::MDI),
-            "AND" => Ok(BasicOp::AND),
-            "BOR" => Ok(BasicOp::BOR),
-            "XOR" => Ok(BasicOp::XOR),
-            "SHR" => Ok(BasicOp::SHR),
-            "ASR" => Ok(BasicOp::ASR),
-            "SHL" => Ok(BasicOp::SHL),
-            "IFB" => Ok(BasicOp::IFB),
-            "IFC" => Ok(BasicOp::IFC),
-            "IFE" => Ok(BasicOp::IFE),
-            "IFN" => Ok(BasicOp::IFN),
-            "IFG" => Ok(BasicOp::IFG),
-            "IFA" => Ok(BasicOp::IFA),
-            "IFL" => Ok(BasicOp::IFL),
-            "IFU" => Ok(BasicOp::IFU),
-            "ADX" => Ok(BasicOp::ADX),
-            "SBX" => Ok(BasicOp::SBX),
-            "STI" => Ok(BasicOp::STI),
-            "STD" => Ok(BasicOp::STD),
-            _     => Err(ParseError::BasicOp)
-        }
-    }
-}
-
 enum_from_primitive! {
 #[allow(dead_code)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -415,27 +342,5 @@ impl SpecialOp {
 
     pub fn decode(op: u16) -> Result<SpecialOp, DecodeError> {
         SpecialOp::from_u16(op).ok_or(DecodeError::SpecialOp(op))
-    }
-}
-
-impl FromStr for SpecialOp {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<SpecialOp, ParseError> {
-        match s.to_uppercase().as_str() {
-            "JSR" => Ok(SpecialOp::JSR),
-            "INT" => Ok(SpecialOp::INT),
-            "IAG" => Ok(SpecialOp::IAG),
-            "IAS" => Ok(SpecialOp::IAS),
-            "RFI" => Ok(SpecialOp::RFI),
-            "IAQ" => Ok(SpecialOp::IAQ),
-            "HWN" => Ok(SpecialOp::HWN),
-            "HWQ" => Ok(SpecialOp::HWQ),
-            "HWI" => Ok(SpecialOp::HWI),
-            "LOG" => Ok(SpecialOp::LOG),
-            "BRK" => Ok(SpecialOp::BRK),
-            "HLT" => Ok(SpecialOp::HLT),
-            _ => Err(ParseError::SpecialOp)
-        }
     }
 }

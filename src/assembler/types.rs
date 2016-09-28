@@ -5,6 +5,15 @@ pub use types::{BasicOp, SpecialOp, Register, Value, Instruction};
 use assembler::linker::{Error, Globals, Locals};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ParsedItem {
+    Directive(Directive),
+    LabelDecl(String),
+    LocalLabelDecl(String),
+    Instruction(Instruction<Expression>),
+    Comment(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Directive {
     Dat(Vec<DatItem>),
     Org(u16, u16),
@@ -14,12 +23,6 @@ pub enum Directive {
     BSS,
     /// Symbol, size
     Lcomm(String, u16),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum DatItem {
-    S(String),
-    E(Expression),
 }
 
 impl Directive {
@@ -63,6 +66,12 @@ impl Directive {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum DatItem {
+    S(String),
+    E(Expression),
+}
+
 impl From<String> for DatItem {
     fn from(s: String) -> DatItem {
         DatItem::S(s)
@@ -73,15 +82,6 @@ impl From<Expression> for DatItem {
     fn from(e: Expression) -> DatItem {
         DatItem::E(e)
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum ParsedItem {
-    Directive(Directive),
-    LabelDecl(String),
-    LocalLabelDecl(String),
-    Instruction(Instruction<Expression>),
-    Comment(String),
 }
 
 impl Instruction<Expression> {
