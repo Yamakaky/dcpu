@@ -2,6 +2,7 @@ pub mod clock;
 pub mod dummy;
 pub mod keyboard;
 pub mod lem1802;
+pub mod m35fd;
 
 pub mod glium_backend;
 
