@@ -92,9 +92,7 @@ impl Cpu {
     }
 
     pub fn load(&mut self, data: &[u16], offset: u16) {
-        for (i, d) in data.iter().enumerate() {
-            self.ram[offset.wrapping_add(i as u16)] = *d;
-        }
+        self.ram.copy(data.iter(), offset);
     }
 
     pub fn load_ops(&mut self, ops: &[Instruction<u16>], mut offset: u16) {

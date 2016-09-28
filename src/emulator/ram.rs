@@ -1,8 +1,30 @@
+use std;
 use std::ops::*;
 use std::num::Wrapping;
 
 pub type InnerRam = [u16; 0x10000];
 pub struct Ram(pub InnerRam);
+
+impl Ram {
+    pub fn copy<'a, T: Iterator<Item=&'a u16>>(&mut self, items: T, offset: u16) {
+        let (low, high) = self.0.split_at_mut(offset as usize);
+        for (from, to) in items.zip(high.iter_mut()
+                                        .chain(low.iter_mut())) {
+            *to = *from;
+        }
+    }
+
+    pub fn iter_wrap(&self, offset: u16) -> Iter {
+        self.iter()
+            .skip(offset as usize)
+            .chain(self.iter()
+                       .take(offset as usize))
+    }
+}
+
+// Waiting for `-> impl Iterator`...
+pub type Iter<'a> = std::iter::Chain<std::iter::Skip<std::slice::Iter<'a, u16>>,
+                                 std::iter::Take<std::slice::Iter<'a, u16>>>;
 
 impl Deref for Ram {
     type Target = InnerRam;
