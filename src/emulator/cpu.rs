@@ -68,8 +68,8 @@ pub struct Cpu {
 impl Default for Cpu {
     fn default() -> Cpu {
         Cpu {
-            ram: Ram([0x03e0; 0x10000]),
-            registers: Registers([0xdead; 8]),
+            ram: Ram::default(),
+            registers: Registers::default(),
             pc: Wrapping(0),
             sp: Wrapping(0xffff),
             ex: 0,

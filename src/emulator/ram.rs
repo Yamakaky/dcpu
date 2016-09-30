@@ -2,8 +2,15 @@ use std;
 use std::ops::*;
 use std::num::Wrapping;
 
-pub type InnerRam = [u16; 0x10000];
-pub struct Ram(pub InnerRam);
+const RAM_SIZE: usize = 0x10000;
+
+pub struct Ram([u16; RAM_SIZE]);
+
+impl Default for Ram {
+    fn default() -> Ram {
+        Ram([0x3e0; 0x10000])
+    }
+}
 
 impl Ram {
     pub fn copy<'a, T: Iterator<Item=&'a u16>>(&mut self, items: T, offset: u16) {
@@ -27,15 +34,15 @@ pub type Iter<'a> = std::iter::Chain<std::iter::Skip<std::slice::Iter<'a, u16>>,
                                  std::iter::Take<std::slice::Iter<'a, u16>>>;
 
 impl Deref for Ram {
-    type Target = InnerRam;
+    type Target = [u16; RAM_SIZE];
 
-    fn deref(&self) -> &InnerRam {
+    fn deref(&self) -> &[u16; RAM_SIZE] {
         &self.0
     }
 }
 
 impl DerefMut for Ram {
-    fn deref_mut(&mut self) -> &mut InnerRam {
+    fn deref_mut(&mut self) -> &mut [u16; RAM_SIZE] {
         &mut self.0
     }
 }
