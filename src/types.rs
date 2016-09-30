@@ -293,7 +293,7 @@ impl BasicOp {
     }
 
     pub fn decode(op: u16) -> Result<BasicOp, DecodeError> {
-        BasicOp::from_u16(op).ok_or(DecodeError::BasicOp(op))
+        BasicOp::from_u16(op).ok_or_else(|| DecodeError::BasicOp(op))
     }
 
     pub fn is_if(&self) -> bool {
@@ -341,6 +341,6 @@ impl SpecialOp {
     }
 
     pub fn decode(op: u16) -> Result<SpecialOp, DecodeError> {
-        SpecialOp::from_u16(op).ok_or(DecodeError::SpecialOp(op))
+        SpecialOp::from_u16(op).ok_or_else(|| DecodeError::SpecialOp(op))
     }
 }

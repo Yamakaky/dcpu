@@ -146,7 +146,7 @@ fn get_it_out(path: &str, which: &str, items: &[u16], format: OutputFormat) {
                 .create(true)
                 .open(&path)
                 .and_then(|mut output| encode_output(&mut output,
-                                                     &items,
+                                                     items,
                                                      format))
                 .map(|_| println!("{} written to {}", which, path))
                 .unwrap_or_else(|e| println!("Error while opening \"{}\": {}",
@@ -159,14 +159,14 @@ fn encode_output(output: &mut Write,
                  format: OutputFormat) -> io::Result<()> {
     match format {
         OutputFormat::Dat => {
-            output.write_all(".dat".as_bytes())
+            output.write_all(b".dat")
                   .and_then(|_| items.iter()
                                      .map(|i|
                                           output.write_fmt(
                                               format_args!(" 0x{:0>4x}", i)
                                           )
                                      ).collect::<io::Result<Vec<()>>>())
-                  .and_then(|_| output.write_all("\n".as_bytes()))
+                  .and_then(|_| output.write_all(b"\n"))
         }
         OutputFormat::Bin => {
             items.iter()
@@ -178,7 +178,7 @@ fn encode_output(output: &mut Write,
             items.iter()
                  .map(|i| output.write_fmt(format_args!("0x{:0>4x} ", i)))
                  .collect::<io::Result<Vec<()>>>()
-                 .and_then(|_| output.write_all("\n".as_bytes()))
+                 .and_then(|_| output.write_all(b"\n"))
         }
     }
 }

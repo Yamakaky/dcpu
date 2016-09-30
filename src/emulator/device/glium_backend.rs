@@ -151,7 +151,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
                keyboard_sender: mpsc::Sender<KeyboardEvent>,
                screen_receiver: mpsc::Receiver<ScreenCommand>) {
     let display = glium::glutin::WindowBuilder::new()
-        .with_title(format!("Screen + keyboard"))
+        .with_title("Screen + keyboard")
         .with_vsync()
         .with_visibility(false)
         .build_glium()
@@ -285,9 +285,9 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
 
         'pote: loop {
             match thread_command.try_recv() {
-                Ok(ThreadCommand::Stop) => break 'main,
-                Err(mpsc::TryRecvError::Empty) => break 'pote,
+                Ok(ThreadCommand::Stop) |
                 Err(mpsc::TryRecvError::Disconnected) => break 'main,
+                Err(mpsc::TryRecvError::Empty) => break 'pote,
             }
         }
     }

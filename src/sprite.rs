@@ -123,9 +123,8 @@ of 4 and 8 respectively, like 64*64px, 32x128px...".into());
     Ok(encode_font_items(&font_items))
 }
 
-fn img_to_font_item<'a>(img: &image::SubImage<'a,
-                                              image::ImageBuffer<image::Rgb<u8>,
-                                                                 Vec<u8>>>,
+fn img_to_font_item(img: &image::SubImage<image::ImageBuffer<image::Rgb<u8>,
+                                                             Vec<u8>>>,
                         fg_color: image::Rgb<u8>)
     -> Result<(FontItem, image::Rgb<u8>), String> {
     assert_eq!(img.dimensions(), (CHAR_WIDTH, CHAR_HEIGHT));

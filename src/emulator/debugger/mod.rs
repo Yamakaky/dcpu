@@ -95,7 +95,7 @@ impl Debugger {
                         self.last_command.clone()
                     } else {
                         match parser::parse_command(line.as_bytes()) {
-                            nom::IResult::Done(ref i, ref o) if i.len() == 0 => {
+                            nom::IResult::Done(i, ref o) if i.len() == 0 => {
                                 rl.add_history_entry(&line);
                                 Some(o.clone())
                             }
@@ -222,10 +222,9 @@ impl Debugger {
             }
 
             if let Some((i, addr)) = self.breakpoints
-                                 .iter()
-                                 .enumerate()
-                                 .filter(|&(_, x)| *x == self.cpu.pc.0)
-                                 .next() {
+                                         .iter()
+                                         .enumerate()
+                                         .find(|&(_, x)| *x == self.cpu.pc.0) {
                 println!("Breakpoint {} triggered at {}", i, addr);
                 return;
             }

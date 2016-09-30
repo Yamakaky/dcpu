@@ -20,7 +20,7 @@ impl Computer {
     pub fn tick(&mut self) -> Result<(), cpu::Error> {
         try!(self.cpu.tick(&mut self.devices));
 
-        for device in self.devices.iter_mut() {
+        for device in &mut self.devices {
             match device.tick(&mut self.cpu, self.current_tick) {
                 TickResult::Nothing => (),
                 TickResult::Interrupt(msg) => self.cpu.hardware_interrupt(msg),

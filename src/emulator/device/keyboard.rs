@@ -63,8 +63,7 @@ impl<B: Backend> Device for Keyboard<B> {
             Command::GET_NEXT =>
                 cpu.registers[Register::C] = self.key_buffer
                                                  .pop_front()
-                                                 .map(Key::encode)
-                                                 .unwrap_or(0),
+                                                 .map_or(0, Key::encode),
             Command::CHECK_KEY => {
                 // TODO: fix error case
                 let key = try!(Key::decode(b).map_err(|_| ErrorKind::InvalidCommand(0xffff)));

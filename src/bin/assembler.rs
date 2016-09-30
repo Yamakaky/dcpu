@@ -82,11 +82,11 @@ fn main_ret() -> i32 {
             dcpu::assembler::preprocessor::preprocess(&asm).unwrap()
         }
     };
-    let parsed = parser::parse(&preprocessed.as_bytes());
+    let parsed = parser::parse(preprocessed.as_bytes());
     let ast = match parsed {
-        Done(ref i, ref o) if i.len() == 0 => o,
-        Done(ref i, _) => {
-            let (line, row) = line_number(&preprocessed.as_bytes(), i);
+        Done(i, ref o) if i.len() == 0 => o,
+        Done(i, _) => {
+            let (line, row) = line_number(preprocessed.as_bytes(), i);
             die!(1,
                  "Unknown (line {}, row {}): \"{}\"",
                  line,
@@ -120,7 +120,7 @@ fn main_ret() -> i32 {
         }
     }
 
-    return 0;
+    0
 }
 
 fn main() {

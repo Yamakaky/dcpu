@@ -40,7 +40,7 @@ pub fn link(ast: &[ParsedItem]) -> Result<Vec<u16>, Error> {
                     index += size;
                 }
                 ParsedItem::Directive(ref d) => index += match last_global {
-                    Some(ref s) => try!(d.append_to(&mut bin, &globals, &locals.get(*s).unwrap())),
+                    Some(s) => try!(d.append_to(&mut bin, &globals, &locals.get(s).unwrap())),
                     None => try!(d.append_to(&mut bin, &globals, &HashMap::new())),
                 },
                 ParsedItem::LabelDecl(ref s) => {
@@ -63,10 +63,10 @@ pub fn link(ast: &[ParsedItem]) -> Result<Vec<u16>, Error> {
                 }
                 ParsedItem::Instruction(ref i) => {
                     let solved = match last_global {
-                        Some(ref s) => try!(i.solve(&globals, locals.get(*s).unwrap())),
+                        Some(s) => try!(i.solve(&globals, locals.get(s).unwrap())),
                         None => try!(i.solve(&globals, &HashMap::new())),
                     };
-                    bin.extend(&[0xbeaf; 3]);
+                    bin.extend_from_slice(&[0xbeaf; 3]);
                     index += solved.encode(&mut bin[index as usize..]);
                     bin.truncate(index as usize);
                 }

@@ -64,14 +64,13 @@ impl Device for Clock {
     }
 
     fn tick(&mut self, _: &mut Cpu, current_tick: u64) -> TickResult {
-        if self.speed != 0 && self.int_msg != 0 {
-            if current_tick % (60 * self.ticks_per_second / self.speed as u64) == 0 {
+        if self.speed != 0 && self.int_msg != 0 &&
+           current_tick % (60 * self.ticks_per_second / self.speed as u64) == 0 {
                 self.last_call += 1;
                 return TickResult::Interrupt(self.int_msg);
-            }
         }
 
-        return TickResult::Nothing;
+        TickResult::Nothing
     }
 
     fn inspect(&self) {

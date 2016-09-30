@@ -47,7 +47,7 @@ impl Color {
         Color {
             r: ((c >> 8) & 0xf) as f32 / 0xf as f32,
             g: ((c >> 4) & 0xf) as f32 / 0xf as f32,
-            b: ((c >> 0) & 0xf) as f32 / 0xf as f32,
+            b: ( c        & 0xf) as f32 / 0xf as f32,
             blinking: false,
         }
     }

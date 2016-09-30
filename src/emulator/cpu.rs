@@ -187,8 +187,10 @@ impl Cpu {
                     warn!("Instruction decoding error: {:x}", self.ram[self.pc]);
                     self.pc += Wrapping(1);
                     return Ok(CpuState::Executing);
-                },
-                OnDecodeError::Fail => return Err(e.into()),
+                }
+                OnDecodeError::Fail => {
+                    return Err(e.into());
+                }
             }
         };
         self.pc += Wrapping(words_used);
@@ -333,7 +335,7 @@ impl Cpu {
         } else {
             let val_b = self.get(b);
             self.set(b, val_b / val_a);
-            self.ex = ((val_b as u32) << 16 / val_a) as u16;
+            self.ex = (((val_b as u32) << 16) / (val_a as u32)) as u16;
         }
         Ok(())
     }
@@ -346,7 +348,7 @@ impl Cpu {
         } else {
             let val_b = self.get(b) as i16;
             self.set(b, (val_b / val_a) as u16);
-            self.ex = ((val_b as i32) << 16 / val_a) as u16;
+            self.ex = (((val_b as i32) << 16) / (val_a as i32)) as u16;
         }
         Ok(())
     }
