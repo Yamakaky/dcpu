@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Better logging of executed instructions.
 - Use generics for types::*
 
+### Fixed
+
+- `s` instead of `s 1` in the debugger
+
 ## [0.3.0]
 
 ### Added

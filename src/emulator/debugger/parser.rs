@@ -46,8 +46,8 @@ named!(pub parse_command<Command>,
 named!(cmd_step<Command>,
     chain!(
         char!('s') ~
-        multispace ~
-        n: map!(opt!(pos_number), |x| Option::unwrap_or(x, 1)),
+        n: chain!(multispace? ~ n: pos_number?,
+                  || n.unwrap_or(1)),
         || Command::Step(n)
     )
 );
