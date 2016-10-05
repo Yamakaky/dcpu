@@ -12,6 +12,8 @@ pub enum KeyboardEvent {
 }
 
 pub struct KeyboardBackend {
+    // used for Drop
+    #[allow(dead_code)]
     common: Rc<Any>,
     receiver: mpsc::Receiver<KeyboardEvent>,
     key_pressed: [bool; 0x92],

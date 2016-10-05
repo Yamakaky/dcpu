@@ -1,12 +1,9 @@
-use std::collections::VecDeque;
-use std::fmt;
 use std::thread;
 use std::rc::Rc;
 use std::sync::mpsc;
 
 use glium::{self, DisplayBuild, Surface};
 
-use emulator::cpu;
 use emulator::device::{keyboard, lem1802};
 use emulator::device::keyboard::mpsc_backend::*;
 use emulator::device::lem1802::generic_backend::*;
