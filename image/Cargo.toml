@@ -1,0 +1,10 @@
+[package]
+name = "dcpu-image"
+version = "0.1.0"
+authors = ["yamakaky"]
+
+[dependencies]
+byteorder = "~0.5.1"
+docopt = "~0.6.80"
+image = "0.10"
+rustc-serialize = "~0.3.19"

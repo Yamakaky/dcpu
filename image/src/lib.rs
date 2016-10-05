@@ -1,4 +1,6 @@
-use image::{self, GenericImage};
+extern crate image;
+
+use image::GenericImage;
 
 const CHAR_HEIGHT: u32 = 8;
 const CHAR_WIDTH: u32 = 4;

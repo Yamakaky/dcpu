@@ -1,11 +1,8 @@
 extern crate byteorder;
-extern crate dcpu;
+extern crate dcpu_image;
 extern crate docopt;
 extern crate image;
 extern crate rustc_serialize;
-
-#[macro_use]
-mod utils;
 
 use std::fs::OpenOptions;
 use std::io::{self, Write};
@@ -57,6 +54,16 @@ impl OutputFormat {
     }
 }
 
+macro_rules! die {
+    ( $exit:expr, $($x:expr),* ) => (
+        {
+            let mut stderr = ::std::io::stderr();
+            writeln!(stderr, $($x),*).unwrap();
+            return $exit;
+        }
+    )
+}
+
 fn main_ret() -> i32 {
     let args: Args = Docopt::new(USAGE)
                             .and_then(|d| d.decode())
@@ -65,7 +72,7 @@ fn main_ret() -> i32 {
     if let Some(font_path) = args.flag_font_file {
         match image::open(&font_path) {
             Ok(font_img) => {
-                match  dcpu::sprite::encode_font(&mut font_img.to_rgb()) {
+                match  dcpu_image::encode_font(&mut font_img.to_rgb()) {
                     Ok(font) => {
                         let output_path = format!("{}.{}",
                                                   font_path,
@@ -84,7 +91,7 @@ fn main_ret() -> i32 {
     if let Some(palette_path) = args.flag_palette_file {
         match image::open(&palette_path) {
             Ok(palette_img) => {
-                let palette = dcpu::sprite::encode_palette(palette_img.to_rgb()
+                let palette = dcpu_image::encode_palette(palette_img.to_rgb()
                                                                       .pixels());
                 let output_path = format!("{}.{}",
                                           palette_path,
@@ -100,7 +107,7 @@ fn main_ret() -> i32 {
     if let Some(image_path) = args.flag_image {
         match image::open(&image_path) {
             Ok(img) => {
-                match  dcpu::sprite::encode_image(img.to_rgb()) {
+                match  dcpu_image::encode_image(img.to_rgb()) {
                     Ok((frame, font, palette)) => {
                         let output_path = format!("{}.frame.{}",
                                                   image_path,
