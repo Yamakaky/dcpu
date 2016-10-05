@@ -8,14 +8,10 @@ use glium::{self, DisplayBuild, Surface};
 
 use emulator::cpu;
 use emulator::device::{keyboard, lem1802};
+use emulator::device::keyboard::mpsc_backend::*;
 
 enum ThreadCommand {
     Stop,
-}
-
-enum KeyboardEvent {
-    KeyPressed(keyboard::Key),
-    KeyReleased(keyboard::Key),
 }
 
 enum ScreenCommand {
@@ -26,14 +22,6 @@ enum ScreenCommand {
 struct CommonBackend {
     thread_handle: Option<thread::JoinHandle<()>>,
     thread_command: mpsc::Sender<ThreadCommand>,
-}
-
-pub struct KeyboardBackend {
-    // used for Drop
-    #[allow(dead_code)]
-    common: Rc<CommonBackend>,
-    keyboard_receiver: mpsc::Receiver<KeyboardEvent>,
-    key_pressed: [bool; 0x92],
 }
 
 pub struct ScreenBackend {
@@ -58,42 +46,7 @@ pub fn start() -> (ScreenBackend, KeyboardBackend) {
     (ScreenBackend {
         common: common.clone(),
         screen_sender: tx3,
-    },KeyboardBackend {
-        common: common,
-        keyboard_receiver: rx2,
-        key_pressed: [false; 0x92],
-    })
-}
-
-impl fmt::Debug for KeyboardBackend {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Glium backend")
-    }
-}
-
-impl keyboard::Backend for KeyboardBackend {
-    fn is_key_pressed(&mut self, key: keyboard::Key) -> bool {
-        self.key_pressed[key.encode() as usize]
-    }
-
-    fn push_typed_keys(&mut self, queue: &mut VecDeque<keyboard::Key>) -> bool {
-        let mut new_keys = false;
-        loop {
-            match self.keyboard_receiver.try_recv() {
-                Ok(KeyboardEvent::KeyPressed(k)) => {
-                    new_keys = true;
-                    self.key_pressed[k.encode() as usize] = true;
-                    queue.push_back(k);
-                }
-                Ok(KeyboardEvent::KeyReleased(k)) => {
-                    new_keys = true;
-                    self.key_pressed[k.encode() as usize] = false;
-                }
-                Err(mpsc::TryRecvError::Empty) => return new_keys,
-                Err(mpsc::TryRecvError::Disconnected) => panic!("Thread down"),
-            }
-        }
-    }
+    }, KeyboardBackend::new(common, rx2))
 }
 
 impl fmt::Debug for ScreenBackend {
