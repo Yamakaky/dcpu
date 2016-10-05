@@ -9,14 +9,10 @@ use glium::{self, DisplayBuild, Surface};
 use emulator::cpu;
 use emulator::device::{keyboard, lem1802};
 use emulator::device::keyboard::mpsc_backend::*;
+use emulator::device::lem1802::generic_backend::*;
 
 enum ThreadCommand {
     Stop,
-}
-
-enum ScreenCommand {
-    Show(Box<lem1802::Screen>),
-    Hide,
 }
 
 struct CommonBackend {
@@ -24,11 +20,13 @@ struct CommonBackend {
     thread_command: mpsc::Sender<ThreadCommand>,
 }
 
-pub struct ScreenBackend {
-    // used for Drop
-    #[allow(dead_code)]
-    common: Rc<CommonBackend>,
-    screen_sender: mpsc::Sender<ScreenCommand>,
+impl Drop for CommonBackend {
+    fn drop(&mut self) {
+        if let Some(handle) = self.thread_handle.take() {
+            let _ = self.thread_command.send(ThreadCommand::Stop);
+            handle.join().unwrap();
+        }
+    }
 }
 
 pub fn start() -> (ScreenBackend, KeyboardBackend) {
@@ -43,61 +41,8 @@ pub fn start() -> (ScreenBackend, KeyboardBackend) {
         thread_handle: Some(handle),
         thread_command: tx1,
     });
-    (ScreenBackend {
-        common: common.clone(),
-        screen_sender: tx3,
-    }, KeyboardBackend::new(common, rx2))
-}
-
-impl fmt::Debug for ScreenBackend {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Glium backend")
-    }
-}
-
-impl lem1802::Backend for ScreenBackend {
-    fn tick<B: lem1802::Backend>(&self,
-                                 cpu: &cpu::Cpu,
-                                 lem: &lem1802::LEM1802<B>,
-                                 tick_count: u64) {
-        // TODO: 10 fps for now by fear to fill the buffer
-        if tick_count % 10_000 == 0 {
-            self.try_show(cpu, lem);
-        }
-    }
-
-    fn hide(&self) {
-        self.screen_sender
-            .send(ScreenCommand::Hide)
-            .unwrap();
-    }
-
-    fn show<B: lem1802::Backend>(&self,
-                                 cpu: &cpu::Cpu,
-                                 lem: &lem1802::LEM1802<B>) {
-        self.try_show(cpu, lem);
-    }
-}
-
-impl ScreenBackend {
-    fn try_show<B: lem1802::Backend>(&self,
-                                     cpu: &cpu::Cpu,
-                                     lem: &lem1802::LEM1802<B>) {
-        if let Some(screen) = lem.get_screen(cpu) {
-            self.screen_sender
-                .send(ScreenCommand::Show(screen))
-                .unwrap();
-        }
-    }
-}
-
-impl Drop for CommonBackend {
-    fn drop(&mut self) {
-        if let Some(handle) = self.thread_handle.take() {
-            let _ = self.thread_command.send(ThreadCommand::Stop);
-            handle.join().unwrap();
-        }
-    }
+    (ScreenBackend::new(common.clone(), move |s| tx3.send(s).unwrap()),
+     KeyboardBackend::new(common, rx2))
 }
 
 fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
