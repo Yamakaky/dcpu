@@ -1,7 +1,7 @@
 use std::fmt;
 
 #[cfg(feature = "serde")]
-use serde::de::{Deserialize, Deserializer};
+use serde::de::{self, Deserialize, Deserializer, SeqVisitor, Visitor};
 #[cfg(feature = "serde")]
 use serde::ser::{Serialize, Serializer};
 
@@ -32,8 +32,33 @@ impl Serialize for Screen {
 impl Deserialize for Screen {
     fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
         where D: Deserializer {
-        // TODO: fixme!
-        Ok(Screen([Color::default(); SCREEN_SIZE as usize]))
+        struct ScreenVisitor;
+
+        impl Visitor for ScreenVisitor {
+            type Value = Screen;
+
+            fn visit_seq<V>(&mut self,
+                            mut visitor: V) -> Result<Screen, V::Error>
+                where V: SeqVisitor
+            {
+                let mut screen = Screen([Color::default();
+                                         SCREEN_SIZE as usize]);
+
+                for i in 0..SCREEN_SIZE as usize {
+                    screen.0[i] = match try!(visitor.visit()) {
+                        Some(val) => val,
+                        None => { return Err(de::Error::end_of_stream()); }
+                    };
+                }
+
+                try!(visitor.end());
+
+                Ok(screen)
+            }
+        }
+
+        deserializer.deserialize_seq_fixed_size(SCREEN_SIZE as usize,
+                                                ScreenVisitor)
     }
 }
 
