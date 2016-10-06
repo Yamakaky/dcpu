@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- serde derives with feature `nightly`
+
 ### Changed
 
+- Move image related features to own crate
 - Replace `--log-map` with `--log-litterals`.
 - Better logging of executed instructions.
 - Use generics for types::*

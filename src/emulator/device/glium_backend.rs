@@ -51,7 +51,8 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
         .with_visibility(false)
         .build_glium()
         .unwrap();
-    let mut current_screen = Box::new([lem1802::Color::default(); 12288]);
+    let mut current_screen =
+        Box::new(lem1802::Screen([lem1802::Color::default(); 12288]));
 
     let vertex_buffer = {
         #[derive(Copy, Clone)]
@@ -142,7 +143,9 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
 
         {
             let mut mapping = per_instance.map();
-            for (color, dst) in current_screen.iter().zip(mapping.iter_mut()) {
+            for (color, dst) in current_screen.0
+                                              .iter()
+                                              .zip(mapping.iter_mut()) {
                 dst.color = [color.r, color.g, color.b];
             }
         }

@@ -1,12 +1,14 @@
 pub mod generic_backend;
+mod screen;
 
-use std::fmt::Debug;
+use std::fmt;
 use std::num::Wrapping;
 
 use num::traits::FromPrimitive;
 
 use emulator::cpu::Cpu;
 use emulator::device::*;
+pub use emulator::device::lem1802::screen::*;
 use types::Register;
 
 const MASK_INDEX: u16 = 0xf;
@@ -35,27 +37,7 @@ enum Command {
 }
 }
 
-#[derive(Debug, Default, Copy, Clone)]
-pub struct Color {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32,
-    pub blinking: bool,
-}
-pub type Screen = [Color; SCREEN_SIZE as usize];
-
-impl Color {
-    fn from_packed(c: u16) -> Color {
-        Color {
-            r: ((c >> 8) & 0xf) as f32 / 0xf as f32,
-            g: ((c >> 4) & 0xf) as f32 / 0xf as f32,
-            b: ( c        & 0xf) as f32 / 0xf as f32,
-            blinking: false,
-        }
-    }
-}
-
-pub trait Backend: Debug {
+pub trait Backend: fmt::Debug {
     fn tick<B: Backend>(&self, &Cpu, &LEM1802<B>, tick_count: u64);
     fn hide(&self);
     fn show<B: Backend>(&self, &Cpu, &LEM1802<B>);
@@ -147,7 +129,8 @@ impl<B: Backend> LEM1802<B> {
     pub fn get_screen(&self, cpu: &Cpu) -> Option<Box<Screen>> {
         // Stack overflow if we don't use Box
         if self.video_map.0 != 0 {
-            let mut screen = Box::new([Color::default(); SCREEN_SIZE as usize]);
+            let mut screen =
+                Box::new(Screen([Color::default(); SCREEN_SIZE as usize]));
             for offset in 0..NB_CHARS {
                 self.add_char(cpu, &mut screen, offset);
             }
@@ -177,7 +160,7 @@ impl<B: Backend> LEM1802<B> {
                 let idx = byte_offset
                         + (CHAR_WIDTH - x - 1)
                         + (SCREEN_WIDTH * (CHAR_HEIGHT - y - 1));
-                screen[idx as usize] = color;
+                screen.0[idx as usize] = color;
             }
         }
     }
