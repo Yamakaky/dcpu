@@ -1,8 +1,7 @@
 use std::any::Any;
 use std::collections::VecDeque;
 use std::fmt;
-use std::rc::Rc;
-use std::sync::mpsc;
+use std::sync::{Arc, Mutex, mpsc};
 
 use emulator::device::keyboard;
 
@@ -14,13 +13,13 @@ pub enum KeyboardEvent {
 pub struct KeyboardBackend {
     // used for Drop
     #[allow(dead_code)]
-    common: Rc<Any>,
+    common: Arc<Mutex<Any + Send>>,
     receiver: mpsc::Receiver<KeyboardEvent>,
     key_pressed: [bool; 0x92],
 }
 
 impl KeyboardBackend {
-    pub fn new(common: Rc<Any>,
+    pub fn new(common: Arc<Mutex<Any + Send>>,
                receiver: mpsc::Receiver<KeyboardEvent>)
         -> KeyboardBackend {
         KeyboardBackend {

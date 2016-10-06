@@ -26,7 +26,7 @@ error_chain!(
     }
 );
 
-pub trait Device: Debug {
+pub trait Device: Debug + Send {
     fn hardware_id(&self) -> u32;
     fn hardware_version(&self) -> u16;
     fn manufacturer(&self) -> u32;

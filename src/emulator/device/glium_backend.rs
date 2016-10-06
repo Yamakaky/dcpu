@@ -1,6 +1,5 @@
 use std::thread;
-use std::rc::Rc;
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc, Mutex};
 
 use glium::{self, DisplayBuild, Surface};
 
@@ -34,10 +33,10 @@ pub fn start() -> (ScreenBackend, KeyboardBackend) {
         .name("glium".into())
         .spawn(move || thread_main(rx1, tx2, rx3))
         .unwrap();
-    let common = Rc::new(CommonBackend {
+    let common = Arc::new(Mutex::new(CommonBackend {
         thread_handle: Some(handle),
         thread_command: tx1,
-    });
+    }));
     (ScreenBackend::new(common.clone(), move |s| tx3.send(s).unwrap()),
      KeyboardBackend::new(common, rx2))
 }

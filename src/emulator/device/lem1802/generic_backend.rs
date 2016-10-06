@@ -1,6 +1,6 @@
 use std::any::Any;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use emulator::cpu;
 use emulator::device::lem1802;
@@ -15,13 +15,13 @@ pub enum ScreenCommand {
 pub struct ScreenBackend {
     // used for Drop
     #[allow(dead_code)]
-    common: Rc<Any>,
-    send: Box<Fn(ScreenCommand)>,
+    common: Arc<Mutex<Any + Send>>,
+    send: Box<Fn(ScreenCommand) + Send + 'static>,
 }
 
 impl ScreenBackend {
-    pub fn new<T: Fn(ScreenCommand) + 'static>(common: Rc<Any>,
-                                               sender: T) -> ScreenBackend {
+    pub fn new<T>(common: Arc<Mutex<Any + Send>>, sender: T) -> ScreenBackend
+    where T: Fn(ScreenCommand) + Send + 'static{
         ScreenBackend {
             common: common,
             send: Box::new(sender),

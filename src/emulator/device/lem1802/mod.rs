@@ -37,7 +37,7 @@ enum Command {
 }
 }
 
-pub trait Backend: fmt::Debug {
+pub trait Backend: fmt::Debug + Send {
     fn tick<B: Backend>(&self, &Cpu, &LEM1802<B>, tick_count: u64);
     fn hide(&self);
     fn show<B: Backend>(&self, &Cpu, &LEM1802<B>);

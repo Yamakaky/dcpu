@@ -21,7 +21,7 @@ enum Command {
 }
 }
 
-pub trait Backend: Debug {
+pub trait Backend: Debug + Send {
     fn is_key_pressed(&mut self, key: Key) -> bool;
     fn push_typed_keys(&mut self, queue: &mut VecDeque<Key>) -> bool;
 }
