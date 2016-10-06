@@ -4,6 +4,9 @@ extern crate docopt;
 extern crate image;
 extern crate rustc_serialize;
 
+#[macro_use]
+mod utils;
+
 use std::fs::OpenOptions;
 use std::io::{self, Write};
 
@@ -52,16 +55,6 @@ impl OutputFormat {
             OutputFormat::Hex => "hex",
         }
     }
-}
-
-macro_rules! die {
-    ( $exit:expr, $($x:expr),* ) => (
-        {
-            let mut stderr = ::std::io::stderr();
-            writeln!(stderr, $($x),*).unwrap();
-            return $exit;
-        }
-    )
 }
 
 fn main_ret() -> i32 {
