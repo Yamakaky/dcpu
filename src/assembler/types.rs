@@ -2,7 +2,15 @@ use std::collections::HashMap;
 use std::iter;
 
 pub use types::{BasicOp, SpecialOp, Register, Value, Instruction};
-use assembler::linker::{Error, Globals, Locals};
+use assembler::linker::Error;
+
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct LabelInfos {
+    pub addr: u16,
+    pub locals: HashMap<String, u16>,
+}
+pub type Globals = HashMap<String, LabelInfos>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ParsedItem {
@@ -26,7 +34,10 @@ pub enum Directive {
 }
 
 impl Directive {
-    pub fn append_to(&self, bin: &mut Vec<u16>, globals: &Globals, locals: &Locals) -> Result<u16, Error> {
+    pub fn append_to(&self,
+                     bin: &mut Vec<u16>,
+                     labels: &Globals,
+                     last_global: &Option<String>) -> Result<u16, Error> {
         match *self {
             Directive::Dat(ref v) => {
                 let mut i = 0;
@@ -40,7 +51,7 @@ impl Directive {
                             size
                         }
                         DatItem::E(ref e) => {
-                            bin.push(try!(e.solve(globals, locals)));
+                            bin.push(try!(e.solve(labels, last_global)));
                             1
                         }
                     }
@@ -85,42 +96,41 @@ impl From<Expression> for DatItem {
 }
 
 impl Instruction<Expression> {
-    pub fn solve(&self,
-                 globals: &Globals,
-                 locals: &Locals)
-                 -> Result<Instruction<u16>, Error> {
+    pub fn solve(&self, globals: &Globals, last_global: &Option<String>)
+        -> Result<Instruction<u16>, Error> {
         match *self {
             Instruction::BasicOp(op, ref b, ref a) => {
                 Ok(Instruction::BasicOp(op,
-                                        try!(b.solve(globals, locals)),
-                                        try!(a.solve(globals, locals))))
+                                        try!(b.solve(globals, last_global)),
+                                        try!(a.solve(globals, last_global))))
             }
             Instruction::SpecialOp(op, ref a) => {
-                Ok(Instruction::SpecialOp(op, try!(a.solve(globals, locals))))
+                Ok(Instruction::SpecialOp(op,
+                                          try!(a.solve(globals, last_global))))
             }
         }
     }
 }
 
 impl Value<Expression> {
-    fn solve(&self,
-             globals: &HashMap<String, u16>,
-             locals: &HashMap<String, u16>)
+    fn solve(&self, globals: &Globals, last_global: &Option<String>)
              -> Result<Value<u16>, Error> {
         match *self {
             Value::Reg(r) => Ok(Value::Reg(r)),
             Value::AtReg(r) => Ok(Value::AtReg(r)),
-            Value::AtRegPlus(r, ref e) => {
-                Ok(Value::AtRegPlus(r, try!(e.solve(globals, locals))))
-            }
+            Value::AtRegPlus(r, ref e) =>
+                Ok(Value::AtRegPlus(r, try!(e.solve(globals, last_global)))),
             Value::Push => Ok(Value::Push),
             Value::Peek => Ok(Value::Peek),
-            Value::Pick(ref e) => Ok(Value::Pick(try!(e.solve(globals, locals)))),
+            Value::Pick(ref e) =>
+                Ok(Value::Pick(try!(e.solve(globals, last_global)))),
             Value::SP => Ok(Value::SP),
             Value::PC => Ok(Value::PC),
             Value::EX => Ok(Value::EX),
-            Value::AtAddr(ref e) => Ok(Value::AtAddr(try!(e.solve(globals, locals)))),
-            Value::Litteral(ref e) => Ok(Value::Litteral(try!(e.solve(globals, locals)))),
+            Value::AtAddr(ref e) =>
+                Ok(Value::AtAddr(try!(e.solve(globals, last_global)))),
+            Value::Litteral(ref e) =>
+                Ok(Value::Litteral(try!(e.solve(globals, last_global)))),
         }
     }
 }
@@ -146,59 +156,61 @@ pub enum Expression {
 }
 
 impl Expression {
-    fn solve(&self,
-             globals: &HashMap<String, u16>,
-             locals: &HashMap<String, u16>)
-             -> Result<u16, Error> {
+    fn solve(&self, globals: &Globals, last_global: &Option<String>)
+        -> Result<u16, Error> {
         match *self {
             Expression::Label(ref s) => {
                 match globals.get(s) {
-                    Some(addr) => Ok(*addr),
+                    Some(i) => Ok(i.addr),
                     None => Err(Error::UnknownLabel(s.clone())),
                 }
             }
             Expression::LocalLabel(ref s) => {
-                match locals.get(s) {
+                match globals.get(last_global.as_ref()
+                                             .unwrap())
+                             .unwrap()
+                             .locals
+                             .get(s) {
                     Some(addr) => Ok(*addr),
                     None => Err(Error::UnknownLocalLabel(s.clone())),
                 }
             }
             Expression::Num(n) => Ok(n.into()),
             Expression::Add(ref l, ref r) => {
-                Ok(try!(l.solve(globals, locals)).wrapping_add(try!(r.solve(globals, locals))))
+                Ok(try!(l.solve(globals, last_global)).wrapping_add(try!(r.solve(globals, last_global))))
             }
             Expression::Sub(ref l, ref r) => {
-                Ok(try!(l.solve(globals, locals)).wrapping_sub(try!(r.solve(globals, locals))))
+                Ok(try!(l.solve(globals, last_global)).wrapping_sub(try!(r.solve(globals, last_global))))
             }
             Expression::Mul(ref l, ref r) => {
-                Ok(try!(l.solve(globals, locals)).wrapping_mul(try!(r.solve(globals, locals))))
+                Ok(try!(l.solve(globals, last_global)).wrapping_mul(try!(r.solve(globals, last_global))))
             }
             Expression::Div(ref l, ref r) => {
-                Ok(try!(l.solve(globals, locals)).wrapping_div(try!(r.solve(globals, locals))))
+                Ok(try!(l.solve(globals, last_global)).wrapping_div(try!(r.solve(globals, last_global))))
             }
             Expression::Shr(ref l, ref r) => {
-                Ok(try!(l.solve(globals, locals)) >> try!(r.solve(globals, locals)))
+                Ok(try!(l.solve(globals, last_global)) >> try!(r.solve(globals, last_global)))
             }
             Expression::Shl(ref l, ref r) => {
-                Ok(try!(l.solve(globals, locals)) << try!(r.solve(globals, locals)))
+                Ok(try!(l.solve(globals, last_global)) << try!(r.solve(globals, last_global)))
             }
             Expression::Mod(ref l, ref r) => {
-                Ok(try!(l.solve(globals, locals)) % try!(r.solve(globals, locals)))
+                Ok(try!(l.solve(globals, last_global)) % try!(r.solve(globals, last_global)))
             }
             Expression::Not(ref l) => {
-                Ok(if try!(l.solve(globals, locals)) == 0 {1} else {0})
+                Ok(if try!(l.solve(globals, last_global)) == 0 {1} else {0})
             }
             Expression::Less(ref l, ref r) => {
-                Ok((try!(l.solve(globals, locals)) <
-                    try!(r.solve(globals, locals))) as u16)
+                Ok((try!(l.solve(globals, last_global)) <
+                    try!(r.solve(globals, last_global))) as u16)
             }
             Expression::Equal(ref l, ref r) => {
-                Ok((try!(l.solve(globals, locals)) ==
-                    try!(r.solve(globals, locals))) as u16)
+                Ok((try!(l.solve(globals, last_global)) ==
+                    try!(r.solve(globals, last_global))) as u16)
             }
             Expression::Greater(ref l, ref r) => {
-                Ok((try!(l.solve(globals, locals)) >
-                    try!(r.solve(globals, locals))) as u16)
+                Ok((try!(l.solve(globals, last_global)) >
+                    try!(r.solve(globals, last_global))) as u16)
             }
         }
     }

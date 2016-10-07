@@ -11,7 +11,7 @@ version = "0.3.0"
 
 [features]
 default = []
-nightly = ["serde", "serde_derive"]
+nightly = ["serde", "serde_derive", "serde_json"]
 
 [dependencies]
 byteorder = "~0.5.1"
@@ -26,6 +26,7 @@ rustc-serialize = "~0.3.19"
 rustyline = "1.0"
 serde = { version = "0.8", optional = true }
 serde_derive = { version = "0.8", optional = true }
+serde_json = { version = "0.8", optional = true }
 simplelog = "~0.2.0"
 
 [profile]

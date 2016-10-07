@@ -3,6 +3,8 @@ extern crate dcpu;
 extern crate docopt;
 extern crate nom;
 extern crate rustc_serialize;
+#[cfg(feature = "serde_json")]
+extern crate serde_json;
 extern crate simplelog;
 
 #[macro_use]
@@ -16,17 +18,18 @@ use docopt::Docopt;
 use nom::IResult::*;
 use nom::HexDisplay;
 
-use dcpu::assembler::{linker, parser};
+use dcpu::assembler::{self, linker, parser};
 
 const USAGE: &'static str = "
 Usage:
-  assembler [--no-cpp] [--ast] [--hex] [<file>] [-o <file>]
+  assembler [options] [<file>]
   assembler (--help | --version)
 
 Options:
   --no-cpp      Disable gcc preprocessor pass.
   --ast         Show the file AST.
   --hex         Show in hexadecimal instead of binary.
+  --symbols <f>  Write the resolved symbols to this file.
   <file>        File to use instead of stdin.
   -o <file>     File to use instead of stdout.
   -h --help     Show this screen.
@@ -38,6 +41,7 @@ struct Args {
     flag_no_cpp: bool,
     flag_ast: bool,
     flag_hex: bool,
+    flag_symbols: Option<String>,
     arg_file: Option<String>,
     flag_o: Option<String>,
 }
@@ -100,7 +104,7 @@ fn main_ret() -> i32 {
         die!(0, "{:?}", ast);
     }
 
-    let bin = match linker::link(ast) {
+    let (bin, symbols) = match linker::link(ast) {
         Ok(v) => v,
         Err(e) => die!(1, "Error: {:?}", e)
     };
@@ -120,9 +124,27 @@ fn main_ret() -> i32 {
         }
     }
 
-    0
+    if let Some(path) = args.flag_symbols {
+        write_symbols(path, &symbols)
+    } else {
+        0
+    }
 }
 
 fn main() {
     std::process::exit(main_ret());
+}
+
+#[cfg(feature = "serde_json")]
+fn write_symbols(path: String, symbols: &assembler::types::Globals) -> i32 {
+    match utils::get_output(Some(path)) {
+        Ok(mut o) => serde_json::to_writer_pretty(&mut o, symbols).unwrap(),
+        Err(e) => die!(1, "Error while opening the symbol map file: {}", e),
+    }
+    0
+}
+
+#[cfg(not(feature = "serde_json"))]
+fn write_symbols(_path: String, _symbols: &assembler::types::Globals) -> i32 {
+    die!(1, "Symbol map generation is disabled, activate the \"nightly\" feature.");
 }

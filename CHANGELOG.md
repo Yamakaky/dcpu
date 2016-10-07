@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - serde derives with feature `nightly`
+- the assembler can generate a symbol file
 
 ### Changed
 
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Replace `--log-map` with `--log-litterals`.
 - Better logging of executed instructions.
 - Use generics for types::*
+- New symbols structure in assembler
 
 ### Fixed
 
