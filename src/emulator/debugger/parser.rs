@@ -1,6 +1,7 @@
 use nom::*;
 
-use assembler::parser::pos_number;
+pub use assembler::types::Expression;
+use assembler::parser::{expression, pos_number};
 
 #[derive(Debug, Clone)]
 pub enum Command {
@@ -14,7 +15,7 @@ pub enum Command {
         from: u16,
         size: u16,
     },
-    Breakpoint(u16),
+    Breakpoint(Expression),
     Continue,
     ShowBreakpoints,
     DeleteBreakpoint(u16),
@@ -80,7 +81,7 @@ named!(cmd_breakpoint<Command>,
     chain!(
         tag!("b") ~
         multispace ~
-        addr: pos_number,
+        addr: expression,
         || Command::Breakpoint(addr)
     )
 );

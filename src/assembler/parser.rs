@@ -296,7 +296,7 @@ named!(simple_expression<Expression>,
     )
 );
 
-named!(expression<Expression>,
+named!(pub expression<Expression>,
     alt_complete!(
         chain!(char!('(') ~
                multispace? ~

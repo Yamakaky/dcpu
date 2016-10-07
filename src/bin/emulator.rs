@@ -4,6 +4,8 @@ extern crate docopt;
 #[macro_use]
 extern crate log;
 extern crate rustc_serialize;
+#[cfg(feature = "serde_json")]
+extern crate serde_json;
 extern crate simplelog;
 
 #[macro_use]
@@ -30,6 +32,7 @@ Options:
   --limit            Try to limit the tick rate to 100_000/s
   -d, --device       clock or keyscreen.
   --debugger         Launches the debugger.
+  --symbols <s>      Symbol map file (debugger only).
   --log-litterals    When a `LOG n` is triggered, print
                      `(char*)n`.
   --debug-history <file>   Use this file for the debugger history
@@ -46,6 +49,7 @@ struct Args {
     flag_debugger: bool,
     flag_tps: bool,
     flag_limit: bool,
+    flag_symbols: Option<String>,
     flag_debug_history: String,
 }
 
@@ -88,8 +92,16 @@ fn main_ret() -> i32 {
     };
 
     if args.flag_debugger {
+        let symbols = match utils::get_input(args.flag_symbols) {
+            Ok(i) => match serde_json::from_reader(i) {
+                Ok(symbols) => symbols,
+                Err(e) => die!(1, "Error while decoding the symbols: {}", e),
+            },
+            Err(e) => die!(1, "Error while reading the symbols map: {}", e),
+        };
         let mut debugger = Debugger::new(cpu, devices);
         debugger.log_litterals(args.flag_log_litterals);
+        debugger.symbols(symbols);
         debugger.run(args.flag_debug_history);
     } else {
         let mut computer = Computer::new(cpu, devices);

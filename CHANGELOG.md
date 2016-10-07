@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - serde derives with feature `nightly`
 - the assembler can generate a symbol file
+- in the debugger, `b` can take an expression with labels
 
 ### Changed
 

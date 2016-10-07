@@ -1,25 +1,33 @@
 mod completion;
 mod parser;
 
+use std::collections::HashMap;
 use std::iter::Iterator;
 use std::io;
 use std::path::Path;
 
 use nom;
 
+use assembler;
 use iterators;
 use emulator::{cpu, device};
 use emulator::debugger::parser::*;
 use types::Register;
 
+pub struct Breakpoint {
+    addr: u16,
+    expression: Expression,
+}
+
 pub struct Debugger {
     cpu: cpu::Cpu,
     devices: Vec<Box<device::Device>>,
-    breakpoints: Vec<u16>,
+    breakpoints: Vec<Breakpoint>,
     tick_number: u64,
     hooks: Vec<Command>,
     last_command: Option<Command>,
     log_litterals: bool,
+    symbols: assembler::types::Globals,
 }
 
 impl Debugger {
@@ -33,11 +41,16 @@ impl Debugger {
             hooks: vec![],
             last_command: None,
             log_litterals: false,
+            symbols: HashMap::new(),
         }
     }
 
     pub fn log_litterals(&mut self, enabled: bool) {
         self.log_litterals = enabled;
+    }
+
+    pub fn symbols(&mut self, symbols: assembler::types::Globals) {
+        self.symbols = symbols;
     }
 
     pub fn run<P: AsRef<Path>>(&mut self, history_path: P) {
@@ -102,7 +115,13 @@ impl Debugger {
             Command::Disassemble {from, size} =>
                 self.disassemble(from, size),
             Command::Examine {from, size} => self.examine(from, size),
-            Command::Breakpoint(b) => self.breakpoints.push(b),
+            Command::Breakpoint(ref b) => match b.solve(&self.symbols, &None) {
+                Ok(addr) => self.breakpoints.push(Breakpoint {
+                    addr: addr,
+                    expression: b.clone(),
+                }),
+                Err(e) => println!("Invalid expression: {:?}", e),
+            },
             Command::ShowBreakpoints => self.show_breakpoints(),
             Command::DeleteBreakpoint(b) =>
                 self.delete_breakpoint(b as usize),
@@ -169,9 +188,9 @@ impl Debugger {
     }
 
     fn show_breakpoints(&self) {
-        println!("Num    Address");
+        println!("Num    Address    Expression");
         for (i, b) in self.breakpoints.iter().enumerate() {
-            println!("{:<4}   0x{:0>4x}", i, b);
+            println!("{:<4}   0x{:0>4x}     {}", i, b.addr, b.expression);
         }
     }
 
@@ -188,11 +207,14 @@ impl Debugger {
                 Err(()) => return,
             }
 
-            if let Some((i, addr)) = self.breakpoints
-                                         .iter()
-                                         .enumerate()
-                                         .find(|&(_, x)| *x == self.cpu.pc.0) {
-                println!("Breakpoint {} triggered at {}", i, addr);
+            if let Some((i, b)) = self.breakpoints
+                                      .iter()
+                                      .enumerate()
+                                      .find(|&(_, x)| x.addr == self.cpu.pc.0) {
+                println!("Breakpoint {} triggered at 0x{:0>4x} ({})",
+                         i,
+                         b.addr,
+                         b.expression);
                 return;
             }
         }

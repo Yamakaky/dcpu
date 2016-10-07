@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt;
 use std::iter;
 
 pub use types::{BasicOp, SpecialOp, Register, Value, Instruction};
@@ -156,7 +157,7 @@ pub enum Expression {
 }
 
 impl Expression {
-    fn solve(&self, globals: &Globals, last_global: &Option<String>)
+    pub fn solve(&self, globals: &Globals, last_global: &Option<String>)
         -> Result<u16, Error> {
         match *self {
             Expression::Label(ref s) => {
@@ -212,6 +213,27 @@ impl Expression {
                 Ok((try!(l.solve(globals, last_global)) >
                     try!(r.solve(globals, last_global))) as u16)
             }
+        }
+    }
+}
+
+impl fmt::Display for Expression {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Expression::Label(ref s) => write!(f, "{}", s),
+            Expression::LocalLabel(ref s) => write!(f, ".{}", s),
+            Expression::Num(ref n) => write!(f, "0x{:0>4x}", u16::from(*n)),
+            Expression::Add(ref l, ref r) => write!(f, "{} + {}", l, r),
+            Expression::Sub(ref l, ref r) => write!(f, "{} - {}", l, r),
+            Expression::Mul(ref l, ref r) => write!(f, "{} * {}", l, r),
+            Expression::Div(ref l, ref r) => write!(f, "{} / {}", l, r),
+            Expression::Shr(ref l, ref r) => write!(f, "{} >> {}", l, r),
+            Expression::Shl(ref l, ref r) => write!(f, "{} << {}", l, r),
+            Expression::Mod(ref l, ref r) => write!(f, "{} % {}", l, r),
+            Expression::Not(ref e) => write!(f, "!{}", e),
+            Expression::Less(ref l, ref r) => write!(f, "{} < {}", l, r),
+            Expression::Equal(ref l, ref r) => write!(f, "{} == {}", l, r),
+            Expression::Greater(ref l, ref r) => write!(f, "{} > {}", l, r),
         }
     }
 }
