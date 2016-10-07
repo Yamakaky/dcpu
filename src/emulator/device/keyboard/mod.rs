@@ -95,6 +95,7 @@ impl<B: Backend> Device for Keyboard<B> {
     }
 }
 
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Key {
     Backspace,
