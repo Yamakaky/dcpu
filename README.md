@@ -34,6 +34,11 @@ You need to install the [rust compiler](https://www.rust-lang.org/) to build thi
 
 Available binaries are assembler, disassembler, emulator and sprite.
 
+Some features are only available on Rust nightly. To enable them, install Rust
+nightly then run;
+
+`cargo run --release --features nightly --bin ...`
+
 ## Convert images to LEM format
 
 The `sprite` utility can:

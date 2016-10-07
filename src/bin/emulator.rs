@@ -13,9 +13,11 @@ mod utils;
 
 use std::{time, thread};
 use std::io::prelude::*;
+use std::result;
 
 use docopt::Docopt;
 
+use dcpu::assembler::types::Globals;
 use dcpu::emulator::Cpu;
 use dcpu::emulator::Computer;
 use dcpu::emulator::Debugger;
@@ -92,16 +94,17 @@ fn main_ret() -> i32 {
     };
 
     if args.flag_debugger {
-        let symbols = match utils::get_input(args.flag_symbols) {
-            Ok(i) => match serde_json::from_reader(i) {
-                Ok(symbols) => symbols,
-                Err(e) => die!(1, "Error while decoding the symbols: {}", e),
-            },
-            Err(e) => die!(1, "Error while reading the symbols map: {}", e),
-        };
         let mut debugger = Debugger::new(cpu, devices);
         debugger.log_litterals(args.flag_log_litterals);
-        debugger.symbols(symbols);
+        if let Some(path) = args.flag_symbols {
+            let symbols = match get_symbols(path) {
+                Ok(s) => s,
+                Err(i) => {
+                    return i;
+                }
+            };
+            debugger.symbols(symbols);
+        }
         debugger.run(args.flag_debug_history);
     } else {
         let mut computer = Computer::new(cpu, devices);
@@ -159,4 +162,26 @@ fn main_ret() -> i32 {
 
 fn main() {
     std::process::exit(main_ret());
+}
+
+#[cfg(feature = "serde_json")]
+fn get_symbols(path: String) -> result::Result<Globals, i32> {
+    Ok(match utils::get_input(Some(path)) {
+        Ok(i) => match serde_json::from_reader(i) {
+            Ok(symbols) => symbols,
+            Err(e) => {
+                println!("Error while decoding the symbols: {}", e);
+                return Err(1);
+            }
+        },
+        Err(e) => {
+            println!("Error while reading the symbols map: {}", e);
+            return Err(1);
+        }
+    })
+}
+
+#[cfg(not(feature = "serde_json"))]
+fn get_symbols(_path: String) -> result::Result<Globals, i32> {
+    die!(1, "Symbol map loading is disabled, activate the \"nightly\" feature.");
 }
