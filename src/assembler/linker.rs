@@ -3,16 +3,32 @@ use std::iter;
 
 use assembler::types::*;
 
-#[derive(Debug)]
-pub enum Error {
-    UnknownLabel(String),
-    UnknownLocalLabel(String),
-    DuplicatedLabel(String),
-    DuplicatedLocalLabel(String),
-    LocalBeforeGlobal(String),
+error_chain!{
+    errors {
+        UnknownLabel(l: String) {
+            description("unknown label")
+            display("unknown label: \"{}\"", l)
+        }
+        UnknownLocalLabel(l: String) {
+            description("unknown local label")
+            display("unknown local label: \"{}\"", l)
+        }
+        DuplicatedLabel(l: String) {
+            description("duplicated label")
+            display("duplicated label: \"{}\"", l)
+        }
+        DuplicatedLocalLabel(l: String) {
+            description("duplicated local label")
+            display("duplicated local label: \"{}\"", l)
+        }
+        LocalBeforeGlobal(l: String) {
+            description("local label before a global")
+            display("local label before a global: \"{}\"", l)
+        }
+    }
 }
 
-pub fn link(ast: &[ParsedItem]) -> Result<(Vec<u16>, Globals), Error> {
+pub fn link(ast: &[ParsedItem]) -> Result<(Vec<u16>, Globals)> {
 
     let mut bin = Vec::new();
     let mut labels = try!(extract_labels(ast));
@@ -71,7 +87,7 @@ pub fn link(ast: &[ParsedItem]) -> Result<(Vec<u16>, Globals), Error> {
     Ok((bin, labels))
 }
 
-fn extract_labels(ast: &[ParsedItem]) -> Result<Globals, Error> {
+fn extract_labels(ast: &[ParsedItem]) -> Result<Globals> {
     let mut prev_label = None;
     let mut labels = HashMap::new();
 
@@ -80,20 +96,20 @@ fn extract_labels(ast: &[ParsedItem]) -> Result<Globals, Error> {
             ParsedItem::LabelDecl(ref s) | ParsedItem::Directive(Directive::Lcomm(ref s, _)) => {
                 prev_label = Some(s.clone());
                 if labels.contains_key(s) {
-                    return Err(Error::DuplicatedLabel(s.clone()));
+                    try!(Err(ErrorKind::DuplicatedLabel(s.clone())));
                 } else {
                     labels.insert(s.clone(), LabelInfos::default());
                 }
             }
             ParsedItem::LocalLabelDecl(ref s) => {
                 if prev_label.is_none() {
-                    return Err(Error::LocalBeforeGlobal(s.clone()));
+                    try!(Err(ErrorKind::LocalBeforeGlobal(s.clone())));
                 }
                 let locals = &mut labels.get_mut(prev_label.as_ref().unwrap())
                                         .unwrap()
                                         .locals;
                 if locals.contains_key(s) {
-                    return Err(Error::DuplicatedLocalLabel(s.clone()));
+                    try!(Err(ErrorKind::DuplicatedLocalLabel(s.clone())));
                 } else {
                     locals.insert(s.clone(), 0);
                 }

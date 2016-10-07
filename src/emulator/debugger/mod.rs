@@ -95,7 +95,7 @@ impl Debugger {
                 }
                 Err(ReadlineError::Interrupted) => (),
                 Err(ReadlineError::Eof) => break,
-                Err(err) => println!("Error: {:?}", err),
+                Err(e) => println!("Error: {}", e),
             }
         }
 
@@ -120,7 +120,7 @@ impl Debugger {
                     addr: addr,
                     expression: b.clone(),
                 }),
-                Err(e) => println!("Invalid expression: {:?}", e),
+                Err(e) => println!("Invalid expression: {}", e),
             },
             Command::ShowBreakpoints => self.show_breakpoints(),
             Command::DeleteBreakpoint(b) =>

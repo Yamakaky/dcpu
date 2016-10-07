@@ -3,7 +3,7 @@ use std::fmt;
 use std::iter;
 
 pub use types::{BasicOp, SpecialOp, Register, Value, Instruction};
-use assembler::linker::Error;
+use assembler::linker::*;
 
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -38,7 +38,7 @@ impl Directive {
     pub fn append_to(&self,
                      bin: &mut Vec<u16>,
                      labels: &Globals,
-                     last_global: &Option<String>) -> Result<u16, Error> {
+                     last_global: &Option<String>) -> Result<u16> {
         match *self {
             Directive::Dat(ref v) => {
                 let mut i = 0;
@@ -98,7 +98,7 @@ impl From<Expression> for DatItem {
 
 impl Instruction<Expression> {
     pub fn solve(&self, globals: &Globals, last_global: &Option<String>)
-        -> Result<Instruction<u16>, Error> {
+        -> Result<Instruction<u16>> {
         match *self {
             Instruction::BasicOp(op, ref b, ref a) => {
                 Ok(Instruction::BasicOp(op,
@@ -115,7 +115,7 @@ impl Instruction<Expression> {
 
 impl Value<Expression> {
     fn solve(&self, globals: &Globals, last_global: &Option<String>)
-             -> Result<Value<u16>, Error> {
+             -> Result<Value<u16>> {
         match *self {
             Value::Reg(r) => Ok(Value::Reg(r)),
             Value::AtReg(r) => Ok(Value::AtReg(r)),
@@ -158,12 +158,12 @@ pub enum Expression {
 
 impl Expression {
     pub fn solve(&self, globals: &Globals, last_global: &Option<String>)
-        -> Result<u16, Error> {
+        -> Result<u16> {
         match *self {
             Expression::Label(ref s) => {
                 match globals.get(s) {
                     Some(i) => Ok(i.addr),
-                    None => Err(Error::UnknownLabel(s.clone())),
+                    None => try!(Err(ErrorKind::UnknownLabel(s.clone()))),
                 }
             }
             Expression::LocalLabel(ref s) => {
@@ -173,7 +173,7 @@ impl Expression {
                              .locals
                              .get(s) {
                     Some(addr) => Ok(*addr),
-                    None => Err(Error::UnknownLocalLabel(s.clone())),
+                    None => try!(Err(ErrorKind::UnknownLocalLabel(s.clone()))),
                 }
             }
             Expression::Num(n) => Ok(n.into()),
