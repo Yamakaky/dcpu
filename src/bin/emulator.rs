@@ -183,5 +183,6 @@ fn get_symbols(path: String) -> result::Result<Globals, i32> {
 
 #[cfg(not(feature = "serde_json"))]
 fn get_symbols(_path: String) -> result::Result<Globals, i32> {
-    die!(1, "Symbol map loading is disabled, activate the \"nightly\" feature.");
+    println!("Symbol map loading is disabled, activate the \"nightly\" feature.");
+    Err(1)
 }
