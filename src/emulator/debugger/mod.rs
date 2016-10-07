@@ -115,13 +115,23 @@ impl Debugger {
             Command::Disassemble {from, size} =>
                 self.disassemble(from, size),
             Command::Examine {from, size} => self.examine(from, size),
-            Command::Breakpoint(ref b) => match b.solve(&self.symbols, &None) {
-                Ok(addr) => self.breakpoints.push(Breakpoint {
-                    addr: addr,
-                    expression: b.clone(),
-                }),
-                Err(e) => println!("Invalid expression: {}", e),
-            },
+            Command::Breakpoint(ref b) => {
+                let mut i = 0;
+                let mut last_global = None;
+                for (name, s) in &self.symbols {
+                    if s.addr <= self.cpu.pc.0 && s.addr >= i {
+                        last_global = Some(name.clone());
+                        i = s.addr;
+                    }
+                }
+                match b.solve(&self.symbols, &last_global) {
+                    Ok(addr) => self.breakpoints.push(Breakpoint {
+                        addr: addr,
+                        expression: b.clone(),
+                    }),
+                    Err(e) => println!("Invalid expression: {}", e),
+                }
+            }
             Command::ShowBreakpoints => self.show_breakpoints(),
             Command::DeleteBreakpoint(b) =>
                 self.delete_breakpoint(b as usize),
