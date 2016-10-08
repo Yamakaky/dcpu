@@ -1,7 +1,12 @@
 [package]
 name = "dcpu-image"
+description = "An image manipulation library for the DCPU"
 version = "0.1.0"
 authors = ["yamakaky"]
+homepage = "https://github.com/Yamakaky/dcpu"
+repository = "https://github.com/Yamakaky/dcpu"
+license = "LGPL-3.0"
+documentation = "https://docs.rs/dcpu-image"
 
 [dependencies]
 byteorder = "~0.5.1"
