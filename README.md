@@ -18,8 +18,7 @@
 ## Quick usage
 
 Compiled versions for Windows and Linux are available at
-https://pydio.chocolytech.info:4443/data/public/051666. No dependencies are
-required.
+https://github.com/Yamakaky/dcpu/releases/. No dependencies are required.
 
 Note: the Windows version of the emulation currently fails with an OpenGL error.
 If anyone knows why...
