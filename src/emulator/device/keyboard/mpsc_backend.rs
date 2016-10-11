@@ -52,6 +52,9 @@ impl keyboard::Backend for KeyboardBackend {
                     new_keys = true;
                     self.key_pressed[k.encode() as usize] = true;
                     queue.push_back(k);
+                    if queue.len() > 8 {
+                        queue.pop_front();
+                    }
                 }
                 Ok(KeyboardEvent::KeyReleased(k)) => {
                     new_keys = true;

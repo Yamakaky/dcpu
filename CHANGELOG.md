@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## Changed
+
+- Limit the keyboard buffer to 8 item
+
 ## [0.4.0]
 
 ### Added
