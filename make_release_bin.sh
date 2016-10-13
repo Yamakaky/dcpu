@@ -2,8 +2,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-cargo build --target=x86_64-unknown-linux-musl --release
-cargo build --target=x86_64-pc-windows-gnu --release
+cargo build --target=x86_64-unknown-linux-musl --release --features=nightly
+cargo build --target=x86_64-pc-windows-gnu --release --features=nightly
 
 (
     cd image

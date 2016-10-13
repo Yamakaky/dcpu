@@ -1,6 +1,6 @@
 #![doc(html_root_url = "https://yamakaky.github.io/dcpu/")]
 
-#![cfg_attr(feature = "serde_derive", feature(rustc_macro))]
+#![cfg_attr(feature = "serde_derive", feature(proc_macro))]
 
 #![recursion_limit = "1024"]
 #[macro_use]
