@@ -11,21 +11,6 @@ use emulator::device::*;
 pub use emulator::device::lem1802::screen::*;
 use types::Register;
 
-const MASK_INDEX: u16 = 0xf;
-pub const SCREEN_HEIGHT: u16 = 96;
-pub const SCREEN_WIDTH: u16 = 128;
-pub const SCREEN_SIZE: u16 = SCREEN_WIDTH * SCREEN_HEIGHT;
-const CHAR_HEIGHT: u16 = 8;
-const CHAR_WIDTH: u16 = 4;
-const CHAR_SIZE: u16 = CHAR_HEIGHT * CHAR_WIDTH;
-const NB_CHARS: u16 = 32 * 12;
-
-const MASK_BLINKING: u16 = 1 << 7;
-const MASK_COLOR_IDX: u16 = 0xf;
-const MASK_CHAR: u16 = 0x7f;
-const SHIFT_FG: u16 = 12;
-const SHIFT_BG: u16 = 8;
-
 enum_from_primitive! {
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
@@ -126,91 +111,49 @@ impl<B: Backend> Device for LEM1802<B> {
 }
 
 impl<B: Backend> LEM1802<B> {
-    pub fn get_screen(&self, cpu: &Cpu) -> Option<Box<Screen>> {
-        // Stack overflow if we don't use Box
+    pub fn get_raw_screen(&self, cpu: &Cpu) -> Option<Box<RawScreen>> {
         if self.video_map.0 != 0 {
-            let mut screen =
-                Box::new(Screen([Color::default(); SCREEN_SIZE as usize]));
-            for offset in 0..NB_CHARS {
-                self.add_char(cpu, &mut screen, offset);
+            let mut raw_screen = Box::new(RawScreen {
+                vram: [0; SCREEN_SIZE as usize / 2],
+                font: self.get_raw_font(cpu),
+                palette: self.get_raw_palette(cpu),
+            });
+            for (from, to) in cpu.ram
+                                 .iter_wrap(self.video_map.0)
+                                 .zip(raw_screen.vram.iter_mut()) {
+                *to = *from;
             }
-            Some(screen)
+            Some(raw_screen)
         } else {
             None
         }
     }
 
-    fn add_char(&self, cpu: &Cpu, screen: &mut Screen, char_offset: u16) {
-        let video_word = self.get_video_word(cpu, char_offset);
-        let font_item = self.get_font(cpu, video_word.char_idx);
-        // x and y are coordinates from top left, but the font items have a different layout so we
-        // have to correct it.
-        for x in 0..CHAR_WIDTH {
-            for y in 0..CHAR_HEIGHT {
-                let bit = (font_item >> (x * CHAR_HEIGHT + 7 - y)) & 1;
-                let mut color = self.get_color(cpu, if bit == 0 {
-                    video_word.bg_idx
-                } else {
-                    video_word.fg_idx
-                });
-                color.blinking = video_word.blinking;
-
-                let byte_offset = (char_offset / 32) * (CHAR_SIZE * 32)
-                                + (char_offset % 32) * CHAR_WIDTH;
-                let idx = byte_offset
-                        + (CHAR_WIDTH - x - 1)
-                        + (SCREEN_WIDTH * (CHAR_HEIGHT - y - 1));
-                screen.0[idx as usize] = color;
+    fn get_raw_font(&self, cpu: &Cpu) -> [u16; 256] {
+        if self.font_map.0 == 0 {
+            DEFAULT_FONT
+        } else {
+            let mut font = [0; 256];
+            for (from, to) in cpu.ram
+                                 .iter_wrap(self.font_map.0)
+                                 .zip(font.iter_mut()) {
+                *to = *from;
             }
+            font
         }
     }
 
-    fn get_video_word(&self, cpu: &Cpu, offset: u16) -> VideoWord {
-        if self.video_map.0 == 0 {
-            unreachable!()
-        } else {
-            let idx = self.video_map + Wrapping(offset);
-            VideoWord::from_packed(cpu.ram[idx])
-        }
-    }
-
-    fn get_font(&self, cpu: &Cpu, char_idx: u16) -> u32 {
-        let (w0, w1) = if self.font_map.0 == 0 {
-            (DEFAULT_FONT[char_idx as usize * 2],
-             DEFAULT_FONT[char_idx as usize * 2 + 1])
-        } else {
-            let idx = self.font_map + Wrapping(char_idx * 2);
-            (cpu.ram[idx],
-             cpu.ram[idx + Wrapping(1)])
-        };
-        (w0 as u32) << 16 | w1 as u32
-    }
-
-    fn get_color(&self, cpu: &Cpu, color_idx: u16) -> Color {
+    fn get_raw_palette(&self, cpu: &Cpu) -> [u16; 16] {
         if self.palette_map.0 == 0 {
-            Color::from_packed(DEFAULT_PALETTE[color_idx as usize])
+            DEFAULT_PALETTE
         } else {
-            let idx = self.palette_map + Wrapping(color_idx);
-            let color = cpu.ram[idx];
-            Color::from_packed(color)
-        }
-    }
-}
-
-struct VideoWord {
-    char_idx: u16,
-    bg_idx: u16,
-    fg_idx: u16,
-    blinking: bool,
-}
-
-impl VideoWord {
-    fn from_packed(w: u16) -> VideoWord {
-        VideoWord {
-            char_idx: w & MASK_CHAR,
-            bg_idx: (w >> SHIFT_BG) & MASK_COLOR_IDX,
-            fg_idx: (w >> SHIFT_FG) & MASK_COLOR_IDX,
-            blinking: (w & MASK_BLINKING) != 0,
+            let mut palette = [0; 16];
+            for (from, to) in cpu.ram
+                                 .iter_wrap(self.palette_map.0)
+                                 .zip(palette.iter_mut()) {
+                *to = *from;
+            }
+            palette
         }
     }
 }

@@ -129,7 +129,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
         'pote2: loop {
             match screen_receiver.try_recv() {
                 Ok(ScreenCommand::Show(screen)) => {
-                    current_screen = screen;
+                    current_screen = screen.into();
                     display.get_window().map(|w| w.show());
                 }
                 Ok(ScreenCommand::Hide) => {

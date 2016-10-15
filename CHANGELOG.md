@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Changed
 
 - Limit the keyboard buffer to 8 item
+- Move the screen convertion from the device to the render thread
 
 ## [0.4.0]
 

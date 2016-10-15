@@ -8,7 +8,7 @@ use emulator::device::lem1802;
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub enum ScreenCommand {
-    Show(Box<lem1802::Screen>),
+    Show(Box<lem1802::RawScreen>),
     Hide,
 }
 
@@ -61,7 +61,7 @@ impl ScreenBackend {
     fn try_show<B: lem1802::Backend>(&self,
                                      cpu: &cpu::Cpu,
                                      lem: &lem1802::LEM1802<B>) {
-        if let Some(screen) = lem.get_screen(cpu) {
+        if let Some(screen) = lem.get_raw_screen(cpu) {
             (self.send)(ScreenCommand::Show(screen))
         }
     }
