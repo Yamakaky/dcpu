@@ -23,6 +23,7 @@ pub struct RawScreen {
     pub vram: Vram,
     pub font: Font,
     pub palette: [u16; 16],
+    pub border_color_index: u16,
 }
 
 impl fmt::Debug for RawScreen {
@@ -79,7 +80,7 @@ impl RawScreen {
         (w0 as u32) << 16 | w1 as u32
     }
 
-    fn get_color(&self, color_idx: u16) -> Color {
+    pub fn get_color(&self, color_idx: u16) -> Color {
         Color::from_packed(self.palette[color_idx as usize])
     }
 }

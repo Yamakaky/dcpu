@@ -124,6 +124,7 @@ impl<B: Backend> LEM1802<B> {
                 vram: Vram([0; 386]),
                 font: Font(self.get_raw_font(cpu)),
                 palette: self.get_raw_palette(cpu),
+                border_color_index: self.border_color_index,
             });
             for (from, to) in cpu.ram
                                  .iter_wrap(self.video_map.0)

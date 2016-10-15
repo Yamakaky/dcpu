@@ -1,7 +1,9 @@
 use std::thread;
 use std::sync::{mpsc, Arc, Mutex};
 
-use glium::{self, DisplayBuild, Surface};
+use glium::{self, glutin, index, framebuffer, texture, vertex};
+use glium::{DisplayBuild, Surface, Program};
+use glium::uniforms::UniformBuffer;
 
 use emulator::device::{self, keyboard, lem1802};
 use emulator::device::keyboard::mpsc_backend::*;
@@ -57,7 +59,10 @@ pub fn start() -> (ScreenBackend, KeyboardBackend) {
 error_chain! {
     foreign_links {
         glium::GliumCreationError<glium::glutin::CreationError>, CreationError;
-        glium::vertex::BufferCreationError, VertexCreationError;
+        framebuffer::ValidationError, ValidationError;
+        glium::buffer::BufferCreationError, BufferCreationError;
+        vertex::BufferCreationError, VertexCreationError;
+        texture::TextureCreationError, TextureCreationError;
         glium::ProgramCreationError, ProgramCreationError;
         glium::SwapBuffersError, SwapBuffersError;
         glium::DrawError, DrawError;
@@ -74,10 +79,14 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
         .with_vsync()
         .with_visibility(false)
         .build_glium());
-    let mut current_screen =
-        Box::new(lem1802::Screen([lem1802::Color::default(); 12288]));
+    let mut current_screen = Box::new(lem1802::RawScreen {
+        vram: lem1802::Vram([0; 386]),
+        font: lem1802::Font([0; 256]),
+        palette: [0; 16],
+        border_color_index: 0,
+    });
 
-    let vertex_buffer = {
+    let render_vertex_buffer = {
         #[derive(Copy, Clone)]
         struct Vertex {
             position: [f32; 2],
@@ -85,75 +94,158 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
         implement_vertex!(Vertex, position);
 
         let data = [
-            Vertex { position: [0., 0.]},
-            Vertex { position: [0., 1.]},
-            Vertex { position: [1., 0.]},
+            Vertex { position: [-1., -1.]},
+            Vertex { position: [-1., 1.]},
+            Vertex { position: [1., -1.]},
             Vertex { position: [1., 1.]},
         ];
-        try!(glium::vertex::VertexBuffer::new(&display, &data))
+        try!(vertex::VertexBuffer::immutable(&display, &data))
     };
 
-    let mut per_instance = {
-        #[derive(Debug, Copy, Clone)]
-        struct Attr {
-            i: u16,
-            j: u16,
-            color: [f32; 3],
+    let composition_vertex_buffer = {
+        #[derive(Copy, Clone)]
+        struct Vertex {
+            position: [f32; 2],
+            texcoord: [f32; 2],
         }
-        implement_vertex!(Attr, i, j, color);
-        let mut data = Vec::with_capacity((lem1802::SCREEN_WIDTH * lem1802::SCREEN_HEIGHT) as usize);
-        for j in 0..lem1802::SCREEN_HEIGHT {
-            for i in 0..lem1802::SCREEN_WIDTH {
-                data.push(Attr {
-                    i: i,
-                    j: j,
-                    color: [0.; 3],
-                })
-            }
-        }
-        try!(glium::vertex::VertexBuffer::dynamic(&display, &data))
+        implement_vertex!(Vertex, position, texcoord);
+
+        let data = [
+            Vertex { position: [-0.9, -0.9], texcoord: [0., 0.] },
+            Vertex { position: [-0.9, 0.9], texcoord: [0., 1.] },
+            Vertex { position: [0.9, -0.9], texcoord: [1., 0.] },
+            Vertex { position: [0.9, 0.9], texcoord: [1., 1.] },
+        ];
+        try!(vertex::VertexBuffer::dynamic(&display, &data))
     };
-    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TriangleStrip);
 
-    let program = try!(glium::Program::from_source(&display, "
-        #version 130
-        #define SCREEN_WIDTH 128.
-        #define SCREEN_HEIGHT 96.
+    let vram: UniformBuffer<[u32; 512]> =
+        try!(UniformBuffer::empty_dynamic(&display));
+    let font: UniformBuffer<[u32; 256]> =
+        try!(UniformBuffer::empty_dynamic(&display));
+    let palette: UniformBuffer<[u32; 16]> =
+        try!(UniformBuffer::empty_dynamic(&display));
+    let render_buffer = try!(texture::Texture2d::empty_with_format(
+        &display,
+        texture::UncompressedFloatFormat::F32F32F32F32,
+        texture::MipmapsOption::NoMipmap,
+        128,
+        96));
+    let mut frame_buffer =
+        try!(framebuffer::SimpleFrameBuffer::new(&display, &render_buffer));
 
-        in uint i;
-        in uint j;
-        in vec3 color;
+    let indices = index::NoIndices(index::PrimitiveType::TriangleStrip);
+
+    let render_program = try!(Program::from_source(&display, r#"
+        #version 330
+
         in vec2 position;
 
-        out vec3 v_color;
+        void main() {
+            gl_Position = vec4(position.xy, 0., 1.);
+        }
+    "#, r#"
+        #version 330
 
-        uniform float aspect_ratio;
+        const uint MASK_INDEX = 0xfu;
+        const uint SCREEN_HEIGHT = 96u;
+        const uint SCREEN_WIDTH = 128u;
+        const uint SCREEN_SIZE = SCREEN_WIDTH * SCREEN_HEIGHT;
+        const uint CHAR_HEIGHT = 8u;
+        const uint CHAR_WIDTH = 4u;
+        const uint CHAR_SIZE = CHAR_HEIGHT * CHAR_WIDTH;
+        const uint NB_CHARS = 32u * 12u;
+
+        const uint MASK_BLINKING = 1u << 7u;
+        const uint MASK_COLOR_IDX = 0xfu;
+        const uint MASK_CHAR = 0x7fu;
+        const uint SHIFT_FG = 12u;
+        const uint SHIFT_BG = 8u;
+
+        layout(origin_upper_left) in vec4 gl_FragCoord;
+
+        uniform uint vram[386];
+        uniform uint font[256];
+        uniform uint palette[16];
+
+        out vec4 f_color;
+
+        struct VideoWord {
+            uint char_idx;
+            uint bg_idx;
+            uint fg_idx;
+            bool blinking;
+        };
+
+        VideoWord vw_from_packed(uint w) {
+            return VideoWord(w & MASK_CHAR,
+                             (w >> SHIFT_BG) & MASK_COLOR_IDX,
+                             (w >> SHIFT_FG) & MASK_COLOR_IDX,
+                             (w & MASK_BLINKING) != 0u);
+        }
+
+        uint get_font(uint char_idx) {
+            uint w0 = font[char_idx * 2u];
+            uint w1 = font[char_idx * 2u + 1u];
+            return (w0 << 16u) | w1;
+        }
+
+        vec4 get_color(uint color_idx) {
+            uint c = palette[color_idx];
+            return vec4(float((c >> 8u) & 0xfu) / 15.0,
+                        float((c >> 4u) & 0xfu) / 15.0,
+                        float(c & 0xfu) / 15.0,
+                        1.0);
+        }
 
         void main() {
-            v_color = color;
-            gl_Position = vec4(
-                ((position[0] + float(i)) / SCREEN_WIDTH - 0.5) * 2.,
-                (-(position[1] + float(j)) / SCREEN_HEIGHT + 0.5) * 2.,
-                0.,
-                1.
-            );
+            uint char_offset = uint(gl_FragCoord.x) / CHAR_WIDTH + (uint(gl_FragCoord.y) / CHAR_HEIGHT) * (SCREEN_WIDTH / CHAR_WIDTH);
+            VideoWord video_word = vw_from_packed(vram[char_offset]);
+            uint font_item = get_font(video_word.char_idx);
+            uint x = uint(gl_FragCoord.x) % CHAR_WIDTH;
+            uint y = uint(gl_FragCoord.y) % CHAR_HEIGHT;
+            uint bit = (font_item >> (x * CHAR_HEIGHT + 7u - y)) & 1u;
+            if (bit == 0u) {
+                f_color = get_color(video_word.bg_idx);
+            } else {
+                f_color = get_color(video_word.fg_idx);
+            }
         }
-    ", "
-        #version 130
-        in vec3 v_color;
+    "#,
+    None));
+
+    let composition_program = try!(Program::from_source(&display, r#"
+        #version 330
+
+        in vec2 position;
+        in vec2 texcoord;
+
+        smooth out vec2 v_texcoord;
+
+        void main() {
+            v_texcoord = texcoord;
+            gl_Position = vec4(position.xy, 0., 1.);
+        }
+    "#, r#"
+        #version 330
+
+        smooth in vec2 v_texcoord;
+
+        uniform sampler2D screen_texture;
+
         out vec4 f_color;
 
         void main() {
-            f_color = vec4(v_color, 1.0);
+            f_color = vec4(texture(screen_texture, v_texcoord).rgb, 1.0);
         }
-    ",
+    "#,
     None));
 
     'main: loop {
         'pote2: loop {
             match screen_receiver.try_recv() {
                 Ok(ScreenCommand::Show(screen)) => {
-                    current_screen = screen.into();
+                    current_screen = screen;
                     display.get_window().map(|w| w.show());
                 }
                 Ok(ScreenCommand::Hide) => {
@@ -164,37 +256,64 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
             }
         }
 
-        {
-            let mut mapping = per_instance.map();
-            for (color, dst) in current_screen.0
-                                              .iter()
-                                              .zip(mapping.iter_mut()) {
-                dst.color = [color.r, color.g, color.b];
-            }
+        let mut vram_data = [0; 512];
+        for (from, to) in current_screen.vram.0.iter().zip(vram_data.iter_mut()) {
+            *to = *from as u32;
         }
+        vram.write(&vram_data);
+        let mut font_data = [0; 256];
+        for (from, to) in current_screen.font.0.iter().zip(font_data.iter_mut()) {
+            *to = *from as u32;
+        }
+        font.write(&font_data);
+        let mut palette_data = [0; 16];
+        for (from, to) in current_screen.palette.iter().zip(palette_data.iter_mut()) {
+            *to = *from as u32;
+        }
+        palette.write(&palette_data);
+
+        frame_buffer.clear_color(0.0, 0.0, 1.0, 1.0);
+        frame_buffer.draw(&render_vertex_buffer,
+                          &indices,
+                          &render_program,
+                          &uniform! {
+                              vram: &vram,
+                              font: &font,
+                              palette: &palette,
+                          },
+                          &Default::default())
+                    .unwrap();
 
         let mut target = display.draw();
-        target.clear_color(0.0, 0.0, 1.0, 1.0);
+        let border_color =
+            current_screen.get_color(current_screen.border_color_index);
+        target.clear_color(border_color.r,
+                           border_color.g,
+                           border_color.b,
+                           1.0);
         let aspect_ratio = {
             let (width, height) = target.get_dimensions();
             height as f32 / width as f32
         };
-        try!(target.draw((&vertex_buffer, per_instance.per_instance().unwrap()),
+        try!(target.draw(&composition_vertex_buffer,
                          &indices,
-                         &program,
-                         &uniform! { aspect_ratio: aspect_ratio },
+                         &composition_program,
+                         &uniform! {
+                             aspect_ratio: aspect_ratio,
+                             screen_texture: &render_buffer,
+                         },
                          &Default::default()));
         try!(target.finish());
 
         for ev in display.poll_events() {
             match ev {
-                glium::glutin::Event::Closed => break 'main,
-                glium::glutin::Event::KeyboardInput(state, raw, code) => {
+                glutin::Event::Closed => break 'main,
+                glutin::Event::KeyboardInput(state, raw, code) => {
                     if let Some(converted) = convert_kb_code(raw, code) {
                         try!(keyboard_sender.send(match state {
-                            glium::glutin::ElementState::Pressed =>
+                            glutin::ElementState::Pressed =>
                                 KeyboardEvent::KeyPressed(converted),
-                            glium::glutin::ElementState::Released =>
+                            glutin::ElementState::Released =>
                                 KeyboardEvent::KeyReleased(converted)
                         }));
                     }
@@ -217,7 +336,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
     Ok(())
 }
 
-fn convert_kb_code(raw: u8, maybe_code: Option<glium::glutin::VirtualKeyCode>)
+fn convert_kb_code(raw: u8, maybe_code: Option<glutin::VirtualKeyCode>)
     -> Option<keyboard::Key> {
     use glium::glutin::VirtualKeyCode;
     use emulator::device::keyboard::Key;
