@@ -205,9 +205,9 @@ impl Cpu {
 
     fn decode(&mut self, offset: u16) -> Result<(u16, Instruction<u16>)> {
         let bin = [
-            self.get(AtAddr(offset)),
-            self.get(AtAddr(offset.wrapping_add(1))),
-            self.get(AtAddr(offset.wrapping_add(2)))
+            self.ram[offset],
+            self.ram[offset.wrapping_add(1)],
+            self.ram[offset.wrapping_add(2)],
         ];
         Ok(try!(Instruction::decode(&bin)))
     }
