@@ -1,10 +1,5 @@
 use std::fmt;
 
-#[cfg(feature = "serde")]
-use serde::de::{self, Deserialize, Deserializer, SeqVisitor, Visitor};
-#[cfg(feature = "serde")]
-use serde::ser::{Serialize, Serializer};
-
 pub const MASK_INDEX: u16 = 0xf;
 pub const SCREEN_HEIGHT: u16 = 96;
 pub const SCREEN_WIDTH: u16 = 128;
@@ -20,9 +15,13 @@ pub const MASK_CHAR: u16 = 0x7f;
 pub const SHIFT_FG: u16 = 12;
 pub const SHIFT_BG: u16 = 8;
 
+/// Wrappers for easier serde implementation
+pub struct Vram(pub [u16; 386]);
+pub struct Font(pub [u16; 256]);
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct RawScreen {
-    pub vram: [u16; SCREEN_SIZE as usize / 2],
-    pub font: [u16; 256],
+    pub vram: Vram,
+    pub font: Font,
     pub palette: [u16; 16],
 }
 
@@ -70,13 +69,13 @@ impl RawScreen {
     }
 
     fn get_video_word(&self, char_offset: u16) -> VideoWord {
-        VideoWord::from_packed(self.vram[char_offset as usize])
+        VideoWord::from_packed(self.vram.0[char_offset as usize])
     }
 
     fn get_font(&self, char_idx: u16) -> u32 {
         let (w0, w1) =
-            (self.font[char_idx as usize * 2],
-             self.font[char_idx as usize * 2 + 1]);
+            (self.font.0[char_idx as usize * 2],
+             self.font.0[char_idx as usize * 2 + 1]);
         (w0 as u32) << 16 | w1 as u32
     }
 
@@ -90,53 +89,6 @@ pub struct Screen(pub [Color; SCREEN_SIZE as usize]);
 impl fmt::Debug for Screen {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "A beautiful screen with shiny pixels")
-    }
-}
-
-#[cfg(feature = "serde")]
-impl Serialize for Screen {
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
-        where S: Serializer {
-        let mut state =
-            try!(serializer.serialize_seq_fixed_size(SCREEN_SIZE as usize));
-        for pixel in self.0.iter() {
-            try!(serializer.serialize_seq_elt(&mut state, pixel));
-        }
-        serializer.serialize_seq_end(state)
-    }
-}
-
-#[cfg(feature = "serde")]
-impl Deserialize for Screen {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
-        where D: Deserializer {
-        struct ScreenVisitor;
-
-        impl Visitor for ScreenVisitor {
-            type Value = Screen;
-
-            fn visit_seq<V>(&mut self,
-                            mut visitor: V) -> Result<Screen, V::Error>
-                where V: SeqVisitor
-            {
-                let mut screen = Screen([Color::default();
-                                         SCREEN_SIZE as usize]);
-
-                for i in 0..SCREEN_SIZE as usize {
-                    screen.0[i] = match try!(visitor.visit()) {
-                        Some(val) => val,
-                        None => { return Err(de::Error::end_of_stream()); }
-                    };
-                }
-
-                try!(visitor.end());
-
-                Ok(screen)
-            }
-        }
-
-        deserializer.deserialize_seq_fixed_size(SCREEN_SIZE as usize,
-                                                ScreenVisitor)
     }
 }
 

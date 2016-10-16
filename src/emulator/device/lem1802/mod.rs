@@ -1,5 +1,6 @@
 pub mod generic_backend;
 mod screen;
+mod serde;
 
 use std::fmt;
 use std::num::Wrapping;
@@ -114,13 +115,13 @@ impl<B: Backend> LEM1802<B> {
     pub fn get_raw_screen(&self, cpu: &Cpu) -> Option<Box<RawScreen>> {
         if self.video_map.0 != 0 {
             let mut raw_screen = Box::new(RawScreen {
-                vram: [0; SCREEN_SIZE as usize / 2],
-                font: self.get_raw_font(cpu),
+                vram: Vram([0; 386]),
+                font: Font(self.get_raw_font(cpu)),
                 palette: self.get_raw_palette(cpu),
             });
             for (from, to) in cpu.ram
                                  .iter_wrap(self.video_map.0)
-                                 .zip(raw_screen.vram.iter_mut()) {
+                                 .zip(raw_screen.vram.0.iter_mut()) {
                 *to = *from;
             }
             Some(raw_screen)
