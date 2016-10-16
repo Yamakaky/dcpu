@@ -1,0 +1,20 @@
+[package]
+name = "dcpu-server"
+version = "0.1.0"
+authors = ["yamakaky"]
+
+[dependencies]
+bytes = { git = "https://github.com/carllerche/bytes" }
+error-chain = "0.5"
+futures = "0.1"
+rayon = "0.4"
+serde = "0.8"
+serde_derive = "0.8"
+serde_json = "0.8"
+tokio-core = "0.1"
+tokio-length-prefix = { path = "../../tokio-length-prefix" }
+tokio-proto = { git = "https://github.com/tokio-rs/tokio-proto" }
+
+[dependencies.dcpu]
+path = ".."
+features = ["nightly"]

@@ -1,5 +1,5 @@
 target/
 *.dasm
-/.gdb_history
-/perf.*
+.gdb_history
+/perf*
 debug_history
