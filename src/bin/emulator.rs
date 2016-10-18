@@ -32,7 +32,7 @@ Options:
   <file>             The binary file to execute.
   --tps              Print the number of ticks by second
   --limit            Try to limit the tick rate to 100_000/s
-  -d, --device       clock, keyscreen or m35fd(=floppy)?.
+  -d, --device       clock, keyscreen or m35fd(=(<floppy>|empty))?.
   --debugger         Launches the debugger.
   --symbols <s>      Symbol map file (debugger only).
   --log-litterals    When a `LOG n` is triggered, print
@@ -90,6 +90,8 @@ fn main_ret() -> i32 {
                     _ => {
                         let mut components = d.split("=");
                         match (components.next(), components.next()) {
+                            (Some("m35fd"), Some("empty")) =>
+                                devices.push(Box::new(m35fd::M35fd::new(m35fd::Floppy::default()))),
                             (Some("m35fd"), Some(path)) => {
                                 let floppy = match m35fd::Floppy::load(path) {
                                     Ok(f) => f,
