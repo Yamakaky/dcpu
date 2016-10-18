@@ -56,15 +56,12 @@ impl BackendControler {
     }
     pub fn dispatch_server(&self, msg: ClientMessage) {
         println!("Dispatching {:?}", msg);
-        match msg {
-            ClientMessage::Keyboard(id, event) => {
-                match self.devices.get(id as usize) {
-                    Some(&Some(Item::Keyboard(ref sender))) =>
-                        sender.send(event).unwrap(),
-                    _ => println!("Invalid device id: {:?}", msg),
-                }
-            }
-            ClientMessage::CreateCpu(_) => panic!("Too late to create a cpu!"),
+        match (msg.device_id().and_then(|id| self.devices.get(id as usize)), &msg) {
+            (Some(&Some(Item::Keyboard(ref sender))),
+             &ClientMessage::Keyboard(_, event)) => sender.send(event).unwrap(),
+            (_, &ClientMessage::CreateCpu(..)) =>
+                println!("Too late to create a cpu!"),
+            _ => println!("Invalid device id: {:?}", msg),
         }
     }
 
