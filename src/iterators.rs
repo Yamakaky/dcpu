@@ -1,6 +1,22 @@
 use std::iter::Iterator;
 
+use byteorder::{self, ReadBytesExt};
+
 use types::*;
+
+#[derive(Debug)]
+pub struct IterU16<I> {
+    pub input: I
+}
+
+impl<I: ReadBytesExt> Iterator for IterU16<I> {
+    type Item = u16;
+
+    fn next(&mut self) -> Option<u16> {
+        self.input.read_u16::<byteorder::LittleEndian>().ok()
+    }
+}
+
 
 pub struct U16ToInstruction<I> {
     it: I,

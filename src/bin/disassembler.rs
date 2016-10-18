@@ -51,7 +51,7 @@ fn main_ret() -> i32 {
         Err(e) => die!(1, "Error while opening the output: {}", e),
     };
 
-    for i in U16ToInstruction::chain(utils::IterU16{input: input}) {
+    for i in U16ToInstruction::chain(dcpu::iterators::IterU16{input: input}) {
         if args.flag_ast {
             writeln!(output, "{:?}", i).unwrap();
         } else {

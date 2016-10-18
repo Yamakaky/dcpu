@@ -13,6 +13,7 @@ extern crate serde_derive;
 #[cfg(feature = "serde")]
 extern crate serde;
 
+extern crate byteorder;
 #[macro_use]
 extern crate enum_primitive;
 #[macro_use]

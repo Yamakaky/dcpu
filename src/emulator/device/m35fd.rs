@@ -1,4 +1,6 @@
-use std::fmt;
+use std::{fmt, io};
+use std::fs::File;
+use std::path::Path;
 
 use enum_primitive::FromPrimitive;
 
@@ -6,6 +8,7 @@ use emulator::Cpu;
 use emulator::device::*;
 use emulator::ram::Ram;
 use types::Register;
+use iterators;
 
 const NB_SECTORS_BY_TRACK: u16 = 18;
 const NB_SECTORS_TOTAL: u16 = 1440;
@@ -44,7 +47,7 @@ enum ErrorCode {
     Broken = 0xffff,
 }
 
-struct Floppy {
+pub struct Floppy {
     data: Box<[Sector; NB_SECTORS_TOTAL as usize]>,
     write_protected: bool,
 }
@@ -179,6 +182,7 @@ impl Device for M35fd {
         } else {
             (false, TickResult::Nothing)
         };
+
         if op {
             self.current_operation = None;
         }
@@ -203,6 +207,45 @@ impl Floppy {
                 }
             }
         }
+    }
+
+    pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Floppy> {
+        let input = try!(File::open(path));
+        let words = iterators::IterU16 { input: input };
+        let mut floppy = Floppy::default();
+        for (from, to) in words.zip(floppy.data.iter_mut().flat_map(|s| s.iter_mut())) {
+            *to = from;
+        }
+        Ok(floppy)
+    }
+}
+
+impl Default for Floppy {
+    fn default() -> Floppy {
+        Floppy {
+            data: Box::new([[0; SECTOR_SIZE_WORD as usize]; NB_SECTORS_TOTAL as usize]),
+            write_protected: false,
+        }
+    }
+}
+
+impl M35fd {
+    pub fn new<F: Into<Option<Floppy>>>(floppy: F) -> M35fd {
+        M35fd {
+            floppy: floppy.into(),
+            last_error: ErrorCode::None,
+            int_msg: 0,
+            current_operation: None,
+            current_sector: 0,
+        }
+    }
+
+    pub fn eject(&mut self) -> Option<Floppy> {
+        self.floppy.take()
+    }
+
+    pub fn load(&mut self, floppy: Floppy) {
+        self.floppy = Some(floppy);
     }
 }
 

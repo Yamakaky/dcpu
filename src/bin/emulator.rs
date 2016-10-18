@@ -32,7 +32,7 @@ Options:
   <file>             The binary file to execute.
   --tps              Print the number of ticks by second
   --limit            Try to limit the tick rate to 100_000/s
-  -d, --device       clock or keyscreen.
+  -d, --device       clock, keyscreen or m35fd(=floppy)?.
   --debugger         Launches the debugger.
   --symbols <s>      Symbol map file (debugger only).
   --log-litterals    When a `LOG n` is triggered, print
@@ -68,7 +68,7 @@ fn main_ret() -> i32 {
             Err(e) => die!(1, "Error while opening the input: {}", e),
         };
         let mut rom = Vec::new();
-        rom.extend(utils::IterU16{input: input});
+        rom.extend(dcpu::iterators::IterU16{input: input});
         rom
     };
 
@@ -86,7 +86,24 @@ fn main_ret() -> i32 {
                         devices.push(Box::new(keyboard::Keyboard::new(kb_backend)));
                         devices.push(Box::new(lem1802::LEM1802::new(screen_backend)));
                     }
-                    _ => die!(1, "Device \"{}\" unknown", d),
+                    "m35fd" => devices.push(Box::new(m35fd::M35fd::new(None))),
+                    _ => {
+                        let mut components = d.split("=");
+                        match (components.next(), components.next()) {
+                            (Some("m35fd"), Some(path)) => {
+                                let floppy = match m35fd::Floppy::load(path) {
+                                    Ok(f) => f,
+                                    Err(e) =>
+                                        die!(1,
+                                             "Error while loading the floppy \"{}\": {}",
+                                             path,
+                                             e),
+                                };
+                                devices.push(Box::new(m35fd::M35fd::new(floppy)));
+                            }
+                            _ => die!(1, "Device \"{}\" unknown", d),
+                        }
+                   }
                 }
             }
         }
