@@ -153,7 +153,7 @@ fn main_ret() -> i32 {
             computer.cpu.log_queue.clear();
 
             if args.flag_tps && computer.current_tick % tps_check == 0 {
-                let delay = time::Instan::now() - timer_tps;
+                let delay = time::Instant::now() - timer_tps;
                 let tps = tps_check * 1_000_000_000 / delay.subsec_nanos() as u64;
                 println!("{} tics per second, {}x speedup",
                          tps,
@@ -161,7 +161,7 @@ fn main_ret() -> i32 {
                 timer_tps = time::Instant::now();
             }
             if args.flag_limit && computer.current_tick % limit_check == 0 {
-                let delay = time::Instan::now() - timer_limit;
+                let delay = time::Instant::now() - timer_limit;
                 let elapsed_ms = (delay.subsec_nanos() / 1_000_000) as u64;
                 let normal_duration = limit_check * 1_000 / normal_tickrate;
                 if elapsed_ms < normal_duration {
