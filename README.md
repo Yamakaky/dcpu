@@ -10,6 +10,7 @@
   - Clock
   - LEM1802
   - Keyboard
+  - m35fd
 - Disassembler
 - Assembler
 - gdb-like debugger

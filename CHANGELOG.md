@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## Added
+
+- Add m35fd support
+
 ## Changed
 
 - Limit the keyboard buffer to 8 item
