@@ -3,7 +3,8 @@ mod screen;
 #[cfg(feature = "serde")]
 mod serde;
 
-use std::fmt;
+use std::any::Any;
+use std::fmt::Debug;
 use std::num::Wrapping;
 
 use num::traits::FromPrimitive;
@@ -24,7 +25,7 @@ enum Command {
 }
 }
 
-pub trait Backend: fmt::Debug + Send {
+pub trait Backend: Debug + Send + Any {
     fn tick<B: Backend>(&self, &Cpu, &LEM1802<B>, tick_count: u64);
     fn hide(&self);
     fn show<B: Backend>(&self, &Cpu, &LEM1802<B>);
@@ -109,6 +110,10 @@ impl<B: Backend> Device for LEM1802<B> {
             println!("Border color is {:?}",
                      Color::from_packed(self.border_color_index));
         }
+    }
+
+    fn as_any(&mut self) -> &mut Any {
+        self
     }
 }
 

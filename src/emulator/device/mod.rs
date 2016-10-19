@@ -6,6 +6,7 @@ pub mod m35fd;
 
 pub mod glium_backend;
 
+use std::any::Any;
 use std::fmt::Debug;
 
 use emulator::cpu::Cpu;
@@ -26,7 +27,7 @@ error_chain!(
     }
 );
 
-pub trait Device: Debug + Send {
+pub trait Device: Debug + Send + Any {
     fn hardware_id(&self) -> u32;
     fn hardware_version(&self) -> u16;
     fn manufacturer(&self) -> u32;
@@ -35,4 +36,5 @@ pub trait Device: Debug + Send {
     fn tick(&mut self, &mut Cpu, current_tick: u64) -> TickResult;
 
     fn inspect(&self);
+    fn as_any(&mut self) -> &mut Any;
 }

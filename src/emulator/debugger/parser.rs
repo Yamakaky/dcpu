@@ -22,6 +22,7 @@ pub enum Command {
     ShowDevices,
     Hook(Box<Command>),
     Logs,
+    ClockCmd(u16),
 }
 
 named!(pub parse_command<Command>,
@@ -33,6 +34,7 @@ named!(pub parse_command<Command>,
             cmd_disassemble |
             cmd_examine |
             cmd_breakpoint |
+            cmd_clock |
             cmd_continue |
             cmd_show_breakpoints |
             cmd_delete_breakpoint |
@@ -118,4 +120,13 @@ named!(cmd_hook<Command>,
 
 named!(cmd_logs<Command>,
     map!(tag!("logs"), |_| Command::Logs)
+);
+
+named!(cmd_clock<Command>,
+    chain!(
+        tag!("clock") ~
+        multispace ~
+        device_id: pos_number,
+        || Command::ClockCmd(device_id)
+    )
 );

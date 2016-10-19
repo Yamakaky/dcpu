@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use num::traits::FromPrimitive;
 
 use emulator::cpu::Cpu;
@@ -89,5 +91,9 @@ impl Device for Clock {
             println!("Int message is 0x{:x}", self.int_msg);
             println!("Last call was {} ticks ago", self.last_call);
         }
+    }
+
+    fn as_any(&mut self) -> &mut Any {
+        self
     }
 }

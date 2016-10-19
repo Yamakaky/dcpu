@@ -1,5 +1,6 @@
 pub mod mpsc_backend;
 
+use std::any::Any;
 use std::collections::VecDeque;
 use std::fmt::Debug;
 use std::result::Result as StdResult;
@@ -21,7 +22,7 @@ enum Command {
 }
 }
 
-pub trait Backend: Debug + Send {
+pub trait Backend: Debug + Any + Send {
     fn is_key_pressed(&mut self, key: Key) -> bool;
     fn push_typed_keys(&mut self, queue: &mut VecDeque<Key>) -> bool;
 }
@@ -92,6 +93,10 @@ impl<B: Backend> Device for Keyboard<B> {
             println!("Int message is 0x{:x}", self.int_msg);
             println!("{} keys in the buffer", self.key_buffer.len());
         }
+    }
+
+    fn as_any(&mut self) -> &mut Any {
+        self
     }
 }
 

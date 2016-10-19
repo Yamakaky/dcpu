@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use emulator::cpu::Cpu;
 use emulator::device::*;
 
@@ -32,5 +34,9 @@ impl Device for Dummy {
 
     fn inspect(&self) {
         println!("Dummy device");
+    }
+
+    fn as_any(&mut self) -> &mut Any {
+        self
     }
 }

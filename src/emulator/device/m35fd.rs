@@ -1,6 +1,7 @@
 use std::{fmt, io};
 use std::fs::File;
 use std::path::Path;
+use std::any::Any;
 
 use enum_primitive::FromPrimitive;
 
@@ -191,6 +192,10 @@ impl Device for M35fd {
 
     fn inspect(&self) {
 
+    }
+
+    fn as_any(&mut self) -> &mut Any {
+        self
     }
 }
 

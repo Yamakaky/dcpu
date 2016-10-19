@@ -11,6 +11,7 @@ use nom;
 use assembler;
 use iterators;
 use emulator::{cpu, device};
+use emulator::device::Device;
 use emulator::debugger::parser::*;
 use types::Register;
 
@@ -143,6 +144,12 @@ impl Debugger {
                 self.hooks.push(*cmd.clone());
             },
             Command::Logs => self.show_logs(),
+            Command::ClockCmd(device_id) => {
+                if let Some(clock) =
+                    self.downcast_device::<device::clock::Clock>(device_id) {
+                    println!("{:?}", clock);
+                }
+            },
         }
     }
 
@@ -247,5 +254,22 @@ impl Debugger {
             }
         }
         self.cpu.log_queue.clear();
+    }
+
+    fn downcast_device<'a, D: Device>(&'a mut self,
+                                      device_id: u16) -> Option<&'a mut D> {
+        match self.devices.get_mut(device_id as usize) {
+            Some(box_dev) => {
+                let dev = box_dev.as_any().downcast_mut::<D>();
+                if dev.is_none() {
+                    println!("Device {} is not what you want", device_id);
+                }
+                dev
+            }
+            None => {
+                println!("Invalid device id: {}", device_id);
+                None
+            }
+        }
     }
 }
