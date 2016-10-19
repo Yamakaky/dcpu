@@ -5,11 +5,11 @@ use std::any::Any;
 
 use enum_primitive::FromPrimitive;
 
+use byteorder::{self, ReadBytesExt};
 use emulator::Cpu;
 use emulator::device::*;
 use emulator::ram::Ram;
 use types::Register;
-use iterators;
 
 const NB_SECTORS_BY_TRACK: u16 = 18;
 const NB_SECTORS_TOTAL: u16 = 1440;
@@ -215,8 +215,8 @@ impl Floppy {
     }
 
     pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Floppy> {
-        let input = try!(File::open(path));
-        let words = iterators::IterU16 { input: input };
+        let mut input = try!(File::open(path));
+        let words = input.iter_items::<u16, byteorder::LittleEndian>();
         let mut floppy = Floppy::default();
         for (from, to) in words.zip(floppy.data.iter_mut().flat_map(|s| s.iter_mut())) {
             *to = from;

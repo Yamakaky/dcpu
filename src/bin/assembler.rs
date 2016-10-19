@@ -1,4 +1,3 @@
-extern crate byteorder;
 extern crate dcpu;
 extern crate docopt;
 extern crate nom;
@@ -13,11 +12,11 @@ mod utils;
 use std::io::{Read, Write};
 use std::str;
 
-use byteorder::WriteBytesExt;
 use docopt::Docopt;
 use nom::IResult::*;
 use nom::HexDisplay;
 
+use dcpu::byteorder::{WriteBytesExt, LittleEndian};
 use dcpu::assembler::{self, linker, parser};
 
 const USAGE: &'static str = "
@@ -120,7 +119,7 @@ fn main_ret() -> i32 {
         }
     } else {
         for n in bin {
-            output.write_u16::<byteorder::LittleEndian>(n).unwrap();
+            output.write_item::<u16, LittleEndian>(n).unwrap();
         }
     }
 

@@ -1,4 +1,3 @@
-extern crate byteorder;
 extern crate dcpu;
 extern crate docopt;
 #[macro_use]
@@ -18,6 +17,7 @@ use std::result;
 use docopt::Docopt;
 
 use dcpu::assembler::types::Globals;
+use dcpu::byteorder::{LittleEndian, ReadBytesExt};
 use dcpu::emulator::Cpu;
 use dcpu::emulator::Computer;
 use dcpu::emulator::Debugger;
@@ -63,12 +63,12 @@ fn main_ret() -> i32 {
                             .unwrap_or_else(|e| e.exit());
 
     let rom = {
-        let input = match utils::get_input(args.arg_file) {
+        let mut input = match utils::get_input(args.arg_file) {
             Ok(input) => input,
             Err(e) => die!(1, "Error while opening the input: {}", e),
         };
         let mut rom = Vec::new();
-        rom.extend(dcpu::iterators::IterU16{input: input});
+        rom.extend(input.iter_items::<u16, LittleEndian>());
         rom
     };
 

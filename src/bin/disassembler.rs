@@ -1,4 +1,3 @@
-extern crate byteorder;
 extern crate dcpu;
 extern crate docopt;
 #[macro_use]
@@ -13,6 +12,7 @@ use std::io::Write;
 
 use docopt::Docopt;
 
+use dcpu::byteorder::{ReadBytesExt, LittleEndian};
 use dcpu::iterators::U16ToInstruction;
 
 const USAGE: &'static str = "
@@ -42,7 +42,7 @@ fn main_ret() -> i32 {
                             .and_then(|d| d.decode())
                             .unwrap_or_else(|e| e.exit());
 
-    let input = match utils::get_input(args.arg_file) {
+    let mut input = match utils::get_input(args.arg_file) {
         Ok(input) => input,
         Err(e) => die!(1, "Error while opening the input: {}", e),
     };
@@ -51,7 +51,7 @@ fn main_ret() -> i32 {
         Err(e) => die!(1, "Error while opening the output: {}", e),
     };
 
-    for i in U16ToInstruction::chain(dcpu::iterators::IterU16{input: input}) {
+    for i in U16ToInstruction::chain(input.iter_items::<u16, LittleEndian>()) {
         if args.flag_ast {
             writeln!(output, "{:?}", i).unwrap();
         } else {
