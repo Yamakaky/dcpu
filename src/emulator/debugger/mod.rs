@@ -114,19 +114,11 @@ impl Debugger {
                 }
             }
             Command::PrintRegisters => self.print_registers(),
-            Command::Disassemble {from, size} =>
+            Command::Disassemble {ref from, size} =>
                 self.disassemble(from, size),
-            Command::Examine {from, size} => self.examine(from, size),
+            Command::Examine {ref from, size} => self.examine(from, size),
             Command::Breakpoint(ref b) => {
-                let mut i = 0;
-                let mut last_global = None;
-                for (name, s) in &self.symbols {
-                    if s.addr <= self.cpu.pc.0 && s.addr >= i {
-                        last_global = Some(name.clone());
-                        i = s.addr;
-                    }
-                }
-                match b.solve(&self.symbols, &last_global) {
+                match b.solve(&self.symbols, &self.get_last_global()) {
                     Ok(addr) => self.breakpoints.push(Breakpoint {
                         addr: addr,
                         expression: b.clone(),
@@ -190,18 +182,32 @@ impl Debugger {
         println!("Tick number: {}", self.tick_number);
     }
 
-    fn disassemble(&self, from: u16, size: u16) {
+    fn disassemble(&self, from: &Expression, size: u16) {
+        let from = match from.solve(&self.symbols, &self.get_last_global()) {
+            Ok(addr) => addr as usize,
+            Err(e) => {
+                println!("Invalid expression: {}", e);
+                return;
+            }
+        };
         for i in iterators::U16ToInstruction::chain(self.cpu
                                                         .ram
                                                         .iter()
                                                         .cloned()
-                                                        .skip(from as usize))
+                                                        .skip(from))
                                              .take(size as usize) {
             println!("{}", i);
         }
     }
 
-    fn examine(&self, from: u16, size: u16) {
+    fn examine(&self, from: &Expression, size: u16) {
+        let from = match from.solve(&self.symbols, &self.get_last_global()) {
+            Ok(addr) => addr,
+            Err(e) => {
+                println!("Invalid expression: {}", e);
+                return;
+            }
+        };
         println!("{:?}", &self.cpu.ram[from..from + size]);
     }
 
@@ -272,5 +278,17 @@ impl Debugger {
                 None
             }
         }
+    }
+
+    fn get_last_global(&self) -> Option<String> {
+        let mut i = 0;
+        let mut last_global = None;
+        for (name, s) in &self.symbols {
+            if s.addr <= self.cpu.pc.0 && s.addr >= i {
+                last_global = Some(name.clone());
+                i = s.addr;
+            }
+        }
+        last_global
     }
 }
