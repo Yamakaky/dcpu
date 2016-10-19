@@ -34,6 +34,7 @@ pub enum Command {
 
 fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
     clap::App::new("DCPU debugger")
+        .author(crate_authors!())
         .version(crate_version!())
         .setting(clap::AppSettings::VersionlessSubcommands)
         .setting(clap::AppSettings::NoBinaryName)
