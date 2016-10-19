@@ -1,5 +1,5 @@
 [package]
-authors = ["yamakaky"]
+authors = ["Yamakaky <yamakaky@yamaworld.fr"]
 description = "An assembler, debugger and emulator for the DCPU-16"
 documentation = "https://docs.rs/dcpu"
 homepage = "https://github.com/Yamakaky/dcpu"
