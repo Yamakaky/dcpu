@@ -6,13 +6,11 @@ use std::iter::Iterator;
 use std::io;
 use std::path::Path;
 
-use nom;
-
 use assembler;
 use iterators;
 use emulator::{cpu, device};
 use emulator::device::Device;
-use emulator::debugger::parser::*;
+use emulator::debugger::parser::{Command, Expression};
 use types::Register;
 
 pub struct Breakpoint {
@@ -75,12 +73,15 @@ impl Debugger {
                     let maybe_cmd = if line == "" {
                         self.last_command.clone()
                     } else {
-                        match parser::parse_command(line.as_bytes()) {
-                            nom::IResult::Done(i, ref o) if i.len() == 0 => {
+                        match parser::parse_command(&line) {
+                            Ok(cmd) => {
                                 rl.add_history_entry(&line);
-                                Some(o.clone())
+                                Some(cmd.clone())
                             }
-                            _ => None,
+                            Err(e) => {
+                                println!("{}", e);
+                                continue
+                            }
                         }
                     };
 

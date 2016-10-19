@@ -14,6 +14,8 @@ extern crate serde_derive;
 extern crate serde;
 
 #[macro_use]
+extern crate clap;
+#[macro_use]
 extern crate enum_primitive;
 #[macro_use]
 extern crate log;

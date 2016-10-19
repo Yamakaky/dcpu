@@ -1,7 +1,14 @@
-use nom::*;
+use clap;
+use nom;
 
 pub use assembler::types::Expression;
 use assembler::parser::{expression, pos_number};
+
+error_chain! {
+    foreign_links {
+        clap::Error, Clap;
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum Command {
@@ -25,108 +32,96 @@ pub enum Command {
     ClockCmd(u16),
 }
 
-named!(pub parse_command<Command>,
-    delimited!(
-        opt!(multispace),
-        alt_complete!(
-            cmd_step |
-            cmd_print_regs |
-            cmd_disassemble |
-            cmd_examine |
-            cmd_breakpoint |
-            cmd_clock |
-            cmd_continue |
-            cmd_show_breakpoints |
-            cmd_delete_breakpoint |
-            cmd_show_devices |
-            cmd_hook |
-            cmd_logs
-        ),
-        opt!(multispace)
-    )
-);
+fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
+    clap::App::new("DCPU debugger")
+        .version(crate_version!())
+        .setting(clap::AppSettings::VersionlessSubcommands)
+        .setting(clap::AppSettings::NoBinaryName)
+        .subcommand(clap::SubCommand::with_name("break")
+            .visible_alias("b")
+            .help("Add a breakpoint.")
+            .arg(clap::Arg::with_name("expression")
+                .multiple(true)
+                .required(true)))
+        .subcommand(clap::SubCommand::with_name("hook")
+            .help("Run this command before each new prompt.")
+            .arg(clap::Arg::with_name("command")
+                .multiple(true)
+                .required(true)))
+        .subcommand(clap::SubCommand::with_name("continue")
+            .visible_alias("c")
+            .help("Continue the execution."))
+        .subcommand(clap::SubCommand::with_name("step")
+            .visible_alias("s")
+            .help("Execute one instruction.")
+            .arg(clap::Arg::with_name("count")
+                .required(true)))
+        .subcommand(clap::SubCommand::with_name("registers")
+            .visible_alias("r")
+            .help("Show the registers."))
+        .subcommand(clap::SubCommand::with_name("breakpoints")
+            .help("Show the active breakpoints"))
+        .subcommand(clap::SubCommand::with_name("delete")
+            .visible_alias("d")
+            .help("Delete a breakpoint.")
+            .arg(clap::Arg::with_name("id")
+                .required(true)))
+        .subcommand(clap::SubCommand::with_name("devices")
+            .help("Show the connected devices."))
+        .subcommand(clap::SubCommand::with_name("clock")
+            .help("Clock-specific commands")
+            .arg(clap::Arg::with_name("id")
+                .required(true)))
+        .subcommand(clap::SubCommand::with_name("logs")
+            .help("Show the values in the LOG buffer."))
+}
 
-named!(cmd_step<Command>,
-    chain!(
-        char!('s') ~
-        n: chain!(multispace? ~ n: pos_number?,
-                  || n.unwrap_or(1)),
-        || Command::Step(n)
-    )
-);
+pub fn parse_command(cmd: &str) -> Result<Command> {
+    let raw = try!(clap_parser().get_matches_from_safe(cmd.split(" ")));
+    Command::try_from(&raw)
+}
 
-named!(cmd_print_regs<Command>,
-    map!(char!('r'), |_| Command::PrintRegisters)
-);
-
-named!(cmd_disassemble<Command>,
-    chain!(tag!("disassemble") ~
-           multispace ~
-           from: pos_number ~
-           multispace ~
-           size: pos_number,
-           || Command::Disassemble{from: from, size: size}
-    )
-);
-
-named!(cmd_examine<Command>,
-    chain!(char!('x') ~
-           multispace ~
-           from: pos_number ~
-           multispace ~
-           size: pos_number,
-           || Command::Examine{from: from, size: size}
-    )
-);
-
-named!(cmd_breakpoint<Command>,
-    chain!(
-        tag!("b") ~
-        multispace ~
-        addr: expression,
-        || Command::Breakpoint(addr)
-    )
-);
-
-named!(cmd_show_breakpoints<Command>,
-    map!(tag!("breakpoints"), |_| Command::ShowBreakpoints)
-);
-
-named!(cmd_delete_breakpoint<Command>,
-    chain!(
-        tag!("delete") ~
-        multispace ~
-        addr: pos_number,
-        || Command::DeleteBreakpoint(addr)
-    )
-);
-
-named!(cmd_continue<Command>,
-    map!(char!('c'), |_| Command::Continue)
-);
-
-named!(cmd_show_devices<Command>,
-    map!(tag!("devices"), |_| Command::ShowDevices)
-);
-
-named!(cmd_hook<Command>,
-    chain!(
-        tag!("hook") ~
-        multispace ~
-        c: parse_command,
-        || Command::Hook(Box::new(c))
-    )
-);
-
-named!(cmd_logs<Command>,
-    map!(tag!("logs"), |_| Command::Logs)
-);
-
-named!(cmd_clock<Command>,
-    chain!(
-        tag!("clock") ~
-        multispace ~
-        device_id: pos_number,
-        || Command::ClockCmd(device_id)
-    )
-);
+impl Command {
+    fn try_from<'a>(matches: &clap::ArgMatches<'a>) -> Result<Command> {
+        match matches.subcommand() {
+            ("step", Some(val)) => {
+                let str_count = val.value_of("count").unwrap();
+                let num = match pos_number(str_count.as_bytes()) {
+                    nom::IResult::Done(i, o) if i.len() == 0 => o,
+                    _ => try!(Err("nom nom nom")),
+                };
+                Ok(Command::Step(num))
+            }
+            ("registers", _) => Ok(Command::PrintRegisters),
+            ("break", Some(val)) => {
+                let str_expr = val.values_of("expression")
+                                  .unwrap()
+                                  .collect::<Vec<_>>()
+                                  .join(" ");
+                let expr = match expression(str_expr.as_bytes()) {
+                    nom::IResult::Done(i, ref o) if i.len() == 0 => o.clone(),
+                    _ => try!(Err("nom nom nom")),
+                };
+                Ok(Command::Breakpoint(expr))
+            }
+            ("continue", _) => Ok(Command::Continue),
+            ("breakpoints", _) => Ok(Command::ShowBreakpoints),
+            ("delete", Some(id)) => {
+                let str_id = id.value_of("id").unwrap();
+                let id = match pos_number(str_id.as_bytes()) {
+                    nom::IResult::Done(i, o) if i.len() == 0 => o,
+                    _ => try!(Err("nom nom nom")),
+                };
+                Ok(Command::DeleteBreakpoint(id))
+            }
+            ("devices", Some(_)) => Ok(Command::ShowDevices),
+            ("hook", Some(cmd)) => {
+                println!("{:?}", cmd);
+                Ok(Command::Hook(Box::new(try!(Command::try_from(&cmd)))))
+            }
+            ("logs", Some(_)) => Ok(Command::Logs),
+            ("clock", Some(_)) => unimplemented!(),
+            _ => unimplemented!(),
+        }
+    }
+}
