@@ -127,8 +127,8 @@ fn main_ret() -> i32 {
         debugger.run(args.flag_debug_history);
     } else {
         let mut computer = Computer::new(cpu, devices);
-        let mut timer_tps = time::SystemTime::now();
-        let mut timer_limit = time::SystemTime::now();
+        let mut timer_tps = time::Instant::now();
+        let mut timer_limit = time::Instant::now();
         let normal_tickrate = 100_000;
         let limit_check = 10_000;
         let tps_check = if args.flag_limit {
@@ -153,26 +153,22 @@ fn main_ret() -> i32 {
             computer.cpu.log_queue.clear();
 
             if args.flag_tps && computer.current_tick % tps_check == 0 {
-                if let Ok(delay) = timer_tps.elapsed() {
-                    let tps = tps_check * 1_000_000_000 / delay.subsec_nanos() as u64;
-                    println!("{} tics per second, {}x speedup",
-                             tps,
-                             tps as f32 / normal_tickrate as f32);
-                }
-
-                timer_tps = time::SystemTime::now();
+                let delay = time::Instan::now() - timer_tps;
+                let tps = tps_check * 1_000_000_000 / delay.subsec_nanos() as u64;
+                println!("{} tics per second, {}x speedup",
+                         tps,
+                         tps as f32 / normal_tickrate as f32);
+                timer_tps = time::Instant::now();
             }
             if args.flag_limit && computer.current_tick % limit_check == 0 {
-                if let Ok(delay) = timer_limit.elapsed() {
-                    let elapsed_ms = (delay.subsec_nanos() / 1_000_000) as u64;
-                    let normal_duration = limit_check * 1_000 / normal_tickrate;
-                    if elapsed_ms < normal_duration {
-                        thread::sleep(time::Duration::from_millis(normal_duration
-                                                                  - elapsed_ms));
-                    }
+                let delay = time::Instan::now() - timer_limit;
+                let elapsed_ms = (delay.subsec_nanos() / 1_000_000) as u64;
+                let normal_duration = limit_check * 1_000 / normal_tickrate;
+                if elapsed_ms < normal_duration {
+                    thread::sleep(time::Duration::from_millis(normal_duration
+                                                              - elapsed_ms));
                 }
-
-                timer_limit = time::SystemTime::now();
+                timer_limit = time::Instant::now();
             }
         }
     }
