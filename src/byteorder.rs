@@ -17,7 +17,7 @@ pub trait ReadBytesExt: Read {
         Ok(I::decode_from_big_endian(&buf))
     }
 
-    fn iter_items<'a, I: Item, B: ByteOrder>(&'a mut self) -> Iter<'a, Self, I, B> {
+    fn iter_items<I: Item, B: ByteOrder>(&mut self) -> Iter<Self, I, B> {
         Iter {
             inner: self,
             _phantom: PhantomData,

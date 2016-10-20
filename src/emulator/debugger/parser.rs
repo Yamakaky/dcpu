@@ -122,7 +122,7 @@ pub fn parse_command(cmd: &str) -> Result<Command> {
 }
 
 impl Command {
-    fn try_from<'a>(matches: &clap::ArgMatches<'a>) -> Result<Command> {
+    fn try_from(matches: &clap::ArgMatches) -> Result<Command> {
         match matches.subcommand() {
             ("step", Some(val)) => {
                 let str_count = val.value_of("count").unwrap();

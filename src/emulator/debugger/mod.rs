@@ -288,8 +288,8 @@ impl Debugger {
         self.cpu.log_queue.clear();
     }
 
-    fn downcast_device<'a, D: Device>(&'a mut self,
-                                      device_id: u16) -> Option<&'a mut D> {
+    fn downcast_device<D: Device>(&mut self,
+                                  device_id: u16) -> Option<&mut D> {
         match self.devices.get_mut(device_id as usize) {
             Some(box_dev) => {
                 let dev = box_dev.as_any().downcast_mut::<D>();
