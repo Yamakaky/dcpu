@@ -191,7 +191,27 @@ impl Device for M35fd {
     }
 
     fn inspect(&self) {
-
+        println!("m35fd");
+        if self.int_msg != 0 {
+            println!("Int message is 0x{:x}", self.int_msg);
+            if let Some(ref floppy) = self.floppy {
+                println!("Floppy loaded ({})", if floppy.write_protected {
+                    "read-write"
+                } else {
+                    "read only"
+                })
+            } else {
+                println!("No floppy loaded");
+            }
+            if self.current_operation.is_some() {
+                println!("Disk operation in progress");
+            } else {
+                println!("No disk operation in progress");
+            }
+            println!("Last error: {:?}", self.last_error);
+        } else {
+            println!("Currently disabled")
+        }
     }
 
     fn as_any(&mut self) -> &mut Any {
