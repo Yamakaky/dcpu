@@ -73,9 +73,9 @@ impl Debugger {
                     let maybe_cmd = if line == "" {
                         self.last_command.clone()
                     } else {
+                        rl.add_history_entry(&line);
                         match parser::parse_command(&line) {
                             Ok(cmd) => {
-                                rl.add_history_entry(&line);
                                 Some(cmd.clone())
                             }
                             Err(e) => {
@@ -137,10 +137,24 @@ impl Debugger {
                 self.hooks.push(*cmd.clone());
             },
             Command::Logs => self.show_logs(),
-            Command::ClockCmd(device_id) => {
-                if let Some(clock) =
-                    self.downcast_device::<device::clock::Clock>(device_id) {
-                    println!("{:?}", clock);
+            Command::M35fd(device_id, ref cmd) => {
+                use emulator::device::m35fd::*;
+
+                if let Some(m35fd) =
+                    self.downcast_device::<M35fd>(device_id) {
+                    match *cmd {
+                        parser::M35fdCmd::Eject => {
+                            if m35fd.eject().is_none() {
+                                println!("This device is already empty");
+                            }
+                        }
+                        parser::M35fdCmd::Load(ref path) => {
+                            match Floppy::load(path) {
+                                Ok(floppy) => m35fd.load(floppy),
+                                Err(e) => println!("{}", e),
+                            }
+                        }
+                    }
                 }
             },
         }

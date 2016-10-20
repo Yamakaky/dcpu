@@ -38,7 +38,13 @@ pub enum Command {
     ShowDevices,
     Hook(Box<Command>),
     Logs,
-    ClockCmd(u16),
+    M35fd(u16, M35fdCmd),
+}
+
+#[derive(Debug, Clone)]
+pub enum M35fdCmd {
+    Eject,
+    Load(String),
 }
 
 fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
@@ -97,10 +103,17 @@ fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
                 .required(true)))
         .subcommand(clap::SubCommand::with_name("logs")
             .help("Show the values in the LOG buffer."))
-        .subcommand(clap::SubCommand::with_name("clock")
-            .help("Clock-specific commands")
+        .subcommand(clap::SubCommand::with_name("m35fd")
+            .setting(clap::AppSettings::SubcommandRequired)
+            .help("M35FD-specific commands")
             .arg(clap::Arg::with_name("id")
-                .required(true)))
+                .required(true))
+            .subcommand(clap::SubCommand::with_name("eject")
+                .help("Eject the floppy"))
+            .subcommand(clap::SubCommand::with_name("load")
+                .help("Load a new floppy")
+                .arg(clap::Arg::with_name("file")
+                    .required(true))))
 }
 
 pub fn parse_command(cmd: &str) -> Result<Command> {
@@ -161,10 +174,18 @@ impl Command {
                 Ok(Command::Hook(Box::new(parsed)))
             }
             ("logs", Some(_)) => Ok(Command::Logs),
-            ("clock", Some(args)) => {
+            ("m35fd", Some(args)) => {
                 let str_id = args.value_of("id").unwrap();
                 let id = try!(conv_iresult(pos_number(str_id.as_bytes())));
-                Ok(Command::ClockCmd(id))
+                match args.subcommand() {
+                    ("eject", Some(_)) =>
+                        Ok(Command::M35fd(id, M35fdCmd::Eject)),
+                    ("load", Some(args)) => {
+                        let file = args.value_of("file").unwrap();
+                        Ok(Command::M35fd(id, M35fdCmd::Load(file.into())))
+                    }
+                    _ => unreachable!(),
+                }
             }
             (cmd, args) => {
                 try!(Err(format!("unknown command \"{}\" ({:?})", cmd, args)))
