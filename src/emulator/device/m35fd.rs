@@ -171,6 +171,7 @@ impl Device for M35fd {
             if let Some(ref mut f) = self.floppy {
                 if op.tick_delay == 0 {
                     f.do_operation(op, &mut cpu.ram);
+                    self.last_error = ErrorCode::None;
                     (true, TickResult::Interrupt(self.int_msg))
                 } else {
                     op.tick_delay -= 1;
