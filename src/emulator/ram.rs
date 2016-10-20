@@ -27,6 +27,10 @@ impl Ram {
             .chain(self.iter()
                        .take(offset as usize))
     }
+
+    pub fn as_mut_ptr(&mut self) -> *mut u16 {
+        self.0.as_mut_ptr()
+    }
 }
 
 // Waiting for `-> impl Iterator`...

@@ -27,6 +27,8 @@ extern crate glium;
 extern crate rustyline;
 
 pub mod assembler;
+#[cfg(not(crate_type = "rlib"))]
+pub mod c_api;
 pub mod byteorder;
 pub mod emulator;
 pub mod iterators;

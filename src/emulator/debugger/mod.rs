@@ -34,7 +34,7 @@ pub struct Breakpoint {
 }
 
 pub struct Debugger {
-    cpu: cpu::Cpu,
+    pub cpu: cpu::Cpu,
     devices: Vec<Box<device::Device>>,
     breakpoints: Vec<Breakpoint>,
     tick_number: u64,
