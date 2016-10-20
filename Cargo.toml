@@ -15,6 +15,7 @@ nightly = ["serde", "serde_derive", "serde_json"]
 
 [dependencies]
 clap = "2.14"
+clippy = { version = "~0.0.95", optional = true }
 docopt = "~0.6.80"
 enum_primitive = "~0.1.0"
 error-chain = "0.5"
