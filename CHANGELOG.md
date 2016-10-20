@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Added
 
 - Add m35fd support
+- Limited C API
 
 ## Changed
 
