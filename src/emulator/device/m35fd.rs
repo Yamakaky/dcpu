@@ -167,28 +167,32 @@ impl Device for M35fd {
     }
 
     fn tick(&mut self, cpu: &mut Cpu, _current_tick: u64) -> TickResult {
-        let (op, res) = if let Some(ref mut op) = self.current_operation {
+        let (op, do_int) = if let Some(ref mut op) = self.current_operation {
             if let Some(ref mut f) = self.floppy {
                 if op.tick_delay == 0 {
                     f.do_operation(op, &mut cpu.ram);
                     self.last_error = ErrorCode::None;
-                    (true, TickResult::Interrupt(self.int_msg))
+                    (true, true)
                 } else {
                     op.tick_delay -= 1;
-                    (false, TickResult::Nothing)
+                    (false, false)
                 }
             } else {
                 self.last_error = ErrorCode::Eject;
-                (true, TickResult::Interrupt(self.int_msg))
+                (true, true)
             }
         } else {
-            (false, TickResult::Nothing)
+            (false, false)
         };
 
         if op {
             self.current_operation = None;
         }
-        res
+        if do_int && self.int_msg != 0 {
+            TickResult::Interrupt(self.int_msg)
+        } else {
+            TickResult::Nothing
+        }
     }
 
     fn inspect(&self) {
@@ -267,10 +271,12 @@ impl M35fd {
     }
 
     pub fn eject(&mut self) -> Option<Floppy> {
+        // TODO: do int
         self.floppy.take()
     }
 
     pub fn load(&mut self, floppy: Floppy) {
+        // TODO: do int
         self.floppy = Some(floppy);
     }
 }
