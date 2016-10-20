@@ -4,18 +4,18 @@ use types::Register;
 
 #[repr(C)]
 pub struct CRegisters {
-    a: u16,
-    b: u16,
-    c: u16,
-    i: u16,
-    j: u16,
-    x: u16,
-    y: u16,
-    z: u16,
-    pc: u16,
-    ia: u16,
-    sp: u16,
-    ex: u16,
+    pub a: u16,
+    pub b: u16,
+    pub c: u16,
+    pub i: u16,
+    pub j: u16,
+    pub x: u16,
+    pub y: u16,
+    pub z: u16,
+    pub pc: u16,
+    pub ia: u16,
+    pub sp: u16,
+    pub ex: u16,
 }
 
 #[no_mangle]
