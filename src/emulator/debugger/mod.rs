@@ -13,6 +13,21 @@ use emulator::device::Device;
 use emulator::debugger::parser::{Command, Expression};
 use types::Register;
 
+error_chain! {
+    links {
+        cpu::Error, cpu::ErrorKind, Cpu;
+    }
+    errors {
+        Breakpoint(i: usize, addr: u16, expr: Expression) {
+            description("breakpoint triggered")
+            display("breakpoint {} triggered at 0x{:0>4x} ({})",
+                    i,
+                    addr,
+                    expr)
+        }
+    }
+}
+
 pub struct Breakpoint {
     addr: u16,
     expression: Expression,
@@ -110,7 +125,9 @@ impl Debugger {
         match *cmd {
             Command::Step(n) => {
                 for _ in 0..n {
-                    let _ = self.step();
+                    if let Err(e) = self.step() {
+                        println!("{}", e);
+                    }
                 }
             }
             Command::PrintRegisters => self.print_registers(),
@@ -129,7 +146,9 @@ impl Debugger {
             Command::ShowBreakpoints => self.show_breakpoints(),
             Command::DeleteBreakpoint(b) =>
                 self.delete_breakpoint(b as usize),
-            Command::Continue => self.continue_exec(),
+            Command::Continue => if let Err(e) = self.continue_exec() {
+                println!("{}", e);
+            },
             Command::ShowDevices => self.show_devices(),
             Command::Hook(ref cmd) => if let Command::Hook(_) = **cmd {
                 println!("You can't hook hooks!");
@@ -160,7 +179,7 @@ impl Debugger {
         }
     }
 
-    fn step(&mut self) -> Result<(), ()> {
+    pub fn step(&mut self) -> Result<()> {
         self.tick_number += 1;
         for (i, device) in self.devices.iter_mut().enumerate() {
             match device.tick(&mut self.cpu, self.tick_number) {
@@ -175,10 +194,7 @@ impl Debugger {
         match self.cpu.tick(&mut self.devices) {
             Ok(cpu::CpuState::Executing) => Ok(()),
             Ok(cpu::CpuState::Waiting) => self.step(),
-            Err(e) => {
-                println!("Cpu error: {}", e);
-                Err(())
-            }
+            Err(e) => try!(Err(e)),
         }
     }
 
@@ -238,22 +254,17 @@ impl Debugger {
         }
     }
 
-    fn continue_exec(&mut self) {
+    pub fn continue_exec(&mut self) -> Result<()> {
         loop {
-            match self.step() {
-                Ok(()) => (),
-                Err(()) => return,
-            }
+            try!(self.step());
 
             if let Some((i, b)) = self.breakpoints
                                       .iter()
                                       .enumerate()
                                       .find(|&(_, x)| x.addr == self.cpu.pc.0) {
-                println!("Breakpoint {} triggered at 0x{:0>4x} ({})",
-                         i,
-                         b.addr,
-                         b.expression);
-                return;
+                try!(Err(ErrorKind::Breakpoint(i,
+                                               b.addr,
+                                               b.expression.clone())));
             }
         }
     }
