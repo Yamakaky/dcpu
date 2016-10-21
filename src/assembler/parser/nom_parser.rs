@@ -11,6 +11,22 @@ fn bytes_to_type<I: FromStr>(i: &[u8]) -> Result<I, ()> {
         .map_err(|_| ())
 }
 
+pub fn line_number(raw_file: &[u8], raw_line: &[u8]) -> (usize, usize) {
+    let offset = raw_file.offset(raw_line);
+    assert!(offset < raw_file.len());
+    let file = str::from_utf8(raw_file).unwrap();
+    file.char_indices()
+        .take_while(|&(i, _)| i <= offset)
+        .map(|(_, c)| c)
+        .fold((1, 1), |(line, row), c| {
+            if c == '\n' {
+                (line + 1, 0)
+            } else {
+                (line, row + 1)
+            }
+        })
+}
+
 named!(hex_num<(&str, u32)>,
     map_res!(chain!(tag!("0x") ~ n: recognize!(many1!(hex_digit)), || n),
              |n| str::from_utf8(n).map(|n| (n, 16)))

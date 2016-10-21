@@ -4,7 +4,7 @@ use clap;
 use nom;
 
 pub use assembler::types::Expression;
-use assembler::parser::{expression, pos_number};
+use assembler::parser::nom_parser::{expression, pos_number};
 
 error_chain! {
     foreign_links {
