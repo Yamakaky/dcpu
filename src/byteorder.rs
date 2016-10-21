@@ -3,10 +3,19 @@ use std::io;
 use std::marker::PhantomData;
 
 pub trait WriteBytesExt: Write {
-    fn write_item<I: Item, B: ByteOrder>(&mut self, item: I) -> io::Result<()> {
+    fn write_item<I, B>(&mut self, item: I) -> io::Result<()>
+    where I: Item, B: ByteOrder {
         let mut data = item.encode_to_big_endian();
         B::encode_to_big_endian::<I>(&mut data);
         self.write_all(data.as_ref())
+    }
+
+    fn write_all_items<I, B>(&mut self, items: &[I]) -> io::Result<()>
+    where I: Item + Clone, B: ByteOrder {
+        for item in items {
+            try!(self.write_item::<I, B>(item.clone()));
+        }
+        Ok(())
     }
 }
 pub trait ReadBytesExt: Read {

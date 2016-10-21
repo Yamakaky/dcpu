@@ -99,9 +99,7 @@ fn main_ret() -> i32 {
             writeln!(output, "0x{:x}", n).unwrap();
         }
     } else {
-        for n in bin {
-            output.write_item::<u16, LittleEndian>(n).unwrap();
-        }
+        output.write_all_items::<u16, LittleEndian>(&bin).unwrap();
     }
 
     if let Some(path) = args.flag_symbols {
