@@ -95,7 +95,7 @@ impl Debugger {
         use rustyline::Editor;
 
         let mut rl = Editor::new();
-        rl.set_completer(Some(completion::DebuggerCompleter));
+        rl.set_completer(Some(completion::DebuggerCompleter::new(&self.symbols)));
         if let Err(e) = rl.load_history(&history_path) {
             if let ReadlineError::Io(io_err) = e {
                 if io_err.kind() != io::ErrorKind::NotFound {

@@ -1,8 +1,20 @@
 use std::collections::BTreeSet;
 
+use assembler::types::Globals;
+
 use rustyline;
 
-pub struct DebuggerCompleter;
+pub struct DebuggerCompleter {
+    symbols: Vec<String>,
+}
+
+impl DebuggerCompleter {
+    pub fn new(globals: &Globals) -> DebuggerCompleter {
+        DebuggerCompleter {
+            symbols: globals.keys().cloned().collect(),
+        }
+    }
+}
 
 impl rustyline::completion::Completer for DebuggerCompleter {
     fn complete(&self, line: &str, pos: usize)
@@ -13,19 +25,11 @@ impl rustyline::completion::Completer for DebuggerCompleter {
             set.insert(' ');
             set
         };
-        let cmds = [
-            "r", "x", "b", "s", "c",
-            "devices",
-            "disassemble",
-            "breakpoints",
-            "delete",
-            "hook",
-            "logs",
-        ];
         let (i, word) = rustyline::completion::extract_word(line,
                                                             pos,
                                                             &break_chars);
-        let completions = cmds.iter()
+        let completions = self.symbols
+                              .iter()
                               .filter(|cmd| cmd.starts_with(word))
                               .cloned()
                               .map(|s| (*s).into())
