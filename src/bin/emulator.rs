@@ -18,9 +18,7 @@ use docopt::Docopt;
 
 use dcpu::assembler::types::Globals;
 use dcpu::byteorder::{LittleEndian, ReadBytesExt};
-use dcpu::emulator::Cpu;
-use dcpu::emulator::Computer;
-use dcpu::emulator::Debugger;
+use dcpu::emulator::{Cpu, Computer, Debugger};
 use dcpu::emulator::device::*;
 
 const USAGE: &'static str = "

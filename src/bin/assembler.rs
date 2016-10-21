@@ -1,6 +1,5 @@
 extern crate dcpu;
 extern crate docopt;
-extern crate nom;
 extern crate rustc_serialize;
 #[cfg(feature = "serde_json")]
 extern crate serde_json;
@@ -13,11 +12,9 @@ use std::io::{Read, Write};
 use std::str;
 
 use docopt::Docopt;
-use nom::IResult::*;
-use nom::HexDisplay;
 
 use dcpu::byteorder::{WriteBytesExt, LittleEndian};
-use dcpu::assembler::{self, linker, parser};
+use dcpu::assembler;
 
 const USAGE: &'static str = "
 Usage:
@@ -45,22 +42,6 @@ struct Args {
     flag_o: Option<String>,
 }
 
-fn line_number(raw_file: &[u8], raw_line: &[u8]) -> (usize, usize) {
-    let offset = raw_file.offset(raw_line);
-    assert!(offset < raw_file.len());
-    let file = str::from_utf8(raw_file).unwrap();
-    file.char_indices()
-        .take_while(|&(i, _)| i <= offset)
-        .map(|(_, c)| c)
-        .fold((1, 1), |(line, row), c| {
-            if c == '\n' {
-                (line + 1, 0)
-            } else {
-                (line, row + 1)
-            }
-        })
-}
-
 fn main_ret() -> i32 {
     simplelog::TermLogger::init(simplelog::LogLevelFilter::Info).unwrap();
 
@@ -82,28 +63,19 @@ fn main_ret() -> i32 {
         if args.flag_no_cpp {
             asm
         } else {
-            dcpu::assembler::preprocessor::preprocess(&asm).unwrap()
+            assembler::preprocess(&asm).unwrap()
         }
     };
-    let parsed = parser::parse(preprocessed.as_bytes());
-    let ast = match parsed {
-        Done(i, ref o) if i.len() == 0 => o,
-        Done(i, _) => {
-            let (line, row) = line_number(preprocessed.as_bytes(), i);
-            die!(1,
-                 "Unknown (line {}, row {}): \"{}\"",
-                 line,
-                 row,
-                 str::from_utf8(i).unwrap().lines().next().unwrap());
-        }
-        e => die!(1, "Error: {:?}", e)
+    let ast = match assembler::parse(&preprocessed) {
+        Ok(o) => o,
+        Err(e) => die!(1, "Error: {}", e),
     };
 
     if args.flag_ast {
         die!(0, "{:?}", ast);
     }
 
-    let (bin, symbols) = match linker::link(ast) {
+    let (bin, symbols) = match assembler::link(&ast) {
         Ok(v) => v,
         Err(e) => die!(1, "Error: {:?}", e)
     };

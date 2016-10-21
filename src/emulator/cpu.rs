@@ -4,8 +4,8 @@ use std::default::Default;
 use std::num::Wrapping;
 
 use emulator::device::{self, Device};
-use emulator::ram::Ram;
-use emulator::registers::Registers;
+use emulator::Ram;
+use emulator::Registers;
 use types::*;
 use types::Value::*;
 use types::BasicOp::*;

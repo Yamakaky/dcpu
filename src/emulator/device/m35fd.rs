@@ -8,7 +8,7 @@ use enum_primitive::FromPrimitive;
 use byteorder::{self, ReadBytesExt};
 use emulator::Cpu;
 use emulator::device::*;
-use emulator::ram::Ram;
+use emulator::Ram;
 use types::Register;
 
 const NB_SECTORS_BY_TRACK: u16 = 18;

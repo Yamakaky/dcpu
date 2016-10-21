@@ -28,7 +28,7 @@ error_chain! {
     }
 }
 
-pub struct Breakpoint {
+struct Breakpoint {
     addr: u16,
     expression: Expression,
 }

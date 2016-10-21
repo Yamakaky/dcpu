@@ -1,10 +1,12 @@
 pub mod cpu;
-pub mod computer;
+mod computer;
 pub mod debugger;
 pub mod device;
-pub mod ram;
-pub mod registers;
+mod ram;
+mod registers;
 
 pub use emulator::cpu::Cpu;
 pub use emulator::computer::Computer;
 pub use emulator::debugger::Debugger;
+pub use emulator::ram::Ram;
+pub use emulator::registers::Registers;
