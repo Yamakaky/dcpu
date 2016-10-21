@@ -1,10 +1,13 @@
 extern crate dcpu;
+#[cfg(feature = "bins")]
 extern crate docopt;
 #[macro_use]
 extern crate log;
+#[cfg(feature = "bins")]
 extern crate rustc_serialize;
 #[cfg(feature = "serde_json")]
 extern crate serde_json;
+#[cfg(feature = "bins")]
 extern crate simplelog;
 
 #[macro_use]
@@ -14,6 +17,7 @@ use std::{time, thread};
 use std::io::prelude::*;
 use std::result;
 
+#[cfg(feature = "bins")]
 use docopt::Docopt;
 
 use dcpu::assembler::types::Globals;
@@ -21,6 +25,7 @@ use dcpu::byteorder::{LittleEndian, ReadBytesExt};
 use dcpu::emulator::{Cpu, Computer, Debugger};
 use dcpu::emulator::device::*;
 
+#[cfg(feature = "bins")]
 const USAGE: &'static str = "
 Usage:
   emulator [options] [(-d <device>)...] [<file>]
@@ -41,6 +46,7 @@ Options:
   --version          Show the version of disassembler.
 ";
 
+#[cfg(feature = "bins")]
 #[derive(Debug, RustcDecodable)]
 struct Args {
     arg_device: Option<Vec<String>>,
@@ -53,6 +59,7 @@ struct Args {
     flag_debug_history: String,
 }
 
+#[cfg(feature = "bins")]
 fn main_ret() -> i32 {
     simplelog::TermLogger::init(simplelog::LogLevelFilter::Info).unwrap();
 
@@ -169,6 +176,11 @@ fn main_ret() -> i32 {
         }
     }
     0
+}
+
+#[cfg(not(feature = "bins"))]
+fn main_ret() -> i32 {
+    "The feature \"bins\" must be activated to use this binary"
 }
 
 fn main() {

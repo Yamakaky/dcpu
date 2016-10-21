@@ -1,8 +1,11 @@
 extern crate dcpu;
+#[cfg(feature = "bins")]
 extern crate docopt;
+#[cfg(feature = "bins")]
 extern crate rustc_serialize;
 #[cfg(feature = "serde_json")]
 extern crate serde_json;
+#[cfg(feature = "bins")]
 extern crate simplelog;
 
 #[macro_use]
@@ -11,11 +14,13 @@ mod utils;
 use std::io::{Read, Write};
 use std::str;
 
+#[cfg(feature = "bins")]
 use docopt::Docopt;
 
 use dcpu::byteorder::{WriteBytesExt, LittleEndian};
 use dcpu::assembler;
 
+#[cfg(feature = "bins")]
 const USAGE: &'static str = "
 Usage:
   assembler [options] [<file>]
@@ -32,6 +37,7 @@ Options:
   --version     Show version.
 ";
 
+#[cfg(feature = "bins")]
 #[derive(Debug, RustcDecodable)]
 struct Args {
     flag_no_cpp: bool,
@@ -42,6 +48,7 @@ struct Args {
     flag_o: Option<String>,
 }
 
+#[cfg(feature = "bins")]
 fn main_ret() -> i32 {
     simplelog::TermLogger::init(simplelog::LogLevelFilter::Info).unwrap();
 
@@ -100,6 +107,11 @@ fn main_ret() -> i32 {
     } else {
         0
     }
+}
+
+#[cfg(not(feature = "bins"))]
+fn main_ret() -> i32 {
+    "The feature \"bins\" must be activated to use this binary"
 }
 
 fn main() {
