@@ -56,8 +56,7 @@ fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
         .subcommand(clap::SubCommand::with_name("step")
             .visible_alias("s")
             .help("Execute one instruction.")
-            .arg(clap::Arg::with_name("count")
-                .required(true)))
+            .arg(clap::Arg::with_name("count")))
         .subcommand(clap::SubCommand::with_name("registers")
             .visible_alias("r")
             .help("Show the registers."))
@@ -125,7 +124,7 @@ impl Command {
     fn try_from(matches: &clap::ArgMatches) -> Result<Command> {
         match matches.subcommand() {
             ("step", Some(val)) => {
-                let str_count = val.value_of("count").unwrap();
+                let str_count = val.value_of("count").unwrap_or("1");
                 let count = try!(conv_iresult(pos_number(str_count.as_bytes())));
                 Ok(Command::Step(count))
             }
