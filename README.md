@@ -39,6 +39,19 @@ nightly then run;
 
 `cargo run --release --features nightly --bin ...`
 
+### Build features
+
+The following build features are available ([x] means "enabled by default"):
+
+- [x] `bins`: only useful to build the binaries, should be disabled for the
+      library.
+- [x] `debugger-cli`: command line parsing for the debugger, should also be
+      disabled for the library.
+- [x] `glium`: OpenGL backend for the lem1802 + keyboard, can be useful in the
+      library.
+- [ ] `nightly`: implementation of `serde::{Serialize, Deserialize}` for some of
+      the types. Requires Rust nightly.
+
 ## Convert images to LEM format
 
 The `sprite` utility can:
