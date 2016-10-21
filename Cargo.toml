@@ -38,3 +38,6 @@ crate-type = ["rlib", "dylib"]
 
 [profile.release]
 lto = true
+
+[workspace]
+members = ["server", "image"]

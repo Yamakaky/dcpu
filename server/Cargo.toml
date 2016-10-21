@@ -12,7 +12,7 @@ serde = "0.8"
 serde_derive = "0.8"
 serde_json = "0.8"
 tokio-core = "0.1"
-tokio-length-prefix = { path = "../../tokio-length-prefix" }
+tokio-length-prefix = { git = "https://github.com/Yamakaky/tokio-length-prefix" }
 tokio-proto = { git = "https://github.com/tokio-rs/tokio-proto" }
 
 [dependencies.dcpu]
