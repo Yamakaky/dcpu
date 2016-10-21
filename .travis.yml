@@ -1,15 +1,29 @@
 language: rust
 cache: cargo
+rust:
+  - stable
+  - beta
+  - nightly
+os:
+  - linux
+  - osx
 matrix:
   include:
-    - rust: stable
     - rust: nightly
+      os: linux
       script:
-        - cargo build --features nightly --verbose
+        - cargo build --features nightly --release
         - cargo test --features nightly --verbose
+      env:
+        - DEPLOY=true
     - rust: nightly
+      os: osx
+      script:
+        - cargo build --features nightly --release
+        - cargo test --features nightly --verbose
+      env:
+        - DEPLOY=true
+    - rust: nightly
+      os: linux
       script:
         - cargo build --features "nightly clippy"
-env:
-  global:
-    secure: gCb/j65Ompy/5M06yhDe7LVlgNNxbhjAqEMnpiffAjBqNRp59hFj7XgXsM4FRMnrJWE+Y70MJXPapynwDkniyaljlB7n/WF4PmKSr/7oeg/0yaugnug3a8Y/fKmctPtBu3YRNFbYbmTbNNPWmR3XRdqNSxXJy26OFSacYhbQiyqIqlea3iJZxbG1Uo3v+2FrrYgoKXBYDN5LMRwVWMJcoB2FZ5DmCBloM1xU5fiWhnVAMwWlHR33faVXr6Z58y2gosqPn7ByGF/n8WCg9t2tTr1kvdXy5H1HY4M9DDNROd3gU28WbURUmyDQEjTDJqZvl5jimisLwzQHgGyFakcwFCdwZNetSrPggdp3Rx+oKUjZdzFNoA9ZVi321Agi0hIZDZrU6M9q6LKxoUXIGAPpoXHd+9rqzfrJKdmyUZt/7DxLficHdDK3zgg0S7reGfHBxZqUCxicicKkp4xX5YMuiWgpkEkcsfsaBGLKW/VlrH18vCczs0a8t4cGNBwEndNlL+W+rBoVBasPAI1xHepua4sQ05wDCp5WyVdmkSlh//gMfv3GUVktXtzZFzEF5aw2XolK1BZWDaAtY09Ha+gdsvGNcTmrM65S+o71Rf3PMjYVZZOxCxjMLosYttFOtHDrM1SYhzKPFHiAhi9iDhqYvAPN3PwXPU+vD4fDcEfkl1U=
