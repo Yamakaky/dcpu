@@ -70,7 +70,7 @@ fn main_ret() -> i32 {
                             .unwrap_or_else(|e| e.exit());
 
     let rom = {
-        let mut input = match utils::get_input(args.arg_file) {
+        let mut input = match utils::get_input(args.arg_file.clone()) {
             Ok(input) => input,
             Err(e) => die!(1, "Error while opening the input: {}", e),
         };
@@ -121,6 +121,7 @@ fn main_ret() -> i32 {
         let mut debugger = Debugger::new(cpu, devices);
         debugger.log_litterals(args.flag_log_litterals);
         if let Some(path) = args.flag_symbols {
+            println!("Loading symbols from {}", path);
             let symbols = match get_symbols(path) {
                 Ok(s) => s,
                 Err(i) => {
@@ -128,6 +129,15 @@ fn main_ret() -> i32 {
                 }
             };
             debugger.symbols(symbols);
+        } else if let Some(mut path) = args.arg_file {
+            path.push_str(".sym");
+            match get_symbols(path.clone()) {
+                Ok(symbols) => {
+                    println!("Loading symbols from {}", path);
+                    debugger.symbols(symbols);
+                }
+                Err(_) => (),
+            };
         }
         debugger.run(args.flag_debug_history);
     } else {
