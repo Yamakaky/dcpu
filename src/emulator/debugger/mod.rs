@@ -201,6 +201,7 @@ impl Debugger {
                 }
             }
             Command::Stack(count) => self.examine(self.cpu.sp.0, count),
+            Command::Symbols => self.show_symbols(),
         }
     }
 
@@ -327,6 +328,13 @@ impl Debugger {
             }
         }
         self.cpu.log_queue.clear();
+    }
+
+    #[allow(dead_code)]
+    fn show_symbols(&self) {
+        for symbol in self.symbols.keys() {
+            println!("{}", symbol);
+        }
     }
 
     #[allow(dead_code)]

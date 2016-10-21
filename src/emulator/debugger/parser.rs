@@ -40,6 +40,7 @@ pub enum Command {
     Logs,
     M35fd(u16, M35fdCmd),
     Stack(u16),
+    Symbols,
 }
 
 #[derive(Debug, Clone)]
@@ -115,6 +116,8 @@ fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
         .subcommand(clap::SubCommand::with_name("stack")
             .help("Show <count> bytes from the stack")
             .arg(clap::Arg::with_name("count")))
+        .subcommand(clap::SubCommand::with_name("symbols")
+            .help("Show the symbols."))
 }
 
 pub fn parse_command(cmd: &str) -> Result<Command> {
@@ -193,6 +196,7 @@ impl Command {
                 let count = try!(conv_iresult(pos_number(str_count.as_bytes())));
                 Ok(Command::Stack(count))
             }
+            ("symbols", Some(_)) => Ok(Command::Symbols),
             (cmd, args) => {
                 try!(Err(format!("unknown command \"{}\" ({:?})", cmd, args)))
             }
