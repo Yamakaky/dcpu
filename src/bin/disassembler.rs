@@ -45,7 +45,9 @@ struct Args {
 fn main_ret() -> i32 {
     simplelog::TermLogger::init(simplelog::LogLevelFilter::Info).unwrap();
 
+    let version = option_env!("CARGO_PKG_VERSION").map(|s| s.into());
     let args: Args = Docopt::new(USAGE)
+                            .map(|d| d.version(version))
                             .and_then(|d| d.decode())
                             .unwrap_or_else(|e| e.exit());
 
