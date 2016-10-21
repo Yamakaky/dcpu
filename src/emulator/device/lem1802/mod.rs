@@ -7,7 +7,7 @@ use std::any::Any;
 use std::fmt::Debug;
 use std::num::Wrapping;
 
-use num::traits::FromPrimitive;
+use enum_primitive::FromPrimitive;
 
 use emulator::cpu::Cpu;
 use emulator::device::*;

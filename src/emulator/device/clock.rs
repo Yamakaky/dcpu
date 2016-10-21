@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use num::traits::FromPrimitive;
+use enum_primitive::FromPrimitive;
 
 use emulator::cpu::Cpu;
 use emulator::device::*;

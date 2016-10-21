@@ -25,7 +25,6 @@ extern crate enum_primitive;
 extern crate log;
 #[macro_use]
 extern crate nom;
-extern crate num;
 #[cfg(feature = "glium")]
 #[macro_use]
 extern crate glium;
