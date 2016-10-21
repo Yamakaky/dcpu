@@ -27,3 +27,14 @@ matrix:
       os: linux
       script:
         - cargo build --features "nightly clippy"
+deploy:
+  - provider: releases
+  - api_key: "$GITHUB_TOKEN"
+  - file:
+      - "target/release/assembler"
+      - "target/release/disassembler"
+      - "target/release/emulator"
+  - skip_cleanup: true
+  - on:
+      - tags: true
+      - condition: "$DEPLOY = true"
