@@ -16,6 +16,7 @@ extern crate serde_derive;
 #[cfg(feature = "serde")]
 extern crate serde;
 
+#[cfg(feature = "clap")]
 #[macro_use]
 extern crate clap;
 #[macro_use]
@@ -28,6 +29,7 @@ extern crate num;
 #[cfg(feature = "glium")]
 #[macro_use]
 extern crate glium;
+#[cfg(feature = "rustyline")]
 extern crate rustyline;
 
 pub mod assembler;

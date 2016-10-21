@@ -10,12 +10,13 @@ repository = "https://github.com/Yamakaky/dcpu"
 version = "0.4.0"
 
 [features]
-default = ["bins", "glium"]
+default = ["bins", "debugger-cli", "glium"]
 nightly = ["serde", "serde_derive", "serde_json"]
 bins = ["docopt", "rustc-serialize", "simplelog"]
+debugger-cli = ["clap", "rustyline"]
 
 [dependencies]
-clap = "2.14"
+clap = { version = "2.14", optional = true }
 clippy = { version = "~0.0.95", optional = true }
 docopt = { version = "0.6", optional = true }
 enum_primitive = "~0.1.0"
@@ -25,7 +26,7 @@ log = "~0.3.6"
 nom = "~1.2.2"
 num = "~0.1.31"
 rustc-serialize = { version = "0.3", optional = true}
-rustyline = "1.0"
+rustyline = { version = "1.0", optional = true }
 serde = { version = "0.8", optional = true }
 serde_derive = { version = "0.8", optional = true }
 serde_json = { version = "0.8", optional = true }

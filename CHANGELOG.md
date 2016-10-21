@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Move the screen convertion from the device to the render thread
 - Huge improvement in the debugger interface
 - Big library interface changes
+- Most dependencies can be disabled
 
 ## [0.4.0]
 

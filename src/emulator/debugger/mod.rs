@@ -1,16 +1,22 @@
+#[cfg(feature = "debugger-cli")]
 mod completion;
+#[cfg(feature = "debugger-cli")]
 mod parser;
 
 use std::collections::HashMap;
 use std::iter::Iterator;
+#[cfg(feature = "debugger-cli")]
 use std::io;
+#[cfg(feature = "debugger-cli")]
 use std::path::Path;
 
 use assembler;
+use assembler::types::Expression;
 use iterators;
 use emulator::{cpu, device};
 use emulator::device::Device;
-use emulator::debugger::parser::{Command, Expression};
+#[cfg(feature = "debugger-cli")]
+use emulator::debugger::parser::Command;
 use types::Register;
 
 error_chain! {
@@ -38,13 +44,16 @@ pub struct Debugger {
     devices: Vec<Box<device::Device>>,
     breakpoints: Vec<Breakpoint>,
     tick_number: u64,
+    #[cfg(feature = "debugger-cli")]
     hooks: Vec<Command>,
+    #[cfg(feature = "debugger-cli")]
     last_command: Option<Command>,
     log_litterals: bool,
     symbols: assembler::types::Globals,
 }
 
 impl Debugger {
+    #[cfg(feature = "debugger-cli")]
     pub fn new(mut cpu: cpu::Cpu, devices: Vec<Box<device::Device>>) -> Debugger {
         cpu.on_decode_error = cpu::OnDecodeError::Fail;
         Debugger {
@@ -59,6 +68,19 @@ impl Debugger {
         }
     }
 
+    #[cfg(not(feature = "debugger-cli"))]
+    pub fn new(mut cpu: cpu::Cpu, devices: Vec<Box<device::Device>>) -> Debugger {
+        cpu.on_decode_error = cpu::OnDecodeError::Fail;
+        Debugger {
+            cpu: cpu,
+            devices: devices,
+            breakpoints: vec![],
+            tick_number: 0,
+            log_litterals: false,
+            symbols: HashMap::new(),
+        }
+    }
+
     pub fn log_litterals(&mut self, enabled: bool) {
         self.log_litterals = enabled;
     }
@@ -67,6 +89,7 @@ impl Debugger {
         self.symbols = symbols;
     }
 
+    #[cfg(feature = "debugger-cli")]
     pub fn run<P: AsRef<Path>>(&mut self, history_path: P) {
         use rustyline::error::ReadlineError;
         use rustyline::Editor;
@@ -121,6 +144,7 @@ impl Debugger {
         }
     }
 
+    #[cfg(feature = "debugger-cli")]
     fn exec(&mut self, cmd: &Command) {
         match *cmd {
             Command::Step(n) => {
@@ -179,6 +203,7 @@ impl Debugger {
         }
     }
 
+    #[allow(dead_code)]
     pub fn step(&mut self) -> Result<()> {
         self.tick_number += 1;
         for (i, device) in self.devices.iter_mut().enumerate() {
@@ -198,6 +223,7 @@ impl Debugger {
         }
     }
 
+    #[allow(dead_code)]
     fn print_registers(&self) {
         let regs = &self.cpu.registers;
         println!(" A {:>4x} |  B {:>4x} |  C {:>4x}",
@@ -212,6 +238,7 @@ impl Debugger {
         println!("Tick number: {}", self.tick_number);
     }
 
+    #[allow(dead_code)]
     fn disassemble(&self, from: &Expression, size: u16) {
         let from = match from.solve(&self.symbols, &self.get_last_global()) {
             Ok(addr) => addr as usize,
@@ -230,6 +257,7 @@ impl Debugger {
         }
     }
 
+    #[allow(dead_code)]
     fn examine(&self, from: &Expression, size: u16) {
         let from = match from.solve(&self.symbols, &self.get_last_global()) {
             Ok(addr) => addr,
@@ -241,6 +269,7 @@ impl Debugger {
         println!("{:?}", &self.cpu.ram[from..from + size]);
     }
 
+    #[allow(dead_code)]
     fn show_breakpoints(&self) {
         println!("Num    Address    Expression");
         for (i, b) in self.breakpoints.iter().enumerate() {
@@ -248,7 +277,7 @@ impl Debugger {
         }
     }
 
-    fn delete_breakpoint(&mut self, b: usize) {
+    pub fn delete_breakpoint(&mut self, b: usize) {
         if b < self.breakpoints.len() {
             self.breakpoints.remove(b);
         }
@@ -269,6 +298,7 @@ impl Debugger {
         }
     }
 
+    #[allow(dead_code)]
     fn show_devices(&self) {
         for (i, dev) in self.devices.iter().enumerate() {
             print!("Device {}: ", i);
@@ -277,6 +307,7 @@ impl Debugger {
         }
     }
 
+    #[allow(dead_code)]
     fn show_logs(&mut self) {
         for msg in &self.cpu.log_queue {
             if self.log_litterals {
@@ -288,6 +319,7 @@ impl Debugger {
         self.cpu.log_queue.clear();
     }
 
+    #[allow(dead_code)]
     fn downcast_device<D: Device>(&mut self,
                                   device_id: u16) -> Option<&mut D> {
         match self.devices.get_mut(device_id as usize) {
@@ -305,6 +337,7 @@ impl Debugger {
         }
     }
 
+    #[allow(dead_code)]
     fn get_last_global(&self) -> Option<String> {
         let mut i = 0;
         let mut last_global = None;
