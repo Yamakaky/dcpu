@@ -157,7 +157,7 @@ impl Debugger {
             Command::PrintRegisters => self.print_registers(),
             Command::Disassemble {ref from, size} =>
                 self.disassemble(from, size),
-            Command::Examine {ref from, size} => self.examine(from, size),
+            Command::Examine {ref from, size} => self.examine_expr(from, size),
             Command::Breakpoint(ref b) => {
                 match b.solve(&self.symbols, &self.get_last_global()) {
                     Ok(addr) => self.breakpoints.push(Breakpoint {
@@ -199,7 +199,8 @@ impl Debugger {
                         }
                     }
                 }
-            },
+            }
+            Command::Stack(count) => self.examine(self.cpu.sp.0, count),
         }
     }
 
@@ -258,7 +259,7 @@ impl Debugger {
     }
 
     #[allow(dead_code)]
-    fn examine(&self, from: &Expression, size: u16) {
+    fn examine_expr(&self, from: &Expression, size: u16) {
         let from = match from.solve(&self.symbols, &self.get_last_global()) {
             Ok(addr) => addr,
             Err(e) => {
@@ -266,7 +267,16 @@ impl Debugger {
                 return;
             }
         };
-        println!("{:?}", &self.cpu.ram[from..from + size]);
+        self.examine(from, size);
+    }
+
+    fn examine(&self, from: u16, size: u16) {
+        let to = from.checked_add(size).unwrap_or(0xffff);
+        print!("0x{:0>4x}: ", from);
+        for x in &self.cpu.ram[from..to] {
+            print!("{:0>4x} ", x);
+        }
+        println!("");
     }
 
     #[allow(dead_code)]

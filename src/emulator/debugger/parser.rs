@@ -39,6 +39,7 @@ pub enum Command {
     Hook(Box<Command>),
     Logs,
     M35fd(u16, M35fdCmd),
+    Stack(u16),
 }
 
 #[derive(Debug, Clone)]
@@ -66,8 +67,7 @@ fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
                 .help("From where to disassemble (default [PC])")
                 .required(true))
             .arg(clap::Arg::with_name("length")
-                .help("Number of instructions to disassemble.")
-                .required(true)))
+                .help("Number of instructions to disassemble.")))
         .subcommand(clap::SubCommand::with_name("examine")
             .visible_alias("x")
             .help("Print a memory slice as hexadecimal.")
@@ -75,8 +75,7 @@ fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
                 .help("From where to disassemble (default [PC])")
                 .required(true))
             .arg(clap::Arg::with_name("length")
-                .help("Number of instructions to disassemble.")
-                .required(true)))
+                .help("Number of instructions to disassemble.")))
         .subcommand(clap::SubCommand::with_name("break")
             .visible_alias("b")
             .help("Add a breakpoint.")
@@ -113,6 +112,9 @@ fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
                 .help("Load a new floppy")
                 .arg(clap::Arg::with_name("file")
                     .required(true))))
+        .subcommand(clap::SubCommand::with_name("stack")
+            .help("Show <count> bytes from the stack")
+            .arg(clap::Arg::with_name("count")))
 }
 
 pub fn parse_command(cmd: &str) -> Result<Command> {
@@ -132,7 +134,7 @@ impl Command {
             ("disassemble", Some(args)) => {
                 let str_from = args.value_of("base").unwrap();
                 let from = try!(conv_iresult(expression(str_from.as_bytes())));
-                let str_len = args.value_of("length").unwrap();
+                let str_len = args.value_of("length").unwrap_or("10");
                 let len = try!(conv_iresult(pos_number(str_len.as_bytes())));
                 Ok(Command::Disassemble {
                     from: from,
@@ -142,7 +144,7 @@ impl Command {
             ("examine", Some(args)) => {
                 let str_from = args.value_of("base").unwrap();
                 let from = try!(conv_iresult(expression(str_from.as_bytes())));
-                let str_len = args.value_of("length").unwrap();
+                let str_len = args.value_of("length").unwrap_or("10");
                 let len = try!(conv_iresult(pos_number(str_len.as_bytes())));
                 Ok(Command::Examine {
                     from: from,
@@ -185,6 +187,11 @@ impl Command {
                     }
                     _ => unreachable!(),
                 }
+            }
+            ("stack", Some(args)) => {
+                let str_count = args.value_of("count").unwrap_or("10");
+                let count = try!(conv_iresult(pos_number(str_count.as_bytes())));
+                Ok(Command::Stack(count))
             }
             (cmd, args) => {
                 try!(Err(format!("unknown command \"{}\" ({:?})", cmd, args)))
