@@ -4,6 +4,7 @@ pub mod keyboard;
 pub mod lem1802;
 pub mod m35fd;
 
+#[cfg(feature = "glium")]
 pub mod glium_backend;
 
 use std::any::Any;

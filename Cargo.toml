@@ -10,7 +10,7 @@ repository = "https://github.com/Yamakaky/dcpu"
 version = "0.4.0"
 
 [features]
-default = []
+default = ["glium"]
 nightly = ["serde", "serde_derive", "serde_json"]
 
 [dependencies]
@@ -19,7 +19,7 @@ clippy = { version = "~0.0.95", optional = true }
 docopt = "~0.6.80"
 enum_primitive = "~0.1.0"
 error-chain = "0.5"
-glium = "0.15"
+glium = { version = "0.15", optional = true }
 log = "~0.3.6"
 nom = "~1.2.2"
 num = "~0.1.31"

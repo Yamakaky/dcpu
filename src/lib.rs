@@ -25,6 +25,7 @@ extern crate log;
 #[macro_use]
 extern crate nom;
 extern crate num;
+#[cfg(feature = "glium")]
 #[macro_use]
 extern crate glium;
 extern crate rustyline;

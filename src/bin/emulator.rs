@@ -79,11 +79,9 @@ fn main_ret() -> i32 {
             for d in devs {
                 match d.as_ref() {
                     "clock" => devices.push(Box::new(clock::Clock::new(100_000))),
-                    "keyscreen" => {
-                        let (screen_backend, kb_backend) = glium_backend::start();
-                        devices.push(Box::new(keyboard::Keyboard::new(kb_backend)));
-                        devices.push(Box::new(lem1802::LEM1802::new(screen_backend)));
-                    }
+                    "keyscreen" => if let Err(e) = add_keyscreen(&mut devices) {
+                        return e;
+                    },
                     "m35fd" => devices.push(Box::new(m35fd::M35fd::new(None))),
                     _ => {
                         let mut components = d.split("=");
@@ -197,5 +195,19 @@ fn get_symbols(path: String) -> result::Result<Globals, i32> {
 #[cfg(not(feature = "serde_json"))]
 fn get_symbols(_path: String) -> result::Result<Globals, i32> {
     println!("Symbol map loading is disabled, activate the \"nightly\" feature.");
+    Err(1)
+}
+
+#[cfg(feature = "glium")]
+fn add_keyscreen(devices: &mut Vec<Box<Device>>) -> result::Result<(), i32> {
+    let (screen_backend, kb_backend) = glium_backend::start();
+    devices.push(Box::new(keyboard::Keyboard::new(kb_backend)));
+    devices.push(Box::new(lem1802::LEM1802::new(screen_backend)));
+    Ok(())
+}
+
+#[cfg(not(feature = "glium"))]
+fn add_keyscreen(_devices: &mut Vec<Box<Device>>) -> result::Result<(), i32> {
+    println!("Symbol map loading is disabled, activate the \"glium\" feature.");
     Err(1)
 }
