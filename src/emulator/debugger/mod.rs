@@ -271,6 +271,7 @@ impl Debugger {
         self.examine(from, size);
     }
 
+    #[allow(dead_code)]
     fn examine(&self, from: u16, size: u16) {
         let to = from.checked_add(size).unwrap_or(0xffff);
         print!("0x{:0>4x}: ", from);
