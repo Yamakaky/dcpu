@@ -14,9 +14,7 @@ use types::SpecialOp::*;
 error_chain!(
     links {
         device::Error, device::ErrorKind, InterruptError;
-    }
-    foreign_links {
-        DecodeError, DecodeError;
+        decode::Error, decode::ErrorKind, DecodeError;
     }
     errors {
         InvalidHardwareId(id: u16) {

@@ -1,5 +1,4 @@
-use std::str;
-use std::str::FromStr;
+use std::str::{self, FromStr};
 
 use nom::*;
 
