@@ -3,17 +3,13 @@ use std::iter::Iterator;
 use types::*;
 
 pub struct U16ToInstruction<I> {
-    it: I,
-    buffer: [u16; 3],
-    len_buffer: usize
+    it: U16ToInstructionOffset<I>,
 }
 
 impl<I: Iterator<Item=u16>> U16ToInstruction<I> {
     pub fn chain(it: I) -> U16ToInstruction<I> {
         U16ToInstruction {
-            it: it,
-            buffer: [0; 3],
-            len_buffer: 0
+            it: U16ToInstructionOffset::chain(it),
         }
     }
 }
@@ -22,6 +18,30 @@ impl<I: Iterator<Item=u16>> Iterator for U16ToInstruction<I> {
     type Item = Instruction<u16>;
 
     fn next(&mut self) -> Option<Instruction<u16>> {
+        self.it.next().map(|(_, i)| i)
+    }
+}
+
+pub struct U16ToInstructionOffset<I> {
+    it: I,
+    buffer: [u16; 3],
+    len_buffer: usize
+}
+
+impl<I: Iterator<Item=u16>> U16ToInstructionOffset<I> {
+    pub fn chain(it: I) -> U16ToInstructionOffset<I> {
+        U16ToInstructionOffset {
+            it: it,
+            buffer: [0; 3],
+            len_buffer: 0
+        }
+    }
+}
+
+impl<I: Iterator<Item=u16>> Iterator for U16ToInstructionOffset<I> {
+    type Item = (u16, Instruction<u16>);
+
+    fn next(&mut self) -> Option<(u16, Instruction<u16>)> {
         while self.len_buffer < 3 {
             if let Some(u) = self.it.next() {
                 self.buffer[self.len_buffer] = u;
@@ -44,7 +64,7 @@ impl<I: Iterator<Item=u16>> Iterator for U16ToInstruction<I> {
             self.buffer[n - used] = self.buffer[n];
         }
         self.len_buffer -= used;
-        Some(i)
+        Some((used as u16, i))
     }
 }
 
