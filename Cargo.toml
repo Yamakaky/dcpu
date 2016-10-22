@@ -31,9 +31,6 @@ serde_derive = { version = "0.8", optional = true }
 serde_json = { version = "0.8", optional = true }
 simplelog = { version = "0.2", optional = true }
 
-[lib]
-crate-type = ["rlib", "dylib"]
-
 [profile]
 
 [profile.release]
