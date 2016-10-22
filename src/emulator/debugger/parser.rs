@@ -41,6 +41,7 @@ pub enum Command {
     M35fd(u16, M35fdCmd),
     Stack(u16),
     Symbols,
+    List(u16),
 }
 
 #[derive(Debug, Clone)]
@@ -118,6 +119,10 @@ fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
             .arg(clap::Arg::with_name("count")))
         .subcommand(clap::SubCommand::with_name("symbols")
             .help("Show the symbols."))
+        .subcommand(clap::SubCommand::with_name("list")
+            .visible_alias("l")
+            .help("Show <count> instructions around PC.")
+            .arg(clap::Arg::with_name("count")))
 }
 
 pub fn parse_command(cmd: &str) -> Result<Command> {
@@ -197,6 +202,11 @@ impl Command {
                 Ok(Command::Stack(count))
             }
             ("symbols", Some(_)) => Ok(Command::Symbols),
+            ("list", Some(args)) => {
+                let str_count = args.value_of("count").unwrap_or("5");
+                let count = try!(conv_iresult(pos_number(str_count.as_bytes())));
+                Ok(Command::List(count))
+            }
             (cmd, args) => {
                 try!(Err(format!("unknown command \"{}\" ({:?})", cmd, args)))
             }

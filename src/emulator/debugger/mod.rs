@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::iter::Iterator;
 #[cfg(feature = "debugger-cli")]
 use std::io;
+use std::num::Wrapping;
 #[cfg(feature = "debugger-cli")]
 use std::path::Path;
 
@@ -202,6 +203,7 @@ impl Debugger {
             }
             Command::Stack(count) => self.examine(self.cpu.sp.0, count),
             Command::Symbols => self.show_symbols(),
+            Command::List(n) => self.list(n),
         }
     }
 
@@ -335,6 +337,18 @@ impl Debugger {
     fn show_symbols(&self) {
         for symbol in self.symbols.keys() {
             println!("{}", symbol);
+        }
+    }
+
+    #[allow(dead_code)]
+    fn list(&self, n: u16) {
+        let it = iterators::U16ToInstructionOffset::chain(
+            self.cpu.ram.iter_wrap(self.cpu.pc.0).cloned()
+        );
+        let mut addr = self.cpu.pc;
+        for (used, instr) in it.take(n as usize) {
+            println!("0x{:0>4}: {}", addr, instr);
+            addr += Wrapping(used);
         }
     }
 
