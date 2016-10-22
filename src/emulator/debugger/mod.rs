@@ -347,7 +347,12 @@ impl Debugger {
         );
         let mut addr = self.cpu.pc;
         for (used, instr) in it.take(n as usize) {
-            println!("0x{:0>4}: {}", addr, instr);
+            for (sym, infos) in &self.symbols {
+                if infos.addr == addr.0 {
+                    println!("0x{:0>4}: {}:", addr, sym);
+                }
+            }
+            println!("0x{:0>4}:     {}", addr, instr);
             addr += Wrapping(used);
         }
     }
