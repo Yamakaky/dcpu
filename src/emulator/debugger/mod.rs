@@ -356,8 +356,8 @@ impl Debugger {
                 }
             }
             println!("{}:     {}",
-                     format!("0x{:0>4}", addr).green(),
-                     instr.retrosolve(&self.symbols).red());
+                     format!("0x{:0>4}", addr).red(),
+                     instr.retrosolve(&self.symbols));
             addr += Wrapping(used);
         }
     }
