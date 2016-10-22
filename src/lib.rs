@@ -19,6 +19,8 @@ extern crate serde;
 #[cfg(feature = "clap")]
 #[macro_use]
 extern crate clap;
+#[cfg(feature = "clap")]
+extern crate colored;
 #[macro_use]
 extern crate enum_primitive;
 #[macro_use]

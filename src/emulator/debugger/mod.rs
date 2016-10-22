@@ -11,6 +11,9 @@ use std::num::Wrapping;
 #[cfg(feature = "debugger-cli")]
 use std::path::Path;
 
+#[cfg(feature = "debugger-cli")]
+use colored::Colorize;
+
 use assembler;
 use assembler::types::Expression;
 use iterators;
@@ -107,7 +110,7 @@ impl Debugger {
         }
 
         loop {
-            match rl.readline(">> ") {
+            match rl.readline(&format!("{} ", ">>".yellow())) {
                 Ok(line) => {
                     let maybe_cmd = if line == "" {
                         self.last_command.clone()
@@ -349,10 +352,12 @@ impl Debugger {
         for (used, instr) in it.take(n as usize) {
             for (sym, infos) in &self.symbols {
                 if infos.addr == addr.0 {
-                    println!("        {}:", sym);
+                    println!("        {}:", sym.magenta());
                 }
             }
-            println!("0x{:0>4}:     {}", addr, instr.retrosolve(&self.symbols));
+            println!("{}:     {}",
+                     format!("0x{:0>4}", addr).green(),
+                     instr.retrosolve(&self.symbols).red());
             addr += Wrapping(used);
         }
     }

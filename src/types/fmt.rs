@@ -63,7 +63,7 @@ impl Value<u16> {
         let reverse = |addr| {
             for (sym, infos) in globals {
                 if infos.addr == addr {
-                    return format!("{}({})", sym.clone(), addr);
+                    return format!("{} ({})", addr, sym.clone());
                 }
             }
             format!("{}", addr)
