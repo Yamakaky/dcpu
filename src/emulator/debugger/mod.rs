@@ -349,10 +349,10 @@ impl Debugger {
         for (used, instr) in it.take(n as usize) {
             for (sym, infos) in &self.symbols {
                 if infos.addr == addr.0 {
-                    println!("0x{:0>4}: {}:", addr, sym);
+                    println!("        {}:", sym);
                 }
             }
-            println!("0x{:0>4}:     {}", addr, instr);
+            println!("0x{:0>4}:     {}", addr, instr.retrosolve(&self.symbols));
             addr += Wrapping(used);
         }
     }
