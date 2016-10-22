@@ -55,11 +55,13 @@ fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
         .author(crate_authors!())
         .version(crate_version!())
         .setting(clap::AppSettings::VersionlessSubcommands)
+        .setting(clap::AppSettings::SubcommandRequiredElseHelp)
         .setting(clap::AppSettings::NoBinaryName)
         .subcommand(clap::SubCommand::with_name("step")
             .visible_alias("s")
             .help("Execute one instruction.")
-            .arg(clap::Arg::with_name("count")))
+            .arg(clap::Arg::with_name("count")
+                .default_value("1")))
         .subcommand(clap::SubCommand::with_name("registers")
             .visible_alias("r")
             .help("Show the registers."))
@@ -69,7 +71,8 @@ fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
                 .help("From where to disassemble (default [PC]).")
                 .required(true))
             .arg(clap::Arg::with_name("length")
-                .help("Number of instructions to disassemble.")))
+                .help("Number of instructions to disassemble.")
+                .default_value("10")))
         .subcommand(clap::SubCommand::with_name("examine")
             .visible_alias("x")
             .help("Print a memory slice as hexadecimal.")
@@ -77,7 +80,8 @@ fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
                 .help("From where to disassemble (default [PC]).")
                 .required(true))
             .arg(clap::Arg::with_name("length")
-                .help("Number of instructions to disassemble.")))
+                .help("Number of instructions to disassemble.")
+                .default_value("10")))
         .subcommand(clap::SubCommand::with_name("break")
             .visible_alias("b")
             .help("Add a breakpoint.")
@@ -116,13 +120,15 @@ fn clap_parser<'a, 'b>() -> clap::App<'a, 'b> {
                     .required(true))))
         .subcommand(clap::SubCommand::with_name("stack")
             .help("Show <count> bytes from the stack.")
-            .arg(clap::Arg::with_name("count")))
+            .arg(clap::Arg::with_name("count")
+                .default_value("10")))
         .subcommand(clap::SubCommand::with_name("symbols")
             .help("Show the symbols."))
         .subcommand(clap::SubCommand::with_name("list")
             .visible_alias("l")
             .help("Show <count> instructions around PC.")
-            .arg(clap::Arg::with_name("count")))
+            .arg(clap::Arg::with_name("count")
+                .default_value("10")))
 }
 
 pub fn parse_command(cmd: &str) -> Result<Command> {
@@ -134,7 +140,7 @@ impl Command {
     fn try_from(matches: &clap::ArgMatches) -> Result<Command> {
         match matches.subcommand() {
             ("step", Some(val)) => {
-                let str_count = val.value_of("count").unwrap_or("1");
+                let str_count = val.value_of("count").unwrap();
                 let count = try!(conv_iresult(pos_number(str_count.as_bytes())));
                 Ok(Command::Step(count))
             }
@@ -142,7 +148,7 @@ impl Command {
             ("disassemble", Some(args)) => {
                 let str_from = args.value_of("base").unwrap();
                 let from = try!(conv_iresult(expression(str_from.as_bytes())));
-                let str_len = args.value_of("length").unwrap_or("10");
+                let str_len = args.value_of("length").unwrap();
                 let len = try!(conv_iresult(pos_number(str_len.as_bytes())));
                 Ok(Command::Disassemble {
                     from: from,
@@ -152,7 +158,7 @@ impl Command {
             ("examine", Some(args)) => {
                 let str_from = args.value_of("base").unwrap();
                 let from = try!(conv_iresult(expression(str_from.as_bytes())));
-                let str_len = args.value_of("length").unwrap_or("10");
+                let str_len = args.value_of("length").unwrap();
                 let len = try!(conv_iresult(pos_number(str_len.as_bytes())));
                 Ok(Command::Examine {
                     from: from,
@@ -197,13 +203,13 @@ impl Command {
                 }
             }
             ("stack", Some(args)) => {
-                let str_count = args.value_of("count").unwrap_or("10");
+                let str_count = args.value_of("count").unwrap();
                 let count = try!(conv_iresult(pos_number(str_count.as_bytes())));
                 Ok(Command::Stack(count))
             }
             ("symbols", Some(_)) => Ok(Command::Symbols),
             ("list", Some(args)) => {
-                let str_count = args.value_of("count").unwrap_or("5");
+                let str_count = args.value_of("count").unwrap();
                 let count = try!(conv_iresult(pos_number(str_count.as_bytes())));
                 Ok(Command::List(count))
             }
