@@ -10,9 +10,11 @@ use std::io;
 use std::num::Wrapping;
 #[cfg(feature = "debugger-cli")]
 use std::path::Path;
+use std::time;
 
 #[cfg(feature = "debugger-cli")]
 use colored::Colorize;
+use signal;
 
 use assembler;
 use assembler::types::Expression;
@@ -34,6 +36,10 @@ error_chain! {
                     i,
                     addr,
                     expr)
+        }
+        Signal {
+            description("received <C-c>")
+            display("received <C-c>")
         }
     }
 }
@@ -301,16 +307,25 @@ impl Debugger {
     }
 
     pub fn continue_exec(&mut self) -> Result<()> {
+        let trap = signal::trap::Trap::trap(&[2]);
         loop {
-            try!(self.step());
+            // optimisation to minimize system calls by trap.
+            for _ in 0..1000 {
+                try!(self.step());
 
-            if let Some((i, b)) = self.breakpoints
-                                      .iter()
-                                      .enumerate()
-                                      .find(|&(_, x)| x.addr == self.cpu.pc.0) {
-                try!(Err(ErrorKind::Breakpoint(i,
-                                               b.addr,
-                                               b.expression.clone())));
+                if let Some((i, b)) = self.breakpoints
+                                          .iter()
+                                          .enumerate()
+                                          .find(|&(_, x)| x.addr == self.cpu.pc.0) {
+                    try!(Err(ErrorKind::Breakpoint(i,
+                                                   b.addr,
+                                                   b.expression.clone())));
+                }
+            }
+
+            if let Some(i) = trap.wait(time::Instant::now()) {
+                println!("stop: {}", i);
+                try!(Err(ErrorKind::Signal));
             }
         }
     }

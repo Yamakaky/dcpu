@@ -32,6 +32,7 @@ extern crate nom;
 extern crate glium;
 #[cfg(feature = "rustyline")]
 extern crate rustyline;
+extern crate signal;
 
 pub mod assembler;
 #[cfg(not(crate_type = "rlib"))]

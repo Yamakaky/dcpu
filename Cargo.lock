@@ -219,6 +219,7 @@ dependencies = [
  "serde 0.8.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 0.8.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "signal 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "simplelog 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -905,6 +906,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "signal"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "libc 0.2.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nix 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "simplelog"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1310,6 +1320,7 @@ dependencies = [
 "checksum serde_json 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)" = "1cb6b19e74d9f65b9d03343730b643d729a446b29376785cd65efdff4675e2fc"
 "checksum shared_library 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "fb04126b6fcfd2710fb5b6d18f4207b6c535f2850a7e1a43bcd526d44f30a79a"
 "checksum shell32-sys 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "72f20b8f3c060374edb8046591ba28f62448c369ccbdc7b02075103fb3a9e38d"
+"checksum signal 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "904a4bba60e8e7a53b7a7eec8f59084a9ceafe3df5aa9d24846a83a5e351aa34"
 "checksum simplelog 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4377e296e05f52bd920b86565039842e5db882d9255c3dfc6d895be2b2095036"
 "checksum slab 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "17b4fcaed89ab08ef143da37bc52adbcc04d4a69014f4c1208d6b51f0c47bc23"
 "checksum smallvec 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)" = "fcc8d19212aacecf95e4a7a2179b26f7aeb9732a915cf01f05b0d3e044865410"
