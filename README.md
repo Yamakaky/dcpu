@@ -30,14 +30,14 @@ All binaries support a `--help` flag for more infos.
 
 You need to install the [rust compiler](https://www.rust-lang.org/) to build this software.
 
-`cargo run --release --bin <bin> -- <bin-args>`
+    # cargo run --release --bin <bin> -- <bin-args>
 
 Available binaries are assembler, disassembler, emulator and sprite.
 
 Some features are only available on Rust nightly. To enable them, install Rust
 nightly then run;
 
-`cargo run --release --features nightly --bin ...`
+    # cargo run --release --features nightly --bin ...
 
 ### Build features
 
@@ -51,6 +51,18 @@ The following build features are available ([x] means "enabled by default"):
       library.
 - [ ] `nightly`: implementation of `serde::{Serialize, Deserialize}` for some of
       the types. Requires Rust nightly.
+
+### Build the C library
+
+To build a dynamic library (`.so`):
+
+    # cargo rustc --lib --no-default-features -- --crate-type=dylib
+
+To build a static library (`.a`):
+
+    # cargo rustc --lib --no-default-features -- --crate-type=staticlib
+
+See `src/c_api.h` for the available functions.
 
 ## Convert images to LEM format
 
