@@ -45,7 +45,7 @@ struct Breakpoint {
 
 pub struct Debugger {
     pub cpu: cpu::Cpu,
-    devices: Vec<Box<device::Device>>,
+    devices: Box<[Box<device::Device>]>,
     breakpoints: Vec<Breakpoint>,
     tick_number: u64,
     #[cfg(feature = "debugger-cli")]
@@ -54,21 +54,24 @@ pub struct Debugger {
     last_command: Option<Command>,
     log_litterals: bool,
     symbols: assembler::types::Globals,
+    show_hwi: Box<[bool]>,
 }
 
 impl Debugger {
     #[cfg(feature = "debugger-cli")]
     pub fn new(mut cpu: cpu::Cpu, devices: Vec<Box<device::Device>>) -> Debugger {
         cpu.on_decode_error = cpu::OnDecodeError::Fail;
+        let nb_devices = devices.len();
         Debugger {
             cpu: cpu,
-            devices: devices,
+            devices: devices.into_boxed_slice(),
             breakpoints: vec![],
             tick_number: 0,
             hooks: vec![],
             last_command: None,
             log_litterals: false,
             symbols: HashMap::new(),
+            show_hwi: vec![false; nb_devices].into_boxed_slice(),
         }
     }
 
@@ -217,8 +220,11 @@ impl Debugger {
             match device.tick(&mut self.cpu, self.tick_number) {
                 device::TickResult::Nothing => (),
                 device::TickResult::Interrupt(msg) => {
-                    //println!("Hardware interrupt from device {} with message {}",
-                             //i, msg);
+                    if self.show_hwi[i] {
+                        println!("Hardware interrupt from device {} with message {}",
+                                 i,
+                                 msg);
+                    }
                     self.cpu.hardware_interrupt(msg);
                 }
             }
