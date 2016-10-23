@@ -217,8 +217,8 @@ impl Debugger {
             match device.tick(&mut self.cpu, self.tick_number) {
                 device::TickResult::Nothing => (),
                 device::TickResult::Interrupt(msg) => {
-                    println!("Hardware interrupt from device {} with message {}",
-                             i, msg);
+                    //println!("Hardware interrupt from device {} with message {}",
+                             //i, msg);
                     self.cpu.hardware_interrupt(msg);
                 }
             }

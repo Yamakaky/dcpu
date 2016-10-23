@@ -71,12 +71,12 @@ impl Device for Clock {
     fn tick(&mut self, _: &mut Cpu, current_tick: u64) -> TickResult {
         if self.speed != 0 && self.int_msg != 0 &&
            current_tick >= self.next_tick {
-                self.last_call += 1;
-                // If we calculate the expression between parens in the `if`
-                // condition, we loose 15% perfs.
-                self.next_tick = current_tick +
-                    (60 * self.ticks_per_second / (self.speed as u64));
-                return TickResult::Interrupt(self.int_msg);
+               self.last_call += 1;
+               // If we calculate the expression between parens in the `if`
+               // condition, we loose 15% perfs.
+               self.next_tick = current_tick +
+                   ((self.speed as u64) * self.ticks_per_second / 60);
+               return TickResult::Interrupt(self.int_msg);
         }
 
         TickResult::Nothing
