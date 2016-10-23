@@ -395,26 +395,29 @@ impl Cpu {
     }
 
     fn op_shr(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
-        let val_a = self.get(a);
+        let val_a = self.get(a) as u32;
         let val_b = self.get(b);
-        self.set(b, val_b >> val_a);
-        self.ex = (((val_b as u32) << 16) >> val_a) as u16;
+        self.set(b, val_b.checked_shr(val_a).unwrap_or(0));
+        self.ex = (((val_b as u32) << 16).checked_shr(val_a)
+                                         .unwrap_or(0)) as u16;
         Ok(())
     }
 
     fn op_asr(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
-        let val_a = self.get(a);
+        let val_a = self.get(a) as u32;
         let val_b = self.get(b) as i16;
-        self.set(b, (val_b >> val_a) as u16);
-        self.ex = (((val_b as i32) << 16) >> val_a) as u16;
+        self.set(b, (val_b.checked_shr(val_a).unwrap_or(0)) as u16);
+        self.ex = (((val_b as i32) << 16).checked_shr(val_a)
+                                         .unwrap_or(0)) as u16;
         Ok(())
     }
 
     fn op_shl(&mut self, b: Value<u16>, a: Value<u16>) -> Result<()> {
-        let val_a = self.get(a);
+        let val_a = self.get(a) as u32;
         let val_b = self.get(b);
-        self.set(b, val_b << val_a);
-        self.ex = (((val_b as u32) << val_a) >> 16) as u16;
+        self.set(b, val_b.checked_shl(val_a).unwrap_or(0));
+        self.ex = (((val_b as u32).checked_shl(val_a)
+                                  .unwrap_or(0)) >> 16) as u16;
         Ok(())
     }
 
