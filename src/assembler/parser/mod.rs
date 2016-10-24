@@ -1,4 +1,5 @@
 pub mod nom_parser;
+pub mod combine_parser;
 
 use std::str;
 
