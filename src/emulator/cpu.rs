@@ -40,6 +40,7 @@ error_chain!(
 pub enum CpuState {
     Executing,
     Waiting,
+    Halted,
 }
 
 #[derive(Debug)]
@@ -162,9 +163,6 @@ impl Cpu {
     }
 
     pub fn tick(&mut self, devices: &mut [Box<Device>]) -> Result<CpuState> {
-        if self.halted {
-            return Err(ErrorKind::Halted.into());
-        }
         if self.wait != 0 {
             self.wait -= 1;
             trace!("Waiting");
@@ -174,7 +172,13 @@ impl Cpu {
         if !self.is_queue_enabled {
             if let Some(interrupt) = self.interrupts_queue.pop_front() {
                 self.exec_interrupt(interrupt);
+                self.halted = false;
             }
+        }
+
+        if self.halted {
+            trace!("Halted");
+            return Ok(CpuState::Halted);
         }
 
         let pc = self.pc;
@@ -198,7 +202,11 @@ impl Cpu {
         self.wait = max(instruction.delay(), 1) - 1;
         try!(self.op(instruction, devices));
 
-        Ok(CpuState::Executing)
+        if self.halted {
+            Ok(CpuState::Halted)
+        } else {
+            Ok(CpuState::Executing)
+        }
     }
 
     fn decode(&mut self, offset: u16) -> Result<(u16, Instruction<u16>)> {
@@ -632,6 +640,6 @@ impl Cpu {
 
     fn op_hlt(&mut self) -> Result<()> {
         self.halted = true;
-        Err(ErrorKind::Halted.into())
+        Ok(())
     }
 }

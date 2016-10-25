@@ -230,7 +230,8 @@ impl Debugger {
             }
         }
         match self.cpu.tick(&mut self.devices) {
-            Ok(cpu::CpuState::Executing) => Ok(()),
+            Ok(cpu::CpuState::Executing)
+            | Ok(cpu::CpuState::Halted)=> Ok(()),
             Ok(cpu::CpuState::Waiting) => self.step(),
             Err(e) => try!(Err(e)),
         }
