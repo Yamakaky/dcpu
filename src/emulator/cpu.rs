@@ -232,6 +232,7 @@ impl Cpu {
     }
 
     pub fn hardware_interrupt(&mut self, msg: u16) {
+        self.halted = false;
         self.interrupts_queue.push_back(msg);
     }
 
@@ -287,7 +288,7 @@ impl Cpu {
             HWI => self.op_hwi(a, devices),
             LOG => self.op_log(a),
             BRK => self.op_brk(a),
-            HLT => self.op_hlt(),
+            HLT => self.op_hlt(a),
         }
     }
 
@@ -638,7 +639,8 @@ impl Cpu {
         Err(ErrorKind::Break(val_a).into())
     }
 
-    fn op_hlt(&mut self) -> Result<()> {
+    fn op_hlt(&mut self, a: Value<u16>) -> Result<()> {
+        let _val_a = self.get(a);
         self.halted = true;
         Ok(())
     }
