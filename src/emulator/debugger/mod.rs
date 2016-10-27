@@ -26,6 +26,7 @@ use types::Register;
 error_chain! {
     links {
         cpu::Error, cpu::ErrorKind, Cpu;
+        device::Error, device::ErrorKind, Device;
     }
     errors {
         Breakpoint(i: usize, addr: u16, expr: Expression) {
@@ -217,7 +218,7 @@ impl Debugger {
     pub fn step(&mut self) -> Result<()> {
         self.tick_number += 1;
         for (i, device) in self.devices.iter_mut().enumerate() {
-            match device.tick(&mut self.cpu, self.tick_number) {
+            match try!(device.tick(&mut self.cpu, self.tick_number)) {
                 device::TickResult::Nothing => (),
                 device::TickResult::Interrupt(msg) => {
                     if self.show_hwi[i] {

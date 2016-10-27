@@ -23,8 +23,8 @@ enum Command {
 }
 
 pub trait Backend: Debug + Any + Send {
-    fn is_key_pressed(&mut self, key: Key) -> bool;
-    fn push_typed_keys(&mut self, queue: &mut VecDeque<Key>) -> bool;
+    fn is_key_pressed(&mut self, key: Key) -> Result<bool>;
+    fn push_typed_keys(&mut self, queue: &mut VecDeque<Key>) -> Result<bool>;
 }
 
 #[derive(Debug)]
@@ -70,19 +70,21 @@ impl<B: Backend> Device for Keyboard<B> {
             Command::CHECK_KEY => {
                 // TODO: fix error case
                 let key = try!(Key::decode(b).map_err(|_| ErrorKind::InvalidCommand(0xffff)));
-                cpu.registers[Register::C] = self.backend.is_key_pressed(key) as u16;
+                cpu.registers[Register::C] =
+                    try!(self.backend.is_key_pressed(key)) as u16;
             },
             Command::SET_INT => self.int_msg = b,
         }
         Ok(0)
     }
 
-    fn tick(&mut self, _: &mut Cpu, _: u64) -> TickResult {
-        if self.backend.push_typed_keys(&mut self.key_buffer) && self.int_msg != 0 {
+    fn tick(&mut self, _: &mut Cpu, _: u64) -> Result<TickResult> {
+        let pushed = try!(self.backend.push_typed_keys(&mut self.key_buffer));
+        Ok(if pushed && self.int_msg != 0 {
             TickResult::Interrupt(self.int_msg)
         } else {
             TickResult::Nothing
-        }
+        })
     }
 
     fn inspect(&self) {

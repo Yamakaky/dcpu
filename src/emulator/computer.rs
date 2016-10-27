@@ -21,7 +21,7 @@ impl Computer {
         try!(self.cpu.tick(&mut self.devices));
 
         for device in &mut self.devices {
-            match device.tick(&mut self.cpu, self.current_tick) {
+            match try!(device.tick(&mut self.cpu, self.current_tick)) {
                 TickResult::Nothing => (),
                 TickResult::Interrupt(msg) => self.cpu.hardware_interrupt(msg),
             }

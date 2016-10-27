@@ -26,9 +26,9 @@ enum Command {
 }
 
 pub trait Backend: Debug + Send + Any {
-    fn tick<B: Backend>(&self, &Cpu, &LEM1802<B>, tick_count: u64);
-    fn hide(&self);
-    fn show<B: Backend>(&self, &Cpu, &LEM1802<B>);
+    fn tick<B: Backend>(&self, &Cpu, &LEM1802<B>, tick_count: u64) -> Result<()>;
+    fn hide(&self) -> Result<()>;
+    fn show<B: Backend>(&self, &Cpu, &LEM1802<B>) -> Result<()>;
 }
 
 #[derive(Debug)]
@@ -73,9 +73,9 @@ impl<B: Backend> Device for LEM1802<B> {
             Command::MEM_MAP_SCREEN => {
                 self.video_map = Wrapping(b);
                 if self.video_map.0 == 0 {
-                    self.backend.hide();
+                    try!(self.backend.hide());
                 } else {
-                    self.backend.show(cpu, self);
+                    try!(self.backend.show(cpu, self));
                 }
             }
             Command::MEM_MAP_FONT => self.font_map = Wrapping(b),
@@ -86,9 +86,9 @@ impl<B: Backend> Device for LEM1802<B> {
         Ok(0)
     }
 
-    fn tick(&mut self, cpu: &mut Cpu, tick_count: u64) -> TickResult {
-        self.backend.tick(cpu, self, tick_count);
-        TickResult::Nothing
+    fn tick(&mut self, cpu: &mut Cpu, tick_count: u64) -> Result<TickResult> {
+        try!(self.backend.tick(cpu, self, tick_count));
+        Ok(TickResult::Nothing)
     }
 
     fn inspect(&self) {

@@ -3,7 +3,7 @@ use std::sync::{mpsc, Arc, Mutex};
 
 use glium::{self, DisplayBuild, Surface};
 
-use emulator::device::{keyboard, lem1802};
+use emulator::device::{ErrorKind, keyboard, lem1802};
 use emulator::device::keyboard::mpsc_backend::*;
 use emulator::device::lem1802::generic_backend::*;
 
@@ -37,7 +37,12 @@ pub fn start() -> (ScreenBackend, KeyboardBackend) {
         thread_handle: Some(handle),
         thread_command: tx1,
     }));
-    (ScreenBackend::new(common.clone(), move |s| tx3.send(s).unwrap()),
+    let callback = move |s| {
+        tx3.send(s).map_err(|_| {
+            ErrorKind::BackendStopped("glium".into()).into()
+        })
+    };
+    (ScreenBackend::new(common.clone(), callback),
      KeyboardBackend::new(common, rx2))
 }
 
@@ -188,6 +193,9 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
             }
         }
     }
+
+    // For some reason, the window is not closed with the end of the thread
+    display.get_window().map(|w| w.hide());
 }
 
 fn convert_kb_code(raw: u8, maybe_code: Option<glium::glutin::VirtualKeyCode>)

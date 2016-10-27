@@ -28,8 +28,8 @@ impl Device for Dummy {
         Ok(self.interrupt_delay)
     }
 
-    fn tick(&mut self, _: &mut Cpu, _: u64) -> TickResult {
-        TickResult::Nothing
+    fn tick(&mut self, _: &mut Cpu, _: u64) -> Result<TickResult> {
+        Ok(TickResult::Nothing)
     }
 
     fn inspect(&self) {

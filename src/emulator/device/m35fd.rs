@@ -166,7 +166,7 @@ impl Device for M35fd {
         Ok(0)
     }
 
-    fn tick(&mut self, cpu: &mut Cpu, _current_tick: u64) -> TickResult {
+    fn tick(&mut self, cpu: &mut Cpu, _current_tick: u64) -> Result<TickResult> {
         let (op, do_int) = if let Some(ref mut op) = self.current_operation {
             if let Some(ref mut f) = self.floppy {
                 if op.tick_delay == 0 {
@@ -188,11 +188,12 @@ impl Device for M35fd {
         if op {
             self.current_operation = None;
         }
-        if do_int && self.int_msg != 0 {
+
+        Ok(if do_int && self.int_msg != 0 {
             TickResult::Interrupt(self.int_msg)
         } else {
             TickResult::Nothing
-        }
+        })
     }
 
     fn inspect(&self) {

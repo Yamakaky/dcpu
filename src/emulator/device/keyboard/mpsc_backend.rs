@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use std::fmt;
 use std::sync::{Arc, Mutex, mpsc};
 
-use emulator::device::keyboard;
+use emulator::device::{Result, ErrorKind, keyboard};
 
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[derive(Debug, Copy, Clone)]
@@ -39,12 +39,12 @@ impl fmt::Debug for KeyboardBackend {
 }
 
 impl keyboard::Backend for KeyboardBackend {
-    fn is_key_pressed(&mut self, key: keyboard::Key) -> bool {
-        self.key_pressed[key.encode() as usize]
+    fn is_key_pressed(&mut self, key: keyboard::Key) -> Result<bool> {
+        Ok(self.key_pressed[key.encode() as usize])
     }
 
     fn push_typed_keys(&mut self,
-                       queue: &mut VecDeque<keyboard::Key>) -> bool {
+                       queue: &mut VecDeque<keyboard::Key>) -> Result<bool> {
         let mut new_keys = false;
         loop {
             match self.receiver.try_recv() {
@@ -60,8 +60,9 @@ impl keyboard::Backend for KeyboardBackend {
                     new_keys = true;
                     self.key_pressed[k.encode() as usize] = false;
                 }
-                Err(mpsc::TryRecvError::Empty) => return new_keys,
-                Err(mpsc::TryRecvError::Disconnected) => panic!("Thread down"),
+                Err(mpsc::TryRecvError::Empty) => return Ok(new_keys),
+                Err(mpsc::TryRecvError::Disconnected) =>
+                    try!(Err(ErrorKind::BackendStopped("keyboard".into()))),
             }
         }
     }

@@ -25,6 +25,10 @@ error_chain!(
             description("invalid hardware command")
             display("invalid hardware command: {:#x}", cmd)
         }
+        BackendStopped(which: String) {
+            description("the backend stopped")
+            display("the {} backend stopped", which)
+        }
     }
 );
 
@@ -34,7 +38,7 @@ pub trait Device: Debug + Send + Any {
     fn manufacturer(&self) -> u32;
 
     fn interrupt(&mut self, &mut Cpu) -> Result<InterruptDelay>;
-    fn tick(&mut self, &mut Cpu, current_tick: u64) -> TickResult;
+    fn tick(&mut self, &mut Cpu, current_tick: u64) -> Result<TickResult>;
 
     fn inspect(&self);
     fn as_any(&mut self) -> &mut Any;
