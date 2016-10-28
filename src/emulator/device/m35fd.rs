@@ -169,32 +169,30 @@ impl Device for M35fd {
     }
 
     fn tick(&mut self, cpu: &mut Cpu, _current_tick: u64) -> Result<TickResult> {
-        let (op, mut do_int) = if let Some(ref mut op) = self.current_operation {
+        let modification = if let Some(ref mut op) = self.current_operation {
             if let Some(ref mut f) = self.floppy {
                 if op.tick_delay == 0 {
                     f.do_operation(op, &mut cpu.ram);
                     self.last_error = ErrorCode::None;
-                    (true, true)
+                    true
                 } else {
                     op.tick_delay -= 1;
-                    (false, false)
+                    false
                 }
             } else {
                 self.last_error = ErrorCode::Eject;
-                (true, true)
+                true
             }
         } else {
-            (false, false)
+            false
         };
 
-        do_int |= self.do_int_next_tick;
-        self.do_int_next_tick = false;
-
-        if op {
+        if modification {
             self.current_operation = None;
         }
 
-        Ok(if do_int && self.int_msg != 0 {
+        Ok(if (modification | self.do_int_next_tick) && self.int_msg != 0 {
+            self.do_int_next_tick = false;
             TickResult::Interrupt(self.int_msg)
         } else {
             TickResult::Nothing
