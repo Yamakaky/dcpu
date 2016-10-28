@@ -68,6 +68,8 @@ pub struct M35fd {
     int_msg: u16,
     current_operation: Option<DiskOperation>,
     current_sector: u16,
+    /// Indicate an int should be launched on next tick.
+    do_int_next_tick: bool,
 }
 
 #[derive(Debug)]
@@ -167,7 +169,7 @@ impl Device for M35fd {
     }
 
     fn tick(&mut self, cpu: &mut Cpu, _current_tick: u64) -> Result<TickResult> {
-        let (op, do_int) = if let Some(ref mut op) = self.current_operation {
+        let (op, mut do_int) = if let Some(ref mut op) = self.current_operation {
             if let Some(ref mut f) = self.floppy {
                 if op.tick_delay == 0 {
                     f.do_operation(op, &mut cpu.ram);
@@ -184,6 +186,9 @@ impl Device for M35fd {
         } else {
             (false, false)
         };
+
+        do_int |= self.do_int_next_tick;
+        self.do_int_next_tick = false;
 
         if op {
             self.current_operation = None;
@@ -268,17 +273,27 @@ impl M35fd {
             int_msg: 0,
             current_operation: None,
             current_sector: 0,
+            do_int_next_tick: false,
         }
     }
 
     pub fn eject(&mut self) -> Option<Floppy> {
-        // TODO: do int
+        self.pote();
         self.floppy.take()
     }
 
     pub fn load(&mut self, floppy: Floppy) {
-        // TODO: do int
+        self.pote();
         self.floppy = Some(floppy);
+    }
+
+    fn pote(&mut self) {
+        if self.current_operation.is_some() {
+            self.current_operation = None;
+            self.current_sector = 0;
+            self.last_error = ErrorCode::Eject;
+            self.do_int_next_tick = true;
+        }
     }
 }
 

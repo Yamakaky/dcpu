@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Huge improvement in the debugger interface
 - Big library interface changes
 - Most dependencies can be disabled
+- Better backend failure handling
 
 ## [0.4.0]
 
