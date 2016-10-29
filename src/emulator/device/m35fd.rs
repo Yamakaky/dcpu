@@ -35,7 +35,7 @@ enum StateCode {
     Busy = 3,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum ErrorCode {
     None = 0,
     Busy = 1,
@@ -119,50 +119,30 @@ impl Device for M35fd {
             }
             Command::SET_INT => self.int_msg = cpu.registers[Register::X],
             Command::READ_SECTOR => {
-                cpu.registers[Register::B] = 0;
-                let sector = cpu.registers[Register::X];
-                let address = cpu.registers[Register::Y];
-                assert!(sector < NB_SECTORS_TOTAL);
-                self.last_error = if self.current_operation.is_some() {
-                    ErrorCode::Busy
-                } else if self.floppy.is_none() {
-                    ErrorCode::NoMedia
-                } else {
-                    cpu.registers[Register::B] = 1;
-                    self.current_operation = Some(DiskOperation {
-                        tick_delay: sector_distance(self.current_sector,
-                                                    sector),
+                self.start_user_command(cpu, |_floppy, sector, address, delay| {
+                    let operation = DiskOperation {
+                        tick_delay: delay,
                         sector: sector,
                         address: address,
                         side: Side::Read,
-                    });
-                    ErrorCode::None
-                }
+                    };
+                    (ErrorCode::None, Some(operation))
+                })
             }
             Command::WRITE_SECTOR => {
-                cpu.registers[Register::B] = 0;
-                let sector = cpu.registers[Register::X];
-                let address = cpu.registers[Register::Y];
-                assert!(sector < NB_SECTORS_TOTAL);
-                self.last_error = if self.current_operation.is_some() {
-                    ErrorCode::Busy
-                } else if let Some(ref f) = self.floppy {
-                    if f.write_protected {
-                        ErrorCode::Protected
+                self.start_user_command(cpu, |floppy, sector, address, delay| {
+                    if floppy.write_protected {
+                        (ErrorCode::Protected, None)
                     } else {
-                        cpu.registers[Register::B] = 1;
-                        self.current_operation = Some(DiskOperation {
-                            tick_delay: sector_distance(self.current_sector,
-                                                        sector),
+                        let operation = DiskOperation {
+                            tick_delay: delay,
                             sector: sector,
                             address: address,
                             side: Side::Write,
-                        });
-                        ErrorCode::None
+                        };
+                        (ErrorCode::None, Some(operation))
                     }
-                } else {
-                    ErrorCode::NoMedia
-                }
+                })
             }
         }
         Ok(0)
@@ -292,6 +272,28 @@ impl M35fd {
             self.last_error = ErrorCode::Eject;
             self.do_int_next_tick = true;
         }
+    }
+
+    fn start_user_command<F>(&mut self, cpu: &mut Cpu, f: F)
+    where F: Fn(&Floppy, u16, u16, u64) -> (ErrorCode, Option<DiskOperation>) {
+        let sector = cpu.registers[Register::X];
+        let address = cpu.registers[Register::Y];
+
+        self.last_error = if sector >= NB_SECTORS_TOTAL {
+            ErrorCode::BadSector
+        } else if self.current_operation.is_some() {
+            ErrorCode::Busy
+        } else if let Some(ref floppy) = self.floppy {
+            let delay = sector_distance(self.current_sector, sector);
+            let (res, op) = f(floppy, sector, address, delay);
+            self.current_operation = op;
+            res
+        } else {
+            ErrorCode::NoMedia
+        };
+
+        cpu.registers[Register::B] =
+            (self.last_error == ErrorCode::None) as u16;
     }
 }
 
