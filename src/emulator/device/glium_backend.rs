@@ -3,7 +3,7 @@ use std::sync::{mpsc, Arc, Mutex};
 
 use glium::{self, DisplayBuild, Surface};
 
-use emulator::device::{ErrorKind, keyboard, lem1802};
+use emulator::device::{self, keyboard, lem1802};
 use emulator::device::keyboard::mpsc_backend::*;
 use emulator::device::lem1802::generic_backend::*;
 
@@ -12,7 +12,7 @@ enum ThreadCommand {
 }
 
 struct CommonBackend {
-    thread_handle: Option<thread::JoinHandle<()>>,
+    thread_handle: Option<thread::JoinHandle<Result<()>>>,
     thread_command: mpsc::Sender<ThreadCommand>,
 }
 
@@ -20,7 +20,15 @@ impl Drop for CommonBackend {
     fn drop(&mut self) {
         if let Some(handle) = self.thread_handle.take() {
             let _ = self.thread_command.send(ThreadCommand::Stop);
-            handle.join().unwrap();
+            match handle.join() {
+                Ok(res) => if let Err(e) = res {
+                    println!("Glium backend error: {}", e);
+                    if let Some(backtrace) = e.backtrace() {
+                        println!("{:?}", backtrace);
+                    }
+                },
+                Err(_) => unimplemented!(),
+            }
         }
     }
 }
@@ -39,22 +47,33 @@ pub fn start() -> (ScreenBackend, KeyboardBackend) {
     }));
     let callback = move |s| {
         tx3.send(s).map_err(|_| {
-            ErrorKind::BackendStopped("glium".into()).into()
+            device::ErrorKind::BackendStopped("glium".into()).into()
         })
     };
     (ScreenBackend::new(common.clone(), callback),
      KeyboardBackend::new(common, rx2))
 }
 
+error_chain! {
+    foreign_links {
+        glium::GliumCreationError<glium::glutin::CreationError>, CreationError;
+        glium::vertex::BufferCreationError, VertexCreationError;
+        glium::ProgramCreationError, ProgramCreationError;
+        glium::SwapBuffersError, SwapBuffersError;
+        glium::DrawError, DrawError;
+        mpsc::SendError<KeyboardEvent>, MpscSendError;
+    }
+}
+
 fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
                keyboard_sender: mpsc::Sender<KeyboardEvent>,
-               screen_receiver: mpsc::Receiver<ScreenCommand>) {
-    let display = glium::glutin::WindowBuilder::new()
+               screen_receiver: mpsc::Receiver<ScreenCommand>)
+    -> Result<()> {
+    let display = try!(glium::glutin::WindowBuilder::new()
         .with_title("Screen + keyboard")
         .with_vsync()
         .with_visibility(false)
-        .build_glium()
-        .unwrap();
+        .build_glium());
     let mut current_screen =
         Box::new(lem1802::Screen([lem1802::Color::default(); 12288]));
 
@@ -71,7 +90,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
             Vertex { position: [1., 0.]},
             Vertex { position: [1., 1.]},
         ];
-        glium::vertex::VertexBuffer::new(&display, &data).unwrap()
+        try!(glium::vertex::VertexBuffer::new(&display, &data))
     };
 
     let mut per_instance = {
@@ -92,11 +111,11 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
                 })
             }
         }
-        glium::vertex::VertexBuffer::dynamic(&display, &data).unwrap()
+        try!(glium::vertex::VertexBuffer::dynamic(&display, &data))
     };
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TriangleStrip);
 
-    let program = glium::Program::from_source(&display, "
+    let program = try!(glium::Program::from_source(&display, "
         #version 130
         #define SCREEN_WIDTH 128.
         #define SCREEN_HEIGHT 96.
@@ -128,7 +147,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
             f_color = vec4(v_color, 1.0);
         }
     ",
-    None).unwrap();
+    None));
 
     'main: loop {
         'pote2: loop {
@@ -160,25 +179,24 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
             let (width, height) = target.get_dimensions();
             height as f32 / width as f32
         };
-        target.draw((&vertex_buffer, per_instance.per_instance().unwrap()),
-                    &indices,
-                    &program,
-                    &uniform! { aspect_ratio: aspect_ratio },
-                    &Default::default())
-              .unwrap();
-        target.finish().unwrap();
+        try!(target.draw((&vertex_buffer, per_instance.per_instance().unwrap()),
+                         &indices,
+                         &program,
+                         &uniform! { aspect_ratio: aspect_ratio },
+                         &Default::default()));
+        try!(target.finish());
 
         for ev in display.poll_events() {
             match ev {
                 glium::glutin::Event::Closed => break 'main,
                 glium::glutin::Event::KeyboardInput(state, raw, code) => {
                     if let Some(converted) = convert_kb_code(raw, code) {
-                        keyboard_sender.send(match state {
+                        try!(keyboard_sender.send(match state {
                             glium::glutin::ElementState::Pressed =>
                                 KeyboardEvent::KeyPressed(converted),
                             glium::glutin::ElementState::Released =>
                                 KeyboardEvent::KeyReleased(converted)
-                        }).unwrap();
+                        }));
                     }
                 }
                 _ => ()
@@ -196,6 +214,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
 
     // For some reason, the window is not closed with the end of the thread
     display.get_window().map(|w| w.hide());
+    Ok(())
 }
 
 fn convert_kb_code(raw: u8, maybe_code: Option<glium::glutin::VirtualKeyCode>)
