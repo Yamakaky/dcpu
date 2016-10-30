@@ -38,7 +38,7 @@ impl Value<u16> {
     pub fn decode(val: u16, next: u16, is_a: bool) -> (u16, Value<u16>) {
         match val {
             x if x <= 0x17 => {
-                let reg = Register::from_u16(x % 0x8).unwrap();
+                let reg = Register::from_u16(x % 0x8).expect("Invalid reg id");
                 if x <= 0x07 {
                     (0, Value::Reg(reg))
                 } else if x <= 0x0f {
