@@ -87,7 +87,7 @@ fn main_ret() -> i32 {
         if let Some(devs) = args.arg_device {
             for d in devs {
                 match d.as_ref() {
-                    "clock" => devices.push(Box::new(clock::Clock::new(100_000))),
+                    "clock" => devices.push(Box::new(eeprom::Eeprom::new(clock::Clock::new(100_000)))),
                     "keyscreen" => if let Err(e) = add_keyscreen(&mut devices) {
                         return e;
                     },
