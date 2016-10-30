@@ -1,11 +1,25 @@
 use std::any::Any;
 
+use enum_primitive::FromPrimitive;
+
 use emulator::Cpu;
 use emulator::device::*;
 use types::Register;
 
 const ONE_MS: u16 = 100;
 const MEMORY_SIZE: usize = 16;
+const DEFAULT_MEM_VALUE: [u16; MEMORY_SIZE] = [0xffff; MEMORY_SIZE];
+const INT_VALUE: u16 = 0xfff0;
+
+enum_from_primitive! {
+#[allow(non_camel_case_types)]
+#[derive(Debug, Copy, Clone)]
+enum Command {
+    GET = 1,
+    SET = 2,
+    RESET = 3,
+}
+}
 
 #[derive(Debug)]
 pub struct Eeprom<D: Device> {
@@ -16,7 +30,7 @@ pub struct Eeprom<D: Device> {
 impl<D: Device> Eeprom<D> {
     pub fn new(inner: D) -> Eeprom<D> {
         Eeprom {
-            mem: [0; MEMORY_SIZE],
+            mem: DEFAULT_MEM_VALUE,
             inner: inner,
         }
     }
@@ -37,28 +51,33 @@ impl<D: Device> Device for Eeprom<D> {
 
     fn interrupt(&mut self, cpu: &mut Cpu) -> Result<InterruptDelay> {
         let a = cpu.registers[Register::A];
-        let b = cpu.registers[Register::B];
-        let x = cpu.registers[Register::X] as usize;
-        match (a, b) {
-            (0xfff0, 0x1) => {
-                match self.mem.get(x) {
-                    Some(word) => cpu.registers[Register::Y] = *word,
-                    None => unimplemented!(),
+        if a == INT_VALUE {
+            let b = cpu.registers[Register::B];
+            let x = cpu.registers[Register::X] as usize;
+
+            match Command::from_u16(b) {
+                Some(Command::GET) => {
+                    match self.mem.get(x) {
+                        Some(word) => cpu.registers[Register::Y] = *word,
+                        None => unimplemented!(),
+                    }
+                    Ok(ONE_MS)
                 }
-                Ok(ONE_MS)
-            }
-            (0xfff0, 0x2) => {
-                match self.mem.get_mut(x) {
-                    Some(word) => *word &= cpu.registers[Register::Y],
-                    None => unimplemented!(),
+                Some(Command::SET) => {
+                    match self.mem.get_mut(x) {
+                        Some(word) => *word &= cpu.registers[Register::Y],
+                        None => unimplemented!(),
+                    }
+                    Ok(5 * ONE_MS)
                 }
-                Ok(5 * ONE_MS)
+                Some(Command::RESET) => {
+                    self.mem = DEFAULT_MEM_VALUE;
+                    Ok(10 * ONE_MS)
+                }
+                None => unimplemented!(),
             }
-            (0xfff0, 0x3) => {
-                self.mem = [0xffff; MEMORY_SIZE];
-                Ok(10 * ONE_MS)
-            }
-            _ => self.inner.interrupt(cpu),
+        } else {
+            self.inner.interrupt(cpu)
         }
     }
 
