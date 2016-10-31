@@ -4,6 +4,8 @@
 
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
+// See https://github.com/brson/error-chain/issues/51
+#![allow(redundant_closure)]
 
 #![recursion_limit = "1024"]
 #[macro_use]

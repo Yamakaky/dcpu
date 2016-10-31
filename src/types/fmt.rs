@@ -85,11 +85,11 @@ impl Value<u16> {
             Value::AtRegPlus(r, v) => format!("[{:?} + {}]", r, v),
             Value::Pick(n) => format!("PICK {}", n),
             Value::AtAddr(v) => format!("[{}]", reverse(v, globals)),
-            Value::Litteral(v) => format!("{}", reverse(v, globals)),
+            Value::Litteral(v) => reverse(v, globals).into(),
             Value::Push => if is_a {
-                format!("POP")
+                "POP".into()
             } else {
-                format!("PUSH")
+                "PUSH".into()
             },
             x => format!("{:?}", x)
         }
