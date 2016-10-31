@@ -91,6 +91,6 @@ impl<D: Device> Device for Eeprom<D> {
     }
 
     fn as_any(&mut self) -> &mut Any {
-        self
+        &mut self.inner
     }
 }
