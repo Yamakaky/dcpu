@@ -1,6 +1,7 @@
 pub mod clock;
 pub mod dummy;
 pub mod eeprom;
+pub mod hic;
 pub mod keyboard;
 pub mod lem1802;
 pub mod m35fd;
