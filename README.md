@@ -1,6 +1,7 @@
 # A DCPU-16 emulator and DASM (dis)assembler
 
 [![Build Status](https://travis-ci.org/Yamakaky/dcpu.svg?branch=master)](https://travis-ci.org/Yamakaky/dcpu)
+[![Clippy Linting Result](https://clippy.bashy.io/github/Yamakaky/dcpu/master/badge.svg)](https://clippy.bashy.io/github/Yamakaky/dcpu/master/log)
 
 ## Features
 
