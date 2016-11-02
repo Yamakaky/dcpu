@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 
 use std::any::Any;
+use std::sync::mpsc;
 
 use enum_primitive::FromPrimitive;
 
@@ -59,17 +60,18 @@ pub struct HIC {
 }
 
 impl HIC {
-    pub fn new(number_ports: NumberPorts) -> HIC {
-        HIC {
-            ports: match number_ports {
-                NumberPorts::N8 => vec![Port::default(); 8],
-                NumberPorts::N16 => unimplemented!(),
-                NumberPorts::N32 => unimplemented!(),
-            }.into_boxed_slice(),
-            int_msg_recv: 0,
-            int_msg_transmit: 0,
-            send_buffer: [0; 2],
-            send_buffer_size: 0,
+    pub fn new(ports: Vec<Port>) -> Option<HIC> {
+        let nb_ports = ports.len();
+        if nb_ports == 8 || nb_ports == 16 || nb_ports == 32 {
+            Some(HIC {
+                ports: ports.into_boxed_slice(),
+                int_msg_recv: 0,
+                int_msg_transmit: 0,
+                send_buffer: [0; 2],
+                send_buffer_size: 0,
+            })
+        } else {
+            None
         }
     }
 
@@ -172,11 +174,13 @@ impl Device for HIC {
     }
 }
 
-#[derive(Debug, Default, Clone)]
-struct Port {
+#[derive(Debug, Default)]
+pub struct Port {
+    connection: Option<(mpsc::Sender<u16>, mpsc::Receiver<u16>)>,
     name: [u16; 8],
     recv_buffer: [u16; 2],
     recv_buffer_size: usize,
+    overflowed: bool,
 }
 
 impl Port {
@@ -185,17 +189,28 @@ impl Port {
     }
 
     fn recv(&mut self) -> (u16, ReceiveError) {
-        unimplemented!()
+        if self.recv_buffer_size == 0 {
+            (0, ReceiveError::NoData)
+        } else {
+            let res = if self.overflowed {
+                ReceiveError::Overflow
+            } else {
+                ReceiveError::Success
+            };
+            self.overflowed = false;
+            self.recv_buffer_size -= 1;
+            (self.recv_buffer[self.recv_buffer_size], res)
+        }
     }
 
     fn status(&self) -> u16 {
         self.is_busy() as u16 |
         (self.is_connected() as u16) << 1 |
-        ((self.recv_buffer_size != 0) as u16) << 2
+        (self.has_data() as u16) << 2
     }
 
     fn has_data(&self) -> bool {
-        unimplemented!()
+        self.recv_buffer_size != 0
     }
 
     fn is_busy(&self) -> bool {
