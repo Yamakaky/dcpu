@@ -164,9 +164,15 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
 
         layout(origin_upper_left) in vec4 gl_FragCoord;
 
-        uniform uint vram[386];
-        uniform uint font[256];
-        uniform uint palette[16];
+        uniform Vram {
+            uint vram[512];
+        };
+        uniform Font {
+            uint font[256];
+        };
+        uniform Palette {
+            uint palette[16];
+        };
 
         out vec4 f_color;
 
@@ -277,9 +283,9 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
                                &indices,
                                &render_program,
                                &uniform! {
-                                   vram: &vram,
-                                   font: &font,
-                                   palette: &palette,
+                                   Vram: &vram,
+                                   Font: &font,
+                                   Palette: &palette,
                                },
                                &Default::default()));
 
