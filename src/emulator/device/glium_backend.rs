@@ -162,7 +162,7 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
         const uint SHIFT_FG = 12u;
         const uint SHIFT_BG = 8u;
 
-        layout(origin_upper_left) in vec4 gl_FragCoord;
+        layout(origin_upper_left, pixel_center_integer) in vec4 gl_FragCoord;
 
         uniform Vram {
             uint vram[512];
