@@ -273,16 +273,15 @@ fn thread_main(thread_command: mpsc::Receiver<ThreadCommand>,
         palette.write(&palette_data);
 
         frame_buffer.clear_color(0.0, 0.0, 1.0, 1.0);
-        frame_buffer.draw(&render_vertex_buffer,
-                          &indices,
-                          &render_program,
-                          &uniform! {
-                              vram: &vram,
-                              font: &font,
-                              palette: &palette,
-                          },
-                          &Default::default())
-                    .unwrap();
+        try!(frame_buffer.draw(&render_vertex_buffer,
+                               &indices,
+                               &render_program,
+                               &uniform! {
+                                   vram: &vram,
+                                   font: &font,
+                                   palette: &palette,
+                               },
+                               &Default::default()));
 
         let mut target = display.draw();
         let border_color =
