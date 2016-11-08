@@ -1,8 +1,6 @@
-// tmp while things are unimplemented
-#![allow(dead_code)]
-
 use std::any::Any;
 use std::sync::mpsc;
+use std::result::Result as StdResult;
 
 use enum_primitive::FromPrimitive;
 
@@ -29,11 +27,14 @@ enum ReceiveError {
     NoData = 0x3,
 }
 
+#[allow(dead_code)]
 enum TransmitError {
     Success = 0x0,
+    // TODO
     PortBusy = 0x1,
     Overflow = 0x2,
     Unconnected = 0x3,
+    // TODO
     HICBusy = 0x4,
 }
 
@@ -51,32 +52,117 @@ pub enum NumberPorts {
 }
 
 #[derive(Debug)]
+struct Message {
+    port: usize,
+    data: u16,
+}
+
+#[derive(Debug, Copy, Clone)]
+enum Buffer<I> {
+    Zero,
+    One(I),
+    Two(I, I),
+}
+
+impl<I: Copy> Buffer<I> {
+    fn push(&mut self, val: I) -> bool {
+        use self::Buffer::*;
+        match *self {
+            Zero => {
+                *self = One(val);
+                true
+            }
+            One(a) => {
+                *self = Two(val, a);
+                true
+            }
+            Two(a, _) => {
+                *self = Two(val, a);
+                false
+            },
+        }
+    }
+
+    fn pop(&mut self) -> Option<I> {
+        use self::Buffer::*;
+        match *self {
+            Zero => None,
+            One(a) => {
+                *self = Zero;
+                Some(a)
+            }
+            Two(a, b) => {
+                *self = One(a);
+                Some(b)
+            }
+        }
+    }
+
+    fn size(&self) -> usize {
+        use self::Buffer::*;
+        match *self {
+            Zero => 0,
+            One(..) => 1,
+            Two(..) => 2,
+        }
+    }
+}
+
+impl<I> Default for Buffer<I> {
+    fn default() -> Buffer<I> {
+        Buffer::Zero
+    }
+}
+
+#[derive(Debug)]
 pub struct HIC {
     ports: Box<[Port]>,
+    recv: mpsc::Receiver<Message>,
+    // Used only for `connect()`
+    send: mpsc::Sender<Message>,
     int_msg_recv: u16,
     int_msg_transmit: u16,
-    send_buffer: [u16; 2],
-    send_buffer_size: usize,
+    send_buffer: Buffer<(usize, u16)>,
 }
 
 impl HIC {
-    pub fn new(ports: Vec<Port>) -> Option<HIC> {
-        let nb_ports = ports.len();
+    pub fn new(nb_ports: usize) -> Option<HIC> {
         if nb_ports == 8 || nb_ports == 16 || nb_ports == 32 {
+            let mut ports = Vec::with_capacity(nb_ports);
+            for _ in 0..nb_ports {
+                ports.push(Port::default());
+            }
+            let (tx, rx) = mpsc::channel();
             Some(HIC {
                 ports: ports.into_boxed_slice(),
+                recv: rx,
+                send: tx,
                 int_msg_recv: 0,
                 int_msg_transmit: 0,
-                send_buffer: [0; 2],
-                send_buffer_size: 0,
+                send_buffer: Buffer::default(),
             })
         } else {
             None
         }
     }
 
+    pub fn connect(&mut self, other: &mut HIC) -> StdResult<(), ()> {
+        let my_ports_free =
+            self.ports.iter_mut().enumerate().filter(|&(_, ref p)| !p.is_connected()).next();
+        let it_ports_free =
+            other.ports.iter_mut().enumerate().filter(|&(_, ref p)| !p.is_connected()).next();
+        if let (Some((my_id, my_free)), Some((other_id, other_free))) = (my_ports_free, it_ports_free) {
+            my_free.connection = Some((other_id, other.send.clone()));
+            other_free.connection = Some((my_id, self.send.clone()));
+            Ok(())
+        } else {
+            Err(())
+        }
+    }
+
     fn is_sending(&self) -> bool {
-        unimplemented!()
+        // TODO
+        self.send_buffer.size() != 0
     }
 }
 
@@ -111,7 +197,7 @@ impl Device for HIC {
                                           .position(Port::has_data)
                                           .unwrap_or(0xffff);
                 let general_status =
-                    ((self.send_buffer_size == 0) as u16) << 4 |
+                    ((self.send_buffer.size() == 0) as u16) << 4 |
                     ((self.is_sending()) as u16) << 5 |
                     ((first_with_data != 0xffff) as u16) << 6 |
                     ((self.int_msg_recv != 0) as u16) << 14 |
@@ -120,21 +206,41 @@ impl Device for HIC {
                 cpu.registers[Register::C] = first_with_data as u16;
             }
             Some(Command::RECEIVE) => {
-                let (res, err) = self.ports
-                                     .get_mut(port_number)
-                                     .map(|port| port.recv())
-                                     .unwrap_or((0, ReceiveError::Fail));
+                let (res, err) =
+                    if let Some(port) = self.ports.get_mut(port_number) {
+                        if let Some(val) = port.recv_buffer.pop() {
+                            let err = if port.overflowed {
+                                port.overflowed = false;
+                                ReceiveError::Overflow
+                            } else {
+                                ReceiveError::Success
+                            };
+                            (val, err)
+                        } else {
+                            (0, ReceiveError::NoData)
+                        }
+                    } else {
+                        // Should be WrongPort
+                        (0, ReceiveError::Fail)
+                    };
                 cpu.registers[Register::B] = res;
                 cpu.registers[Register::C] = err as u16;
             }
             Some(Command::TRANSMIT) => {
                 let val = cpu.registers[Register::B];
-                cpu.registers[Register::C] =
-                    self.ports
-                        .get_mut(port_number)
-                        .map(|port| port.send(val))
-                        // should be OOB
-                        .unwrap_or_else(|| unreachable!()) as u16;
+                let connected = self.ports
+                                    .get_mut(port_number)
+                                    .map(|port| port.is_connected())
+                                    .unwrap_or(false);
+                cpu.registers[Register::C] = if connected {
+                    if self.send_buffer.push((port_number, val)) {
+                        TransmitError::Success
+                    } else {
+                        TransmitError::Overflow
+                    }
+                } else {
+                    TransmitError::Unconnected
+                } as u16;
             }
             Some(Command::CONFIGURE) => {
                 self.int_msg_recv = cpu.registers[Register::B];
@@ -162,11 +268,31 @@ impl Device for HIC {
     }
 
     fn tick(&mut self, _cpu: &mut Cpu, _current_tick: u64) -> Result<TickResult> {
-        unimplemented!()
+        if let Some((port_num, val)) = self.send_buffer.pop() {
+            try!(self.ports[port_num].try_send(val));
+            if self.int_msg_transmit != 0 {
+                return Ok(TickResult::Interrupt(self.int_msg_transmit));
+            }
+        }
+
+        loop {
+            match self.recv.try_recv() {
+                Ok(Message { port, data }) => {
+                    self.ports[port].recv(data);
+                    if self.int_msg_recv != 0 {
+                        return Ok(TickResult::Interrupt(self.int_msg_recv));
+                    }
+                }
+                Err(mpsc::TryRecvError::Empty) => break,
+                Err(e) => try!(Err(ErrorKind::BackendStopped(format!("{}", e)))),
+            }
+        }
+
+        Ok(TickResult::Nothing)
     }
 
     fn inspect(&self) {
-        unimplemented!()
+        println!("{:?}", self);
     }
 
     fn as_any(&mut self) -> &mut Any {
@@ -176,31 +302,29 @@ impl Device for HIC {
 
 #[derive(Debug, Default)]
 pub struct Port {
-    connection: Option<(mpsc::Sender<u16>, mpsc::Receiver<u16>)>,
+    connection: Option<(usize, mpsc::Sender<Message>)>,
     name: [u16; 8],
-    recv_buffer: [u16; 2],
-    recv_buffer_size: usize,
+    recv_buffer: Buffer<u16>,
     overflowed: bool,
 }
 
 impl Port {
-    fn send(&mut self, _data: u16) -> TransmitError {
-        unimplemented!()
+    fn try_send(&mut self, val: u16) -> Result<()> {
+        if let Some((port_num, ref sender)) = self.connection {
+            match sender.send(Message {
+                port: port_num,
+                data: val,
+            }) {
+                Ok(()) => Ok(()),
+                Err(_) => try!(Err(ErrorKind::BackendStopped("hic".into()))),
+            }
+        } else {
+            unreachable!()
+        }
     }
 
-    fn recv(&mut self) -> (u16, ReceiveError) {
-        if self.recv_buffer_size == 0 {
-            (0, ReceiveError::NoData)
-        } else {
-            let res = if self.overflowed {
-                ReceiveError::Overflow
-            } else {
-                ReceiveError::Success
-            };
-            self.overflowed = false;
-            self.recv_buffer_size -= 1;
-            (self.recv_buffer[self.recv_buffer_size], res)
-        }
+    fn recv(&mut self, data: u16) {
+        self.overflowed = !self.recv_buffer.push(data);
     }
 
     fn status(&self) -> u16 {
@@ -210,14 +334,15 @@ impl Port {
     }
 
     fn has_data(&self) -> bool {
-        self.recv_buffer_size != 0
+        self.recv_buffer.size() != 0
     }
 
     fn is_busy(&self) -> bool {
-        unimplemented!()
+        // TODO
+        false
     }
 
     fn is_connected(&self) -> bool {
-        unimplemented!()
+        self.connection.is_some()
     }
 }
