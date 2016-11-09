@@ -31,6 +31,7 @@ serde = { version = "0.8", optional = true }
 serde_derive = { version = "0.8", optional = true }
 serde_json = { version = "0.8", optional = true }
 simplelog = { version = "0.2", optional = true }
+time = "0.1"
 
 [profile]
 

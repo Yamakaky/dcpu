@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add eeprom support
 - Add m35fd support
 - Limited C API
+- clock v2 support
 
 ## Changed
 

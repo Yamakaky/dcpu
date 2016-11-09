@@ -1,8 +1,10 @@
 use std::any::Any;
 
 use enum_primitive::FromPrimitive;
+use time::{empty_tm, now, Duration, Tm};
 
 use emulator::cpu::Cpu;
+use emulator::Registers;
 use emulator::device::*;
 use types::Register;
 
@@ -12,7 +14,11 @@ enum_from_primitive! {
 enum Command {
     SET_SPEED = 0x0,
     GET_TICKS = 0x1,
-    SET_INT = 0x2
+    SET_INT = 0x2,
+    REAL_TIME = 0x10,
+    RUN_TIME = 0x11,
+    SET_REAL_TIME = 0x12,
+    RESET = 0xffff,
 }
 }
 
@@ -25,6 +31,8 @@ pub struct Clock {
     last_call: u64,
     /// Which future CPU tick should we tick on (optimisation)
     next_tick: u64,
+    /// Difference between real-life and in-game time
+    delta_time: Duration,
 }
 
 impl Clock {
@@ -35,6 +43,7 @@ impl Clock {
             int_msg: 0,
             last_call: 0,
             next_tick: 0,
+            delta_time: Duration::zero(),
         }
     }
 }
@@ -45,7 +54,7 @@ impl Device for Clock {
     }
 
     fn hardware_version(&self) -> u16 {
-        1
+        2
     }
 
     fn manufacturer(&self) -> u32 {
@@ -63,6 +72,13 @@ impl Device for Clock {
                 self.last_call = 0;
             },
             Command::SET_INT => self.int_msg = b,
+            Command::REAL_TIME =>
+                encode_time(&mut cpu.registers, now() + self.delta_time),
+            Command::RUN_TIME =>
+                encode_time(&mut cpu.registers, empty_tm() + self.delta_time),
+            Command::SET_REAL_TIME =>
+                self.delta_time = now() - decode_time(&cpu.registers),
+            Command::RESET => *self = Clock::new(self.ticks_per_second),
         }
 
         Ok(0)
@@ -95,5 +111,28 @@ impl Device for Clock {
 
     fn as_any(&mut self) -> &mut Any {
         self
+    }
+}
+
+fn encode_time(regs: &mut Registers, time: Tm) {
+    regs[Register::B] = time.tm_year as u16;
+    regs[Register::C] =
+        (time.tm_mon as u16 + 1) << 8 | time.tm_mday as u16;
+    regs[Register::X] =
+        (time.tm_hour as u16) << 8 | time.tm_min as u16;
+    regs[Register::Y] = time.tm_sec as u16;
+    regs[Register::Z] = (time.tm_nsec / 1_000_000) as u16;
+}
+
+fn decode_time(regs: &Registers) -> Tm {
+    Tm {
+        tm_year: regs[Register::B] as i32,
+        tm_mon: ((regs[Register::C] >> 8) - 1) as i32,
+        tm_mday: (regs[Register::C] & 0xff) as i32,
+        tm_hour: (regs[Register::X] >> 8) as i32,
+        tm_min: (regs[Register::X] & 0xff) as i32,
+        tm_sec: regs[Register::Y] as i32,
+        tm_nsec: (regs[Register::Z] as i32) * 1_000_000,
+        ..empty_tm()
     }
 }
