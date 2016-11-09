@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add m35fd support
 - Limited C API
 - clock v2 support
+- Feature to use the old device id
 
 ## Changed
 

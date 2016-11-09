@@ -49,10 +49,15 @@ impl Clock {
 }
 
 impl Device for Clock {
+    #[cfg(feature = "old-device-id")]
     fn hardware_id(&self) -> u32 {
         0x12d0b402
     }
 
+    #[cfg(not(feature = "old-device-id"))]
+    fn hardware_id(&self) -> u32 {
+        0x12d1b402
+    }
     fn hardware_version(&self) -> u16 {
         2
     }

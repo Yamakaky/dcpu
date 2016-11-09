@@ -53,8 +53,14 @@ impl<B: Backend> LEM1802<B> {
 }
 
 impl<B: Backend> Device for LEM1802<B> {
+    #[cfg(feature = "old-device-id")]
     fn hardware_id(&self) -> u32 {
         0x7349f615
+    }
+
+    #[cfg(not(feature = "old-device-id"))]
+    fn hardware_id(&self) -> u32 {
+        0x734df615
     }
 
     fn hardware_version(&self) -> u16 {

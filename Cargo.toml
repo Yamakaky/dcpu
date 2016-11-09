@@ -10,10 +10,11 @@ repository = "https://github.com/Yamakaky/dcpu"
 version = "0.4.0"
 
 [features]
-default = ["bins", "debugger-cli", "glium"]
+default = ["bins", "debugger-cli", "glium", "old-device-id"]
 nightly = ["serde", "serde_derive", "serde_json"]
 bins = ["docopt", "rustc-serialize", "simplelog"]
 debugger-cli = ["clap", "rustyline", "colored"]
+old-device-id = []
 
 [dependencies]
 clap = { version = "2.14", optional = true }

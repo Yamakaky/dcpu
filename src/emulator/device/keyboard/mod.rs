@@ -45,8 +45,14 @@ impl<B: Backend> Keyboard<B> {
 }
 
 impl<B: Backend> Device for Keyboard<B> {
+    #[cfg(feature = "old-device-id")]
     fn hardware_id(&self) -> u32 {
         0x30cf7406
+    }
+
+    #[cfg(not(feature = "old-device-id"))]
+    fn hardware_id(&self) -> u32 {
+        0x30c17406
     }
 
     fn hardware_version(&self) -> u16 {
