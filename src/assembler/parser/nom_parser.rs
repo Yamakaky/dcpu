@@ -28,22 +28,22 @@ pub fn line_number(raw_file: &[u8], raw_line: &[u8]) -> (usize, usize) {
 }
 
 named!(hex_num<(&str, u32)>,
-    map_res!(chain!(tag!("0x") ~ n: recognize!(many1!(hex_digit)), || n),
+    map_res!(preceded!(tag!("0x"), recognize!(many1!(hex_digit))),
              |n| str::from_utf8(n).map(|n| (n, 16)))
 );
 
 named!(num<(&str, u32)>,
-    map_res!(chain!(n: recognize!(many1!(digit)), || n),
+    map_res!(recognize!(many1!(digit)),
              |n| str::from_utf8(n).map(|n| (n, 10)))
 );
 
 named!(octal_num<(&str, u32)>,
-    map_res!(chain!(tag!("0o") ~ n: recognize!(many1!(one_of!("01234567"))), || n),
+    map_res!(preceded!(tag!("0o"), recognize!(many1!(one_of!("01234567")))),
              |n| str::from_utf8(n).map(|n| (n, 8)))
 );
 
 named!(bin_num<(&str, u32)>,
-    map_res!(chain!(tag!("0b") ~ n: recognize!(many1!(one_of!("01"))), || n),
+    map_res!(preceded!(tag!("0b"), recognize!(many1!(one_of!("01")))),
              |n| str::from_utf8(n).map(|n| (n, 2)))
 );
 
@@ -56,9 +56,10 @@ named!(pub pos_number<u16>,
 
 named!(neg_number<i16>,
     map_res!(
-        chain!(char!('-') ~
-               n: alt_complete!(hex_num | octal_num | bin_num | num),
-               || n),
+        preceded!(
+            char!('-'),
+            alt_complete!(hex_num | octal_num | bin_num | num)
+        ),
         |(n, base)| i16::from_str_radix(&format!("-{}", n), base)
     )
 );
@@ -90,16 +91,16 @@ named!(instruction<Instruction<Expression> >,
 );
 
 named!(basic_instruction<Instruction<Expression> >,
-    chain!(
-        op: basic_op ~
-        multispace ~
-        b: b_value ~
-        multispace? ~
-        char!(',') ~
-        multispace? ~
-        a: a_value,
+    do_parse!(
+           op: basic_op
+        >>     opt!(multispace)
+        >> b:  b_value
+        >>     opt!(multispace)
+        >>     char!(',')
+        >>     opt!(multispace)
+        >> a:  a_value
 
-        || Instruction::BasicOp(op, b, a)
+        >> (Instruction::BasicOp(op, b, a))
     )
 );
 
@@ -111,12 +112,12 @@ named!(special_op<SpecialOp>,
 );
 
 named!(special_instruction<Instruction<Expression> >,
-    chain!(
-        op: special_op ~
-        multispace ~
-        a: a_value,
+    do_parse!(
+           op: special_op
+        >>     multispace
+        >> a:  a_value
 
-        || Instruction::SpecialOp(op, a)
+        >> (Instruction::SpecialOp(op, a))
     )
 );
 
@@ -128,17 +129,17 @@ named!(register<Register>,
 );
 
 named!(at_reg_plus<Value<Expression> >,
-    chain!(
-        char!('[') ~
-        multispace? ~
-        reg: register ~
-        multispace? ~
-        char!('+') ~
-        multispace? ~
-        e: expression ~
-        multispace? ~
-        char!(']'),
-        || Value::AtRegPlus(reg, e)
+    do_parse!(
+                char!('[')
+        >>      opt!(multispace)
+        >> reg: register
+        >>      opt!(multispace)
+        >>      char!('+')
+        >>      opt!(multispace)
+        >> e:   expression
+        >>      opt!(multispace)
+        >>      char!(']')
+        >> ( Value::AtRegPlus(reg, e) )
     )
 );
 
