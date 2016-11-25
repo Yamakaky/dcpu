@@ -13,8 +13,8 @@ use types::SpecialOp::*;
 
 error_chain!(
     links {
-        device::Error, device::ErrorKind, InterruptError;
-        decode::Error, decode::ErrorKind, DecodeError;
+        device::Error, InterruptError;
+        decode::Error, DecodeError;
     }
     errors {
         InvalidHardwareId(id: u16) {
