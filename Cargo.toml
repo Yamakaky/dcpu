@@ -25,7 +25,7 @@ enum_primitive = "0.1"
 error-chain = "0.5"
 glium = { version = "0.15", optional = true }
 log = "0.3"
-nom = "1.2"
+nom = "^2.0"
 rustc-serialize = { version = "0.3", optional = true }
 rustyline = { version = "1.0", optional = true }
 serde = { version = "0.8", optional = true }
