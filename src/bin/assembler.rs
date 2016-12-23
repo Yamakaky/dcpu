@@ -30,6 +30,7 @@ Options:
   --no-cpp      Disable gcc preprocessor pass.
   --ast         Show the file AST.
   --hex         Show in hexadecimal instead of binary.
+  --remove-unused  Remove unused labels and associated code.
   --symbols <f>  Write the resolved symbols to this file.
   <file>        File to use instead of stdin.
   -o <file>     File to use instead of stdout.
@@ -43,6 +44,7 @@ struct Args {
     flag_no_cpp: bool,
     flag_ast: bool,
     flag_hex: bool,
+    flag_remove_unused: bool,
     flag_symbols: Option<String>,
     arg_file: Option<String>,
     flag_o: Option<String>,
@@ -85,7 +87,12 @@ fn main_ret() -> i32 {
         die!(0, "{:?}", ast);
     }
 
-    let ast = assembler::clean(ast);
+    let ast = if args.flag_remove_unused {
+        assembler::clean(ast)
+    } else {
+        assembler::print_unused(&ast);
+        ast
+    };
 
     let (bin, symbols) = match assembler::link(&ast) {
         Ok(v) => v,

@@ -1,5 +1,20 @@
 use assembler::types::*;
 
+pub fn print_unused(ast: &[ParsedItem]) {
+    let used_labels: Vec<String> = ast.iter().flat_map(|i| i.used_labels().into_iter()).collect();
+    for item in ast {
+        match *item {
+            ParsedItem::LabelDecl(ref l) |
+                ParsedItem::Directive(Directive::Lcomm(ref l, _))=> {
+                    if !used_labels.contains(&l) {
+                        println!("Unused label: {}", l);
+                    }
+            }
+            _ => (),
+        }
+    }
+}
+
 pub fn clean(ast: Vec<ParsedItem>) -> Vec<ParsedItem> {
     let used_labels: Vec<String> = ast.clone().into_iter().flat_map(|i| i.used_labels().into_iter()).collect();
     let mut res = vec![];
@@ -9,9 +24,6 @@ pub fn clean(ast: Vec<ParsedItem>) -> Vec<ParsedItem> {
             &ParsedItem::LabelDecl(ref l) |
                 &ParsedItem::Directive(Directive::Lcomm(ref l, _))=> {
                 keep = used_labels.contains(&l);
-                if !keep {
-                    println!("Removing {}", l);
-                }
             }
             _ => (),
         }

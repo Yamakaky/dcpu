@@ -43,7 +43,8 @@ struct Args {
 
 #[cfg(feature = "bins")]
 fn main_ret() -> i32 {
-    simplelog::TermLogger::init(simplelog::LogLevelFilter::Info).unwrap();
+    simplelog::TermLogger::init(simplelog::LogLevelFilter::Info,
+                                Default::default()).unwrap();
 
     let version = option_env!("CARGO_PKG_VERSION").map(|s| s.into());
     let args: Args = Docopt::new(USAGE)

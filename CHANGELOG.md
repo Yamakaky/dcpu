@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Limited C API
 - clock v2 support
 - Feature to use the old device id
+- Remove/warn for unused labels
 
 ## Changed
 

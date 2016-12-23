@@ -7,4 +7,4 @@ pub mod types;
 pub use self::preprocessor::preprocess;
 pub use self::linker::link;
 pub use self::parser::parse;
-pub use self::cleaner::clean;
+pub use self::cleaner::{clean, print_unused};
