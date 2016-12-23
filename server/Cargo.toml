@@ -5,9 +5,9 @@ authors = ["yamakaky"]
 
 [dependencies]
 bytes = { git = "https://github.com/carllerche/bytes" }
-error-chain = "0.5"
+error-chain = "0.7"
 futures = "0.1"
-rayon = "0.4"
+rayon = "0.6"
 serde = "0.8"
 serde_derive = "0.8"
 serde_json = "0.8"
