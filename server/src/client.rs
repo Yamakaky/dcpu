@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 
 error_chain!{
     foreign_links {
-        io::Error, IoError;
+        IoError(io::Error);
     }
 }
 

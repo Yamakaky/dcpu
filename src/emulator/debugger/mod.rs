@@ -25,8 +25,8 @@ use types::Register;
 
 error_chain! {
     links {
-        cpu::Error, Cpu;
-        device::Error, Device;
+        Cpu(cpu::Error, cpu::ErrorKind);
+        Device(device::Error, device::ErrorKind);
     }
     errors {
         Breakpoint(i: usize, addr: u16, expr: Expression) {

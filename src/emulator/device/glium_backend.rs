@@ -56,12 +56,12 @@ pub fn start() -> (ScreenBackend, KeyboardBackend) {
 
 error_chain! {
     foreign_links {
-        glium::GliumCreationError<glium::glutin::CreationError>, CreationError;
-        glium::vertex::BufferCreationError, VertexCreationError;
-        glium::ProgramCreationError, ProgramCreationError;
-        glium::SwapBuffersError, SwapBuffersError;
-        glium::DrawError, DrawError;
-        mpsc::SendError<KeyboardEvent>, MpscSendError;
+        CreationError(glium::GliumCreationError<glium::glutin::CreationError>);
+        VertexCreationError(glium::vertex::BufferCreationError);
+        ProgramCreationError(glium::ProgramCreationError);
+        SwapBuffersError(glium::SwapBuffersError);
+        DrawError(glium::DrawError);
+        MpscSendError(mpsc::SendError<KeyboardEvent>);
     }
 }
 

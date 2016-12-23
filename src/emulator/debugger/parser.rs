@@ -8,7 +8,7 @@ use assembler::parser::nom_parser::{expression, pos_number};
 
 error_chain! {
     foreign_links {
-        clap::Error, Clap;
+        Clap(clap::Error);
     }
 
     errors {
