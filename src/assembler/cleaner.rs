@@ -82,7 +82,7 @@ impl Value<Expression> {
 
 impl Expression {
     fn used_labels(&self) -> Vec<String> {
-        use self::Expression::*;
+        use assembler::types::Expression::*;
 
         match *self {
             Label(ref l) => vec![l.clone()],
