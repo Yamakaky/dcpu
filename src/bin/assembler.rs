@@ -84,6 +84,8 @@ fn main_ret() -> i32 {
         die!(0, "{:?}", ast);
     }
 
+    let ast = assembler::clean(ast);
+
     let (bin, symbols) = match assembler::link(&ast) {
         Ok(v) => v,
         Err(e) => die!(1, "Error: {:?}", e)
