@@ -7,7 +7,7 @@ license = "LGPL-3.0"
 name = "dcpu"
 readme = "README.md"
 repository = "https://github.com/Yamakaky/dcpu"
-version = "0.4.0"
+version = "0.5.0"
 
 [features]
 default = ["bins", "debugger-cli", "glium", "old-device-id"]
