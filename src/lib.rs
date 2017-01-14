@@ -1,7 +1,5 @@
 #![doc(html_root_url = "https://yamakaky.github.io/dcpu/")]
 
-#![cfg_attr(feature = "serde_derive", feature(proc_macro))]
-
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
 // See https://github.com/brson/error-chain/issues/51
