@@ -191,7 +191,9 @@ named!(raw_label<String>,
 );
 
 named!(raw_local_label<String>,
-    chain!(char!('.') ~ l: raw_label, || l)
+    chain!(alt!(char!('.') | char!('_')) ~
+           l: raw_label,
+           || l)
 );
 
 named!(label_decl<ParsedItem>,
