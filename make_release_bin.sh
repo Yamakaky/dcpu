@@ -12,5 +12,4 @@ cargo build --target=x86_64-pc-windows-gnu --release --features=nightly
 )
 
 mkdir -p target/bins
-cp target/*/release/{emulator,emulator.exe,assembler,assembler.exe,disassembler,disassembler.exe} target/bins/
-cp image/target/*/release/{sprite,sprite.exe} target/bins
+cp target/*/release/{emulator,emulator.exe,assembler,assembler.exe,disassembler,disassembler.exe,sprite,sprite.exe} target/bins/
