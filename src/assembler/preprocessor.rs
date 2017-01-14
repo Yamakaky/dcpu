@@ -1,7 +1,9 @@
 use std::io::Write;
 use std::process::*;
 
-pub fn preprocess(asm: &str) -> Option<String> {
+error_chain! {}
+
+pub fn preprocess(asm: &str) -> Result<String> {
     let mut process = Command::new("cpp")
         .arg("-Wall")
         .args(&["-x", "assembler-with-cpp"])
@@ -10,19 +12,18 @@ pub fn preprocess(asm: &str) -> Option<String> {
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
-        .spawn().unwrap_or_else(|e| panic!("failed to execute process: {}\nIs gcc installed?", e));
+        .spawn()
+        .chain_err(|| "failed to execute process: {}\nIs gcc installed?")?;
 
     if let Some(ref mut stdin) = process.stdin {
-        if stdin.write_all(asm.as_bytes()).is_err() {
-            return None;
-        }
+        stdin.write_all(asm.as_bytes()).chain_err(|| "gcc input error")?
     } else {
-        return None;
+        return Err("problem getting the assembler stdin".into())
     }
-    let output = process.wait_with_output().unwrap();
+    let output = process.wait_with_output().chain_err(|| "gcc execution error")?;
     if output.status.success() {
-        String::from_utf8(output.stdout).ok()
+        String::from_utf8(output.stdout).chain_err(|| "preprocessor output decoding")
     } else {
-        None
+        Err("preprocessor error".into())
     }
 }

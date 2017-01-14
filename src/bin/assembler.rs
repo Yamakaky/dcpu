@@ -1,6 +1,8 @@
 extern crate dcpu;
 #[cfg(feature = "bins")]
 extern crate docopt;
+#[macro_use]
+extern crate error_chain;
 #[cfg(feature = "bins")]
 extern crate rustc_serialize;
 #[cfg(feature = "serde_json")]
@@ -11,14 +13,14 @@ extern crate simplelog;
 #[macro_use]
 mod utils;
 
-use std::io::{Read, Write};
+use std::io::Read;
 use std::str;
 
 #[cfg(feature = "bins")]
 use docopt::Docopt;
 
 use dcpu::byteorder::{WriteBytesExt, LittleEndian};
-use dcpu::assembler;
+use dcpu::assembler::{self, ResultExt};
 
 #[cfg(feature = "bins")]
 const USAGE: &'static str = "
@@ -51,9 +53,10 @@ struct Args {
 }
 
 #[cfg(feature = "bins")]
-fn main_ret() -> i32 {
+quick_main!(|| -> assembler::Result<()> {
     simplelog::TermLogger::init(simplelog::LogLevelFilter::Info,
-                                Default::default()).unwrap();
+                                Default::default())
+                          .chain_err(|| "log init failure")?;
 
     let version = option_env!("CARGO_PKG_VERSION").map(|s| s.into());
     let args: Args = Docopt::new(USAGE)
@@ -63,11 +66,10 @@ fn main_ret() -> i32 {
 
     let asm = {
         let mut asm = String::new();
-        let mut input = match utils::get_input(args.arg_file) {
-            Ok(input) => input,
-            Err(e) => die!(1, "Error while opening the input: {}", e),
-        };
-        input.read_to_string(&mut asm).unwrap();
+        let mut input = utils::get_input(args.arg_file).chain_err(||
+            "input file opening"
+        )?;
+        input.read_to_string(&mut asm).chain_err(|| "input reading")?;
         asm
     };
 
@@ -75,16 +77,14 @@ fn main_ret() -> i32 {
         if args.flag_no_cpp {
             asm
         } else {
-            assembler::preprocess(&asm).unwrap()
+            assembler::preprocess(&asm)?
         }
     };
-    let ast = match assembler::parse(&preprocessed) {
-        Ok(o) => o,
-        Err(e) => die!(1, "Error: {}", e),
-    };
+    let ast = assembler::parse(&preprocessed)?;
 
     if args.flag_ast {
-        die!(0, "{:?}", ast);
+        println!("{:?}", ast);
+        return Ok(());
     }
 
     let ast = if args.flag_remove_unused {
@@ -94,50 +94,43 @@ fn main_ret() -> i32 {
         ast
     };
 
-    let (bin, symbols) = match assembler::link(&ast) {
-        Ok(v) => v,
-        Err(e) => die!(1, "Error: {:?}", e)
-    };
+    let (bin, symbols) = assembler::link(&ast)?;
 
-    let mut output = match utils::get_output(args.flag_o) {
-        Ok(o) => o,
-        Err(e) => die!(1, "Error while opening the output: {}", e),
-    };
+    let mut output = utils::get_output(args.flag_o).chain_err(||
+        "Error while opening the output"
+    )?;
 
     if args.flag_hex {
         for n in bin {
-            writeln!(output, "0x{:x}", n).unwrap();
+            writeln!(output, "0x{:x}", n).chain_err(|| "print error")?;
         }
     } else {
-        output.write_all_items::<u16, LittleEndian>(&bin).unwrap();
+        output.write_all_items::<u16, LittleEndian>(&bin)
+              .chain_err(|| "output error")?;
     }
 
     if let Some(path) = args.flag_symbols {
-        write_symbols(path, &symbols)
-    } else {
-        0
+        write_symbols(path, &symbols)?;
     }
-}
+
+    Ok(())
+});
 
 #[cfg(not(feature = "bins"))]
-fn main_ret() -> i32 {
+quick_main!(|| -> assembler::Result<i32> {
     "The feature \"bins\" must be activated to use this binary"
-}
-
-fn main() {
-    std::process::exit(main_ret());
-}
+});
 
 #[cfg(feature = "serde_json")]
-fn write_symbols(path: String, symbols: &assembler::types::Globals) -> i32 {
-    match utils::get_output(Some(path)) {
-        Ok(mut o) => serde_json::to_writer_pretty(&mut o, symbols).unwrap(),
-        Err(e) => die!(1, "Error while opening the symbol map file: {}", e),
-    }
-    0
+fn write_symbols(path: String,
+                 symbols: &assembler::types::Globals) -> assembler::Result<()> {
+    let mut o = utils::get_output(Some(path))
+                      .chain_err(|| "Error while opening the symbol map file")?;
+    serde_json::to_writer_pretty(&mut o, symbols).unwrap();
+    Ok(())
 }
 
 #[cfg(not(feature = "serde_json"))]
-fn write_symbols(_path: String, _symbols: &assembler::types::Globals) -> i32 {
-    die!(1, "Symbol map generation is disabled, activate the \"nightly\" feature.");
+fn write_symbols(_path: String, _symbols: &assembler::types::Globals) -> Result<()> {
+    Err("Symbol map generation is disabled, activate the \"nightly\" feature.".into())
 }
