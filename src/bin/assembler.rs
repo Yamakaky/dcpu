@@ -131,6 +131,7 @@ fn write_symbols(path: String,
 }
 
 #[cfg(not(feature = "serde_json"))]
-fn write_symbols(_path: String, _symbols: &assembler::types::Globals) -> Result<()> {
+fn write_symbols(_path: String,
+                 _symbols: &assembler::types::Globals) -> assembler::Result<()> {
     Err("Symbol map generation is disabled, activate the \"nightly\" feature.".into())
 }
