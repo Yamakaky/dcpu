@@ -13,7 +13,7 @@ use types::Register;
 
 const NB_SECTORS_BY_TRACK: u16 = 18;
 const NB_SECTORS_TOTAL: u16 = 1440;
-const SECTOR_SIZE_WORD: u32 = 513;
+const SECTOR_SIZE_WORD: u32 = 512;
 const TRACK_SEEKING_TIME: u64 = 100_000 * 10_000 / 24;
 
 enum_from_primitive! {
