@@ -9,18 +9,18 @@ os:
   - osx
 matrix:
   include:
-    - rust: nightly
+    - rust: stable
       os: linux
       script:
-        - cargo build nightly --release
-        - cargo test nightly --verbose
+        - cargo build --release
+        - cargo test --verbose
       env:
         - DEPLOY=true
-    - rust: nightly
+    - rust: stable
       os: osx
       script:
-        - cargo build nightly --release
-        - cargo test nightly --verbose
+        - cargo build --release
+        - cargo test --verbose
       env:
         - DEPLOY=true
     - rust: nightly
