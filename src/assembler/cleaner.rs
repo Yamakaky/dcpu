@@ -6,7 +6,7 @@ pub fn print_unused(ast: &[ParsedItem]) {
         match *item {
             ParsedItem::LabelDecl(ref l) |
                 ParsedItem::Directive(Directive::Lcomm(ref l, _))=> {
-                    if !used_labels.contains(&l) {
+                    if !used_labels.contains(l) {
                         println!("Unused label: {}", l);
                     }
             }
@@ -20,10 +20,10 @@ pub fn clean(ast: Vec<ParsedItem>) -> Vec<ParsedItem> {
     let mut res = vec![];
     let mut keep = true;
     for item in ast {
-        match &item {
-            &ParsedItem::LabelDecl(ref l) |
-                &ParsedItem::Directive(Directive::Lcomm(ref l, _))=> {
-                keep = used_labels.contains(&l);
+        match item {
+            ParsedItem::LabelDecl(ref l) |
+                ParsedItem::Directive(Directive::Lcomm(ref l, _))=> {
+                keep = used_labels.contains(l);
             }
             _ => (),
         }

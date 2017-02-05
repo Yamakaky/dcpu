@@ -1,7 +1,6 @@
 extern crate dcpu;
 #[cfg(feature = "bins")]
 extern crate docopt;
-#[macro_use]
 extern crate log;
 #[cfg(feature = "bins")]
 extern crate rustc_serialize;

@@ -148,9 +148,9 @@ impl HIC {
 
     pub fn connect(&mut self, other: &mut HIC) -> StdResult<(), ()> {
         let my_ports_free =
-            self.ports.iter_mut().enumerate().filter(|&(_, ref p)| !p.is_connected()).next();
+            self.ports.iter_mut().enumerate().find(|&(_, ref p)| !p.is_connected());
         let it_ports_free =
-            other.ports.iter_mut().enumerate().filter(|&(_, ref p)| !p.is_connected()).next();
+            other.ports.iter_mut().enumerate().find(|&(_, ref p)| !p.is_connected());
         if let (Some((my_id, my_free)), Some((other_id, other_free))) = (my_ports_free, it_ports_free) {
             my_free.connection = Some((other_id, other.send.clone()));
             other_free.connection = Some((my_id, self.send.clone()));
