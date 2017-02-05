@@ -35,11 +35,6 @@ You need to install the [rust compiler](https://www.rust-lang.org/) to build thi
 
 Available binaries are assembler, disassembler, emulator and sprite.
 
-Some features are only available on Rust nightly. To enable them, install Rust
-nightly then run;
-
-    # cargo run --release --features nightly --bin ...
-
 ### Build features
 
 The following build features are available ([x] means "enabled by default"):
@@ -50,8 +45,6 @@ The following build features are available ([x] means "enabled by default"):
       disabled for the library.
 - [x] `glium`: OpenGL backend for the lem1802 + keyboard, can be useful in the
       library.
-- [ ] `nightly`: implementation of `serde::{Serialize, Deserialize}` for some of
-      the types. Requires Rust nightly.
 
 ### Build the C library
 
