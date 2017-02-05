@@ -5,7 +5,6 @@ extern crate docopt;
 extern crate log;
 #[cfg(feature = "bins")]
 extern crate rustc_serialize;
-#[cfg(feature = "serde_json")]
 extern crate serde_json;
 #[cfg(feature = "bins")]
 extern crate simplelog;
@@ -200,7 +199,6 @@ fn main() {
     std::process::exit(main_ret());
 }
 
-#[cfg(feature = "serde_json")]
 fn get_symbols(path: String) -> result::Result<Globals, i32> {
     Ok(match utils::get_input(Some(path)) {
         Ok(i) => match serde_json::from_reader(i) {
@@ -215,12 +213,6 @@ fn get_symbols(path: String) -> result::Result<Globals, i32> {
             return Err(1);
         }
     })
-}
-
-#[cfg(not(feature = "serde_json"))]
-fn get_symbols(_path: String) -> result::Result<Globals, i32> {
-    println!("Symbol map loading is disabled, activate the \"nightly\" feature.");
-    Err(1)
 }
 
 #[cfg(feature = "glium")]

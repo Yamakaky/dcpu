@@ -12,21 +12,21 @@ matrix:
     - rust: nightly
       os: linux
       script:
-        - cargo build --features nightly --release
-        - cargo test --features nightly --verbose
+        - cargo build nightly --release
+        - cargo test nightly --verbose
       env:
         - DEPLOY=true
     - rust: nightly
       os: osx
       script:
-        - cargo build --features nightly --release
-        - cargo test --features nightly --verbose
+        - cargo build nightly --release
+        - cargo test nightly --verbose
       env:
         - DEPLOY=true
     - rust: nightly
       os: linux
       script:
-        - cargo build --features "nightly clippy"
+        - cargo build --features clippy
 #deploy:
 #  - provider: releases
 #  - api_key: "$GITHUB_TOKEN"

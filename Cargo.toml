@@ -11,8 +11,7 @@ version = "0.5.0"
 
 [features]
 default = ["bins", "debugger-cli", "glium", "old-device-id"]
-nightly = ["serde", "serde_derive", "serde_json"]
-bins = ["docopt", "rustc-serialize", "simplelog"]
+bins = ["docopt", "rustc-serialize", "simplelog", "serde_json"]
 debugger-cli = ["clap", "rustyline", "colored"]
 old-device-id = []
 
@@ -28,9 +27,9 @@ log = "0.3"
 nom = "2.0"
 rustc-serialize = { version = "0.3", optional = true }
 rustyline = { version = "1.0", optional = true }
-serde = { version = "0.8", optional = true }
-serde_derive = { version = "0.8", optional = true }
-serde_json = { version = "0.8", optional = true }
+serde = "0.9"
+serde_derive = "0.9"
+serde_json = { version = "0.9", optional = true }
 simplelog = { version = "0.4", optional = true }
 time = "0.1"
 

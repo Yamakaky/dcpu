@@ -5,7 +5,6 @@ extern crate docopt;
 extern crate error_chain;
 #[cfg(feature = "bins")]
 extern crate rustc_serialize;
-#[cfg(feature = "serde_json")]
 extern crate serde_json;
 #[cfg(feature = "bins")]
 extern crate simplelog;
@@ -121,17 +120,10 @@ quick_main!(|| -> assembler::Result<i32> {
     "The feature \"bins\" must be activated to use this binary"
 });
 
-#[cfg(feature = "serde_json")]
 fn write_symbols(path: String,
                  symbols: &assembler::types::Globals) -> assembler::Result<()> {
     let mut o = utils::get_output(Some(path))
                       .chain_err(|| "Error while opening the symbol map file")?;
     serde_json::to_writer_pretty(&mut o, symbols).unwrap();
     Ok(())
-}
-
-#[cfg(not(feature = "serde_json"))]
-fn write_symbols(_path: String,
-                 _symbols: &assembler::types::Globals) -> assembler::Result<()> {
-    Err("Symbol map generation is disabled, activate the \"nightly\" feature.".into())
 }

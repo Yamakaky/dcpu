@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex, mpsc};
 
 use emulator::device::{Result, ErrorKind, keyboard};
 
-#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[derive(Serialize, Deserialize)]
 #[derive(Debug, Copy, Clone)]
 pub enum KeyboardEvent {
     KeyPressed(keyboard::Key),

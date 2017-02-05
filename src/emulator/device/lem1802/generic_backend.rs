@@ -6,7 +6,7 @@ use emulator::cpu;
 use emulator::device::Result;
 use emulator::device::lem1802;
 
-#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[derive(Serialize, Deserialize)]
 #[derive(Debug)]
 pub enum ScreenCommand {
     Show(Box<lem1802::RawScreen>),

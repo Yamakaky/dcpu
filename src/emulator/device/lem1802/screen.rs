@@ -18,7 +18,8 @@ pub const SHIFT_BG: u16 = 8;
 /// Wrappers for easier serde implementation
 pub struct Vram(pub [u16; 386]);
 pub struct Font(pub [u16; 256]);
-#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+
+#[derive(Serialize, Deserialize)]
 pub struct RawScreen {
     pub vram: Vram,
     pub font: Font,
@@ -92,7 +93,7 @@ impl fmt::Debug for Screen {
     }
 }
 
-#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[derive(Serialize, Deserialize)]
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Color {
     pub r: f32,

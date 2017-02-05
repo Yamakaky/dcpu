@@ -1,6 +1,5 @@
 pub mod generic_backend;
 mod screen;
-#[cfg(feature = "serde")]
 mod serde;
 
 use std::any::Any;

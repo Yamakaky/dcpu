@@ -18,4 +18,3 @@ tokio-proto = { git = "https://github.com/tokio-rs/tokio-proto" }
 [dependencies.dcpu]
 path = ".."
 default-features = false
-features = ["nightly"]

@@ -5,7 +5,7 @@ use std::iter;
 pub use types::{BasicOp, SpecialOp, Register, Value, Instruction};
 use assembler::linker::*;
 
-#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[derive(Serialize, Deserialize)]
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct LabelInfos {
     pub addr: u16,
